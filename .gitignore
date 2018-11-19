@@ -1,0 +1,8 @@
+*.swo
+*.swp
+temp.vim
+*.vim
+*vimrc
+doc/tags
+node_modules
+*.js
