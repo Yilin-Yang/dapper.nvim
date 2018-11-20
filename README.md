@@ -20,6 +20,8 @@ Installation
 --------------------------------------------------------------------------------
 
 ### Prerequisites
+
+#### Node.js
 If you haven't done so already, install Node.js and the Node package manager. On
 Ubuntu, we recommend following the instructions [here](https://websiteforstudents.com/install-the-latest-node-js-and-nmp-packages-on-ubuntu-16-04-18-04-lts/)
 to install a recent **LTS** version of Node.js.
@@ -29,6 +31,15 @@ Alternatively, you might just install Node.js through apt.
 sudo apt install nodejs
 ```
 
+#### neovim Node.js Client
+
+Install [neovim's node client](https://github.com/neovim/node-client) by running
+the following:
+
+```bash
+npm install -g neovim
+```
+
 ### Plugin Installation
 We recommend installing dapper.nvim using [vim-plug.](https://github.com/junegunn/vim-plug)
 
@@ -36,7 +47,7 @@ We recommend installing dapper.nvim using [vim-plug.](https://github.com/junegun
 " .vimrc
 call plug#begin('~/.vim/bundle')
 " ...
-Plug 'Yilin-Yang/dapper.nvim', { 'do': 'npm install && tsc -p .', }
+Plug 'Yilin-Yang/dapper.nvim', { 'do': 'npm install --production && npm run compile', }
 " ...
 call plug#end()
 ```
@@ -59,16 +70,28 @@ And then,
 ```bash
 cd ~/.vim/bundle # or wherever you've installed the plugin
 cd dapper.nvim
-npm install
-tsc -p .
+npm install --production
+npm run compile
 ```
 
 Contribution
 --------------------------------------------------------------------------------
 
+### Prerequisites
+Install development dependencies using:
+
+```bash
+npm install   # without --production flag
+```
+
 ### Coding Style
+This repository has an [EditorConfig](https://editorconfig.org/) file in its
+top-level directory. If contributing from vim, you can use
+[editorconfig-vim](https://editorconfig.org/) to load settings from this file
+automatically.
+
 This repository is written in a mixture of VimL and TypeScript. For the latter,
-we try to follow Google's style wherever possible, as enforced by the
+try to follow Google's style wherever possible, as enforced by the
 [ts-style](https://github.com/google/ts-style) tool.
 
 `ts-style` provides the following commands, among others:
@@ -78,6 +101,9 @@ gts check # lint and check for formatting problems
 gts fix   # fix style/formatting errors, wherever possible
 gts clean # remove output files, analogous to `make clean`
 ```
+
+If the EditorConfig and `ts-style` conflict, prefer `ts-style` and (if possible)
+open a pull request after changing the EditorConfig to match.
 
 License
 --------------------------------------------------------------------------------
