@@ -6,3 +6,4 @@ temp.vim
 doc/tags
 node_modules
 *.js
+build
