@@ -6,6 +6,13 @@
     "name": "Yilin Yang",
     "email": "yiliny@umich.edu"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Yilin-Yang/dapper.nvim.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Yilin-Yang/dapper.nvim/issues"
+  },
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
   "files": [
@@ -24,10 +31,10 @@
     "posttest": "npm run check"
   },
   "dependencies": {
-    "vscode-debugadapter": "1.32.1"
+    "vscode-debugprotocol": "1.32.0",
+    "gts": "^0.9.0"
   },
   "devDependencies": {
-    "gts": "^0.9.0",
     "typescript": "~3.1.0"
   }
 }
