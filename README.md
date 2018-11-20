@@ -1,18 +1,17 @@
-dapper.nvim
+dapper.nvim (PRE-ALPHA)
 ================================================================================
-A language-agnostic debugger plugin frontend for neovim; a fancy client for the
-[debug adapter protocol!](https://microsoft.github.io/debug-adapter-protocol/)
-WIP.
+A language-agnostic debugger plugin frontend for neovim, implemented as a client
+for the [debug adapter protocol.](https://microsoft.github.io/debug-adapter-protocol/)
+
+**Work In Progress.**
 
 
 Requirements
 --------------------------------------------------------------------------------
 dapper.nvim requires:
 
-- **Node.js,** with the following packages as runtime dependencies:
-  - typescript
-  - vscode-debugadapter
-- **neovim 0.1.6** or newer.
+- A recent version of **Node.js**.
+- **neovim,** and the neovim Node.js provider.
 <!-- TODO update requirements based on nvim api functions -->
 <!-- TODO update Node requirements -->
 
@@ -37,7 +36,7 @@ Install [neovim's node client](https://github.com/neovim/node-client) by running
 the following:
 
 ```bash
-npm install -g neovim
+sudo npm install -g neovim
 ```
 
 ### Plugin Installation
@@ -97,10 +96,13 @@ try to follow Google's style wherever possible, as enforced by the
 `ts-style` provides the following commands, among others:
 
 ```bash
-gts check # lint and check for formatting problems
-gts fix   # fix style/formatting errors, wherever possible
-gts clean # remove output files, analogous to `make clean`
+[npx] gts check # lint and check for formatting problems
+[npx] gts fix   # fix style/formatting errors, wherever possible
+[npx] gts clean # remove output files, analogous to `make clean`
 ```
+
+(The [`npx` program](https://www.npmjs.com/package/npx) will run `gts` from
+`dapper.nvim/node_modules.bin`, if it is not installed globally.)
 
 If the EditorConfig and `ts-style` conflict, prefer `ts-style` and (if possible)
 open a pull request after changing the EditorConfig to match.
