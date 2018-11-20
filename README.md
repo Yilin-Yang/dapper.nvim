@@ -36,7 +36,7 @@ We recommend installing dapper.nvim using [vim-plug.](https://github.com/junegun
 " .vimrc
 call plug#begin('~/.vim/bundle')
 " ...
-Plug 'Yilin-Yang/dapper.nvim', { 'do': 'npm install', }
+Plug 'Yilin-Yang/dapper.nvim', { 'do': 'npm install && tsc -p .', }
 " ...
 call plug#end()
 ```
@@ -60,6 +60,23 @@ And then,
 cd ~/.vim/bundle # or wherever you've installed the plugin
 cd dapper.nvim
 npm install
+tsc -p .
+```
+
+Contribution
+--------------------------------------------------------------------------------
+
+### Coding Style
+This repository is written in a mixture of VimL and TypeScript. For the latter,
+we try to follow Google's style wherever possible, as enforced by the
+[ts-style](https://github.com/google/ts-style) tool.
+
+`ts-style` provides the following commands, among others:
+
+```bash
+gts check # lint and check for formatting problems
+gts fix   # fix style/formatting errors, wherever possible
+gts clean # remove output files, analogous to `make clean`
 ```
 
 License
