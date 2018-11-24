@@ -4,8 +4,7 @@ console.log('Hello, World!');
 
 let dc : DebugClient;
 
-dc = new DebugClient('node', './build/vscode-node-debug2/src/nodeDebug.js', 'node');
-console.log('DebugClient object created.');
+dc = new DebugClient('node', './build/vscode-mock-debug/out/debugAdapter.js', 'mock');
 
 dc.start().then((res) => {
   console.log('Debug adapter started!');
@@ -14,17 +13,7 @@ dc.start().then((res) => {
 }).then((res) => {
   console.log('Debug adapter initialized!');
   console.log(res);
+}).catch((rej) => {
+  console.log('Initialization request failed!');
+  throw new Error(rej);
 });
-// }).catch((rej) => {
-//   console.log('Initialization request failed!');
-//   throw new Error(rej);
-// });
-
-// dc.configurationSequence().then((res) => {
-//   console.log('configurationDone');
-//   console.log(res);
-// }).catch((rej) => {
-//   console.log('Configuration sequence failed.');
-//   console.log('Printing configuration sequence failure message:');
-//   console.log(rej);
-// });
