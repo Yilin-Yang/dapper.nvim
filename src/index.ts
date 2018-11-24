@@ -14,10 +14,17 @@ dc.start().then((res) => {
   console.log('Start debug adapter FAILED!');
   throw new Error(rej);
 }).then((res) => {
-  console.log('Debug adapter initialized!');
-  console.log('Printing response:');
-  console.log(res);
+  console.log('Debug adapter initialization in progress!');
 }).catch((rej) => {
   console.log('Initialization request failed!');
   throw new Error(rej);
+});
+
+dc.configurationSequence().then((res) => {
+  console.log('configurationDone');
+  console.log(res);
+}).catch((rej) => {
+  console.log('Configuration sequence failed.');
+  console.log('Printing configuration sequence failure message:');
+  console.log(rej);
 });
