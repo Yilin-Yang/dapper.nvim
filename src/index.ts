@@ -10,21 +10,21 @@ console.log('DebugClient object created.');
 dc.start().then((res) => {
   console.log('Debug adapter started!');
   console.log('Trying initialization...');
-}).catch((rej) => {
-  console.log('Start debug adapter FAILED!');
-  throw new Error(rej);
+  return dc.initializeRequest();
 }).then((res) => {
-  console.log('Debug adapter initialization in progress!');
-}).catch((rej) => {
-  console.log('Initialization request failed!');
-  throw new Error(rej);
-});
-
-dc.configurationSequence().then((res) => {
-  console.log('configurationDone');
+  console.log('Debug adapter initialized!');
   console.log(res);
-}).catch((rej) => {
-  console.log('Configuration sequence failed.');
-  console.log('Printing configuration sequence failure message:');
-  console.log(rej);
 });
+// }).catch((rej) => {
+//   console.log('Initialization request failed!');
+//   throw new Error(rej);
+// });
+
+// dc.configurationSequence().then((res) => {
+//   console.log('configurationDone');
+//   console.log(res);
+// }).catch((rej) => {
+//   console.log('Configuration sequence failed.');
+//   console.log('Printing configuration sequence failure message:');
+//   console.log(rej);
+// });
