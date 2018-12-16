@@ -1,8 +1,11 @@
 {
   "extends": "./node_modules/gts/tsconfig-google.json",
   "compilerOptions": {
-    "rootDir": ".",
-    "outDir": "build",
+    "rootDirs": [
+      ".",
+      "src"
+    ],
+    "outDir": "rplugin/node/dapper.nvim",
     "skipLibCheck": true
   },
   "include": [

@@ -7,3 +7,4 @@ doc/tags
 node_modules
 *.js
 build
+rplugin/*
