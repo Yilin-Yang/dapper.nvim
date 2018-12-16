@@ -39,6 +39,7 @@
   },
   "devDependencies": {
     "@types/node": "^10.12.9",
+    "es6-promise": "^4.2.5",
     "neovim": "^4.2.1"
   }
 }
