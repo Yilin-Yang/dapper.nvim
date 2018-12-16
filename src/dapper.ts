@@ -27,5 +27,6 @@ export function start(adapterID: string, command?: string): Promise<string> {
   );
 }
 export const FN_START_OPTIONS = {
-  sync: false
+  sync: false,
+  nargs: '+'
 };
