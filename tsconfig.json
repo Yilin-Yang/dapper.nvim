@@ -5,6 +5,7 @@
       ".",
       "src"
     ],
+    "lib": ["es2015"],
     "outDir": "rplugin/node/dapper.nvim",
     "skipLibCheck": true
   },
