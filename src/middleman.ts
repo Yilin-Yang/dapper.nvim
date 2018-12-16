@@ -1,15 +1,26 @@
-import {NvimPlugin} from 'neovim';
+import {NvimPlugin, Neovim} from 'neovim';
 // import {DebugProtocol} from 'vscode-debugprotocol';
 
 /**
  * The middleman between dapper's VimL frontend and the debug adapter backend.
  */
 class Middleman {
-  constructor(private api: NvimPlugin) {}
+
+  /**
+   * For manipulating the user-facing neovim instance.
+   */
+  private nvim: Neovim;
+
+  constructor(api: NvimPlugin) {
+    this.nvim = api.nvim;
+  }
 
   success(): Promise<string> {
+    console.log('invoked success function');
     return new Promise<string>(
-      (resolve, reject) => {
+      async (resolve, reject) => {
+        console.log('entered promise');
+        await this.nvim.command('vsp');
         resolve('succeeded from inside middleman');
       }
     );
@@ -17,8 +28,9 @@ class Middleman {
 
   fail(): Promise<string> {
     return new Promise<string>(
-      (resolve, reject) => {
-        reject('failed from inside promise');
+      async (resolve, reject) => {
+        await this.nvim.command('echoerr "failed from inside middleman"');
+        reject('failed from inside middleman');
       }
     );
   }

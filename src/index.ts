@@ -8,5 +8,6 @@ const PLUGIN_OPTIONS = {
 
 module.exports = (api: NvimPlugin) => {
   api.setOptions(PLUGIN_OPTIONS);
+  dapper.initialize(api);
   api.registerCommand('DapperStart', dapper.start, dapper.FN_START_OPTIONS);
 };
