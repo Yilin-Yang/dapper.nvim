@@ -24,7 +24,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "check": "gts check",
     "clean": "gts clean",
-    "compile": "tsc -p .",
+    "compile": "tsc -p . && cp package.json rplugin/node/dapper.nvim",
     "fix": "gts fix",
     "prepare": "npm run compile",
     "pretest": "npm run compile",
