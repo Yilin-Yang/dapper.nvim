@@ -20,7 +20,7 @@ class Middleman {
     return new Promise<string>(
       async (resolve, reject) => {
         console.log('entered promise');
-        await this.nvim.command('vsp');
+        await this.nvim.call('dapper#receive', 'foo');
         resolve('succeeded from inside middleman');
       }
     );
