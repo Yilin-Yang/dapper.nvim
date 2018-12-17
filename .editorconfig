@@ -8,7 +8,7 @@ charset = utf-8
 
 [*.vim]
 indent_style = space
-indent_size = 4
+indent_size = 2
 
 [*.vader]
 indent_style = space
