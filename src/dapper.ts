@@ -26,7 +26,21 @@ export function start(adapterID: string, command?: string): Promise<string> {
     }
   );
 }
-export const FN_START_OPTIONS = {
+export const CM_START_OPTIONS = {
   sync: false,
   nargs: '+'
+};
+
+export function request() {
+  return new Promise<string>(
+    (resolve, reject) => {
+      try {
+        // note, this return value is ignored in async calls
+        setTimeout(() => {resolve('resolved!');}, 2000);
+      } catch (e) {
+        reject(e.what);
+      }});
+}
+export const FN_REQUEST_OPTIONS = {
+  sync: false
 };

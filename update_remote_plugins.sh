@@ -11,5 +11,6 @@ nvim -n -u NONE -i NONE --headless "$MANIFEST" -c "%s/\n^.\{-}dapper.nvim'\_.\{-
 cat << EOF >> "$MANIFEST"
 call remote#host#RegisterPlugin('node', '/home/yiliny/plugin/dapper.nvim/rplugin/node/dapper.nvim', [
       \ {'sync': v:false, 'name': 'DapperStart', 'type': 'command', 'opts': {'nargs': '+'}},
+      \ {'sync': v:false, 'name': 'DapperRequest', 'type': 'function', 'opts': {}},
      \ ])
 EOF
