@@ -9,7 +9,7 @@ let dc: DebugClient;
 // 'mock');
 dc = new DebugClient(
     'node',
-    '/home/yiliny/plugin/dapper.nvim/build/vscode-mock-debug/out/debugAdapter.js',
+    '/home/yiliny/plugin/dapper.nvim/rplugin/node/dapper.nvim/vscode-mock-debug/out/debugAdapter.js',
     'mock');
 
 dc.start()
