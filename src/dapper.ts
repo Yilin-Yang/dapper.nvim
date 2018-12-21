@@ -1,5 +1,6 @@
 import {NvimPlugin} from 'neovim';
 import Middleman = require('./middleman');
+import {DebugProtocol} from 'vscode-debugprotocol';
 
 let middleman: Middleman;
 
@@ -31,7 +32,7 @@ export const CM_START_OPTIONS = {
   nargs: '+'
 };
 
-export function request() {
+export function resolve_two_seconds() {
   return new Promise<string>(
     (resolve, reject) => {
       try {
@@ -41,6 +42,22 @@ export function request() {
         reject(e.what);
       }});
 }
+
+export function return_dict() {
+  return new Promise<DebugProtocol.ProtocolMessage>(
+    (resolve, reject) => {
+      try {
+        const dict = {
+          seq: 1,
+          type: 'response',
+          vim_id: 0,
+          vim_msg_typename: 'ProtocolMessage'
+        };
+        resolve(dict);
+      } catch (e) {
+        reject(e.what);
+      }});
+}
 export const FN_REQUEST_OPTIONS = {
-  sync: false
+  sync: true
 };
