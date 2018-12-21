@@ -1,0 +1,62 @@
+Execute (MiddleTalker: Set Up):
+  let g:middletalker = dapper#MiddleTalker#get()
+  function! TestCbSingle(msg)
+    let g:received = a:msg
+    return v:true
+  endfunction
+
+  function! TestCbList(msg)
+    if !exists('g:received') | let g:received = [] | endif
+    let g:received += [a:msg]
+    return v:true
+  endfunction
+
+  function! TestAltCbList(msg)
+    if !exists('g:alt_received') | let g:alt_received = [] | endif
+    let g:alt_received += [a:msg]
+    return v:true
+  endfunction
+
+Execute (MiddleTalker: Test Subscribe to Incoming):
+  call g:middletalker.subscribe('foo', function('TestCbSingle'))
+  let g:will_match = dapper#dap#ProtocolMessage#new(0, 'foobar')
+  call g:middletalker.receive(g:will_match)
+Then:
+  AssertEqual g:will_match, g:received
+  unlet g:received
+
+Execute (MiddleTalker: Test Won't Match):
+  let g:wont_match = dapper#dap#ProtocolMessage#new(0, 'justbar')
+  call g:middletalker.receive(g:wont_match)
+Then:
+  Assert !exists('g:received')
+
+Execute (MiddleTalker: Test Unsubscribe):
+  call g:middletalker.unsubscribe('foo', function('TestCbSingle'))
+  call g:middletalker.receive(g:will_match)
+Then:
+  Assert !exists('g:received')
+
+Execute (MiddleTalker: Test Several Messages, Will/Won't Match):
+  call g:middletalker.subscribe('foo', function('TestCbList'))
+  call g:middletalker.receive(g:wont_match)
+
+  call g:middletalker.receive(g:will_match)
+  call g:middletalker.receive(g:will_match)
+
+  call g:middletalker.receive(g:wont_match)
+
+  call g:middletalker.receive(g:will_match)
+Then:
+  AssertEqual [g:will_match, g:will_match, g:will_match], g:received
+  unlet g:received
+
+Execute (MiddleTalker: Test Multiple Subscriptions):
+  call g:middletalker.subscribe('foob', function('TestAltCbList'))
+  let g:will_match_first = dapper#dap#ProtocolMessage#new(0, 'foo')
+  call g:middletalker.receive(g:will_match)
+  call g:middletalker.receive(g:will_match_first)
+  call g:middletalker.receive(g:wont_match)
+Then:
+  AssertEqual [g:will_match, g:will_match_first], g:received
+  AssertEqual [g:will_match], g:alt_received

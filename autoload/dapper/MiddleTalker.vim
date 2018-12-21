@@ -43,14 +43,13 @@ endfunction
 " BRIEF:  Receive a response or event, passing it to subscribers.
 function! dapper#MiddleTalker#receive(msg) abort dict
   call dapper#MiddleTalker#CheckType(l:self)
-  let l:id = a:msg['recipientID']
+  let l:id = a:msg['vim_id']
   if l:id ># 0 " msg is a response to a request
     call  l:self['__ids_to_callbacks'][l:id](a:msg)
     unlet l:self['__ids_to_callbacks'][l:id]
   endif
   let l:pats_to_cbs = l:self['__patterns_to_callbacks']
-  " TODO: how to query message typename?
-  let l:typename = a:msg.typename()
+  let l:typename = a:msg['vim_msg_typename']
   for [l:pat, l:Cbs] in items(l:pats_to_cbs)
     if match(l:typename, l:pat) ==# -1 | continue | endif
     if type(l:Cbs) ==# v:t_func
