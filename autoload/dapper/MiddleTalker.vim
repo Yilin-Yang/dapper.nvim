@@ -1,7 +1,7 @@
 " BRIEF:  The interface between the VimL frontend and the TypeScript 'middle-end'.
 
 " BRIEF:  Get the MiddleTalker singleton, or make one if it doesn't yet exist.
-function! dapper#MiddleTalker#get()
+function! dapper#MiddleTalker#get() abort
   if exists('g:dapper_middletalker')
     try
       call dapper#MiddleTalker#CheckType(g:dapper_middletalker)
