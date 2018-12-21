@@ -1,0 +1,10 @@
+set nocompatible
+filetype off
+execute 'set runtimepath+='.getcwd()
+execute 'set runtimepath+='.getcwd().'/..'
+set runtimepath+=vader.vim
+set runtimepath+=~/.vim/bundle/vader.vim
+filetype plugin indent on
+syntax enable
+set autoread
+set hidden
