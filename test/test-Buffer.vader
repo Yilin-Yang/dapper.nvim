@@ -1,0 +1,36 @@
+Execute (Buffer: Construct Default):
+  let g:buffer = dapper#Buffer#new()
+  call g:buffer.open()
+Then:
+  AssertEqual 'hide',   &bufhidden
+  AssertEqual 0,        &buflisted
+  AssertEqual 'nofile', &buftype
+  AssertEqual 0,        &swapfile
+
+Execute (Buffer: Set Buffer Variable):
+  let g:buffer = dapper#Buffer#new()
+  call g:buffer.setbufvar('test_var', 1)
+  call g:buffer.open()
+Then:
+  AssertEqual 1, b:test_var
+
+Execute (Buffer: Get Buffer Variable):
+  AssertEqual 'nofile', g:buffer.getbufvar('&buftype')
+  AssertEqual 1, g:buffer.getbufvar('test_var')
+
+" Since split moves the cursor to the new split, check relative position by
+" moving *back* to the original window and checking that it *isn't* the owned
+" buffer.
+Execute (Buffer: Open Horizontal Split):
+  buffer 1
+  call g:buffer.split('', 'botright')
+Then:
+  wincmd k
+  Assert !exists('b:test_var')
+
+Execute (Buffer: Open Vertical Split):
+  buffer 1
+  call g:buffer.vsplit('', 'botright')
+Then:
+  wincmd h
+  Assert !exists('b:test_var')
