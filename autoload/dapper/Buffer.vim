@@ -63,6 +63,10 @@ function! dapper#Buffer#new(...) abort
     \ 'open': function('dapper#Buffer#open'),
     \ 'split': function('dapper#Buffer#openSplit', [v:false]),
     \ 'vsplit': function('dapper#Buffer#openSplit', [v:true]),
+    \ 'getLines': function('dapper#Buffer#getLines'),
+    \ 'replaceLines': function('dapper#Buffer#replaceLines'),
+    \ 'insertLines': function('dapper#Buffer#insertLines'),
+    \ 'removeLines': function('dapper#Buffer#removeLines'),
   \ }
 
   return l:new
@@ -124,4 +128,66 @@ function! dapper#Buffer#openSplit(open_vertical, ...) abort dict
 
   execute 'silent '.a:pos.' '.a:ornt.' '.a:size.' split'
   execute 'buffer! '.l:self['__bufnr']
+endfunction
+
+" RETURN: (v:t_list)  A list containing the given range of lines from this
+"                     buffer.
+" PARAM:  lnum  (v:t_number | v:t_string)     The first line number (starting
+"                             from 1) to include in the range. Can also be
+"                             '$', for the last line in the buffer.
+" PARAM:  rnum  (v:t_number? | v:t_string?)   The last line to include in the
+"                             range. If not specified, will be equal to lnum
+"                             (i.e. not specifying rnum will return a one-item
+"                             list with the given line).
+function! dapper#Buffer#getLines(lnum, ...) abort dict
+  call dapper#Buffer#CheckType(l:self)
+  let a:rnum = get(a:000, 0, a:lnum)
+  return getbufline(l:self['__bufnr'], a:lnum, a:rnum)
+endfunction
+
+" BRIEF:  Set, add to, or remove lines. Wraps `nvim_buf_set_lines`.
+" PARAM:  after     (v:t_number)  Replace lines starting after this line number.
+" PARAM:  through   (v:t_number)  Replace until this line number, inclusive.
+" PARAM:  strict_indexing   (v:t_bool?)   Throw error on 'line out-of-range.'
+" DETAILS:  See `:h nvim_buf_set_lines` for details on function parameters.
+"           `{strict_indexing}` is always `v:false`.
+function! dapper#Buffer#replaceLines(after, through, replacement, ...) abort dict
+  call dapper#Buffer#CheckType(l:self)
+  let a:strict_indexing = get(a:000, 0, v:false)
+  call nvim_buf_set_lines(
+    \ l:self['__bufnr'],
+    \ a:after,
+    \ a:through,
+    \ a:strict_indexing,
+    \ a:replacement)
+endfunction
+
+" BRIEF:  Insert lines at a position.
+" PARAM:  after   (v:t_number)  Insert text right after this line number.
+" PARAM:  lines   (v:t_list)    List of `v:t_string`s: the text to insert.
+" PARAM:  strict_indexing   (v:t_bool?)   Throw error on 'line out-of-range.'
+function! dapper#Buffer#insertLines(after, lines, ...) abort dict
+  call dapper#Buffer#CheckType(l:self)
+  let a:strict_indexing = get(a:000, 0, v:false)
+  call nvim_buf_set_lines(
+    \ l:self['__bufnr'],
+    \ a:after,
+    \ a:after,
+    \ a:strict_indexing,
+    \ a:lines)
+endfunction
+
+" BRIEF:  Remove lines over a range.
+" PARAM:  after     (v:t_number)  Remove lines starting after this line number.
+" PARAM:  through   (v:t_number)  Remove until this line number, inclusive.
+" PARAM:  strict_indexing   (v:t_bool?)   Throw error on 'line out-of-range.'
+function! dapper#Buffer#removeLines(start, end, ...) abort dict
+  call dapper#Buffer#CheckType(l:self)
+  let a:strict_indexing = get(a:000, 0, v:false)
+  call nvim_buf_set_lines(
+    \ l:self['__bufnr'],
+    \ a:start,
+    \ a:end,
+    \ a:strict_indexing,
+    \ [])
 endfunction
