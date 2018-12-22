@@ -10,6 +10,7 @@ let s:buffer_fname_mangle = localtime()
 "               - 'buflisted' (v:t_bool)
 "               - 'buftype'   (v:t_string)
 "               - 'fname'     (v:t_string)  Name of the newly created buffer.
+"                             If empty (''), do not create a new buffer.
 "               - 'swapfile'  (v:t_bool)
 "
 "             All of these are optional and will have default values if not
@@ -45,9 +46,17 @@ function! dapper#Buffer#new(...) abort
     throw '(dapper#Buffer) Too many arguments to new(): '.string(a:000)
   endif
 
-  " create a buffer with the given name
-  let l:bufnr = bufnr(escape(l:bufparams['fname'], '~*.,$?{}\[]'), 1)
-  unlet l:bufparams['fname']
+  if !empty(l:bufparams['fname'])
+    " create a buffer with the given name
+    let l:bufnr = bufnr(escape(l:bufparams['fname'], '~*.,$?{}\[]'), 1)
+    unlet l:bufparams['fname']
+  else
+    unlet l:bufparams['fname']
+    if !empty(keys(l:bufparams))
+      throw '(dapper#Buffer) Tried setting props without creating a buffer: '
+        \.string(l:bufparams)
+    endif
+  endif
 
   for [l:prop, l:val] in items(l:bufparams)
     if type(l:val) ==# v:t_bool | let l:val = l:val + 0 | endif
@@ -57,16 +66,18 @@ function! dapper#Buffer#new(...) abort
   let l:new = {
     \ 'TYPE': {'Buffer': 1},
     \ '__bufnr': l:bufnr,
+    \ 'destroy': function('dapper#Buffer#destroy'),
     \ 'getbufvar': function('dapper#Buffer#getbufvar'),
     \ 'setbufvar': function('dapper#Buffer#setbufvar'),
     \ 'bufnr': function('dapper#Buffer#bufnr'),
     \ 'open': function('dapper#Buffer#open'),
+    \ 'setBuffer': function('dapper#Buffer#setBuffer'),
     \ 'split': function('dapper#Buffer#openSplit', [v:false]),
     \ 'vsplit': function('dapper#Buffer#openSplit', [v:true]),
     \ 'getLines': function('dapper#Buffer#getLines'),
     \ 'replaceLines': function('dapper#Buffer#replaceLines'),
     \ 'insertLines': function('dapper#Buffer#insertLines'),
-    \ 'removeLines': function('dapper#Buffer#removeLines'),
+    \ 'deleteLines': function('dapper#Buffer#deleteLines'),
   \ }
 
   return l:new
@@ -76,6 +87,12 @@ function! dapper#Buffer#CheckType(object) abort
   if type(a:object) !=# v:t_dict || !has_key(a:object['TYPE'], 'Buffer')
     throw '(dapper#Buffer) Object is not of type Buffer: ' . a:object
   endif
+endfunction
+
+" BRIEF:  Perform cleanup for this Buffer object.
+function! dapper#Buffer#destroy() abort dict
+  call dapper#Buffer#CheckType(l:self)
+  execute 'bwipeout! '.l:self['__bufnr']
 endfunction
 
 " BRIEF:  Wrapper around `getbufvar`.
@@ -111,6 +128,34 @@ function! dapper#Buffer#open(...) abort dict
   endif
 endfunction
 
+" BRIEF:  Replace the buffer owned by this Buffer object.
+" PARAM:  bufnr   (v:t_number)  The `bufnr()` of the buffer to be owned.
+" PARAM:  action  (v:t_string)  Whether to do nothing (''), unload ('bunload'),
+"                               delete ('bdelete'), or wipeout ('bwipeout')
+"                               the buffer being replaced.
+" PARAM:  force   (v:t_bool)    Whether to ignore unsaved changes in a buffer
+"                               being unloaded, deleted, or wiped out.
+" RETURNS:  (v:t_number)  The `bufnr` of the buffer being replaced.
+function! dapper#Buffer#setBuffer(bufnr, ...) abort dict
+  call dapper#Buffer#CheckType(l:self)
+  if !bufexists(a:bufnr)
+    throw '(dapper#Buffer) Cannot find buffer: '.a:bufnr
+  endif
+  let a:action = get(a:000, 0, '')
+  let a:force  = get(a:000, 1, v:true)
+  let l:to_return = l:self['__bufnr']
+  if      a:action ==# ''
+  elseif  a:action ==# 'bunload'
+     \ || a:action ==# 'bdelete'
+     \ || a:action ==# 'bwipeout'
+    execute a:action . a:force ? '! ' : ' ' . l:to_return
+  else
+    throw '(dapper#Buffer) Bad argument value: '.a:action
+  endif
+  let l:self['__bufnr'] = a:bufnr
+  return l:to_return
+endfunction
+
 " BRIEF:  Open this buffer in a split.
 " PARAM:  cmd   (v:t_string?)   See `:h cmd`. Should include leading `+`. Can
 "                               be empty string.
@@ -130,19 +175,18 @@ function! dapper#Buffer#openSplit(open_vertical, ...) abort dict
   execute 'buffer! '.l:self['__bufnr']
 endfunction
 
-" RETURN: (v:t_list)  A list containing the given range of lines from this
-"                     buffer.
-" PARAM:  lnum  (v:t_number | v:t_string)     The first line number (starting
-"                             from 1) to include in the range. Can also be
-"                             '$', for the last line in the buffer.
-" PARAM:  rnum  (v:t_number? | v:t_string?)   The last line to include in the
-"                             range. If not specified, will be equal to lnum
-"                             (i.e. not specifying rnum will return a one-item
-"                             list with the given line).
+" RETURN: (v:t_list)  A list containing the requested lines from this buffer.
+" PARAM:  after (v:t_number)  Include lines starting *after* this line number.
+" PARAM:  rnum  (v:t_number?) The last line to include in the range. If not
+"                             specified, will be equal to lnum+1 (i.e. not
+"                             specifying rnum will return a one-item list with
+"                             the given line).
+" PARAM:  strict_indexing   (v:t_bool?)   Throw error on 'line out-of-range.'
 function! dapper#Buffer#getLines(lnum, ...) abort dict
   call dapper#Buffer#CheckType(l:self)
+  let a:strict_indexing = get(a:000, 0, v:false)
   let a:rnum = get(a:000, 0, a:lnum)
-  return getbufline(l:self['__bufnr'], a:lnum, a:rnum)
+  return nvim_buf_get_lines(l:self['__bufnr'], a:lnum, a:rnum, a:strict_indexing)
 endfunction
 
 " BRIEF:  Set, add to, or remove lines. Wraps `nvim_buf_set_lines`.
@@ -181,13 +225,13 @@ endfunction
 " PARAM:  after     (v:t_number)  Remove lines starting after this line number.
 " PARAM:  through   (v:t_number)  Remove until this line number, inclusive.
 " PARAM:  strict_indexing   (v:t_bool?)   Throw error on 'line out-of-range.'
-function! dapper#Buffer#removeLines(start, end, ...) abort dict
+function! dapper#Buffer#deleteLines(after, through, ...) abort dict
   call dapper#Buffer#CheckType(l:self)
   let a:strict_indexing = get(a:000, 0, v:false)
   call nvim_buf_set_lines(
     \ l:self['__bufnr'],
-    \ a:start,
-    \ a:end,
+    \ a:after,
+    \ a:through,
     \ a:strict_indexing,
     \ [])
 endfunction

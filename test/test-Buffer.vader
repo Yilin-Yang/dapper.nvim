@@ -34,3 +34,131 @@ Execute (Buffer: Open Vertical Split):
 Then:
   wincmd h
   Assert !exists('b:test_var')
+
+Execute (Buffer: Wipeout Buffer):
+  let g:bufnr = g:buffer.bufnr()
+  AssertEqual g:bufnr, g:buffer.setBuffer(bufnr('%'), 'bwipeout')
+
+Given (Ten Lines of Text):
+  first line
+  second line
+  third line
+  fourth line
+  fifth line
+  sixth line
+  seventh line
+  eighth line
+  ninth line
+  tenth line
+
+Execute (Buffer: Delete Buffer Contents):
+  call g:buffer.setBuffer(bufnr('%'))
+  call g:buffer.deleteLines(0, 5)
+Expect:
+  sixth line
+  seventh line
+  eighth line
+  ninth line
+  tenth line
+
+Execute (Buffer: Delete Everything):
+  call g:buffer.setBuffer(bufnr('%'))
+  call g:buffer.deleteLines(0, -1)
+Expect:
+  
+
+Execute (Buffer: Replace Buffer Contents):
+  call g:buffer.setBuffer(bufnr('%'))
+  let g:lines = [
+    \ 'foo1',
+    \ 'foo2',
+    \ 'foo3',
+  \ ]
+  call g:buffer.replaceLines(0, 5, g:lines)
+Expect:
+  foo1
+  foo2
+  foo3
+  sixth line
+  seventh line
+  eighth line
+  ninth line
+  tenth line
+
+Execute (Buffer: Replace Last Lines):
+  call g:buffer.setBuffer(bufnr('%'))
+  let g:lines = [
+    \ 'foo1',
+    \ 'foo2',
+    \ 'foo3',
+  \ ]
+  call g:buffer.replaceLines(6, -1, g:lines)
+Expect:
+  first line
+  second line
+  third line
+  fourth line
+  fifth line
+  sixth line
+  foo1
+  foo2
+  foo3
+
+Execute (Buffer: Replace Everything):
+  call g:buffer.setBuffer(bufnr('%'))
+  let g:lines = [
+    \ 'foo1',
+    \ 'foo2',
+    \ 'foo3',
+  \ ]
+  call g:buffer.replaceLines(0, -1, g:lines)
+Expect:
+  foo1
+  foo2
+  foo3
+
+Execute (Buffer: Insert Lines):
+  call g:buffer.setBuffer(bufnr('%'))
+  let g:lines = [
+    \ 'foo1',
+    \ 'foo2',
+    \ 'foo3',
+  \ ]
+  call g:buffer.insertLines(0, g:lines)
+Expect:
+  foo1
+  foo2
+  foo3
+  first line
+  second line
+  third line
+  fourth line
+  fifth line
+  sixth line
+  seventh line
+  eighth line
+  ninth line
+  tenth line
+
+Execute (Buffer: Insert Lines At End):
+  call g:buffer.setBuffer(bufnr('%'))
+  let g:lines = [
+    \ 'foo1',
+    \ 'foo2',
+    \ 'foo3',
+  \ ]
+  call g:buffer.insertLines(-1, g:lines)
+Expect:
+  first line
+  second line
+  third line
+  fourth line
+  fifth line
+  sixth line
+  seventh line
+  eighth line
+  ninth line
+  tenth line
+  foo1
+  foo2
+  foo3
