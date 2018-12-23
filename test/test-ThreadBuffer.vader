@@ -1,0 +1,12 @@
+Execute (ThreadBuffer: Construct and Initialize):
+  let g:tb = dapper#ThreadBuffer#new('[dapper] Threads')
+
+Execute (ThreadBuffer: Receive ThreadEvent, started):
+  let g:msg = dapper#dap#Event#new(0, 'ThreadEvent')
+  let g:msg['event'] = 'ThreadEvent'
+  let g:msg['body'] = {'threadId': 123, 'reason': 'started'}
+  call g:tb.receive(g:msg)
+  call g:tb.open()
+Expect:
+  thread	id: 123	name: unnamed	status: started
+  
