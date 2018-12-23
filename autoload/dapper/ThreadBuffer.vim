@@ -30,7 +30,8 @@ endfunction
 " PARAM:  msg   (DebugProtocol.ThreadEvent)
 function! dapper#ThreadBuffer#receive(msg) abort dict
   call dapper#ThreadBuffer#CheckType(l:self)
-  if a:msg['typename'] ==# 'ThreadEvent'
+  let l:typename = a:msg['vim_msg_typename']
+  if l:typename ==# 'ThreadEvent'
     " make ThreadsRequest
     " basic ThreadsRequest will return a list of all threads
     let l:req = dapper#dap#Request#new()
@@ -38,7 +39,7 @@ function! dapper#ThreadBuffer#receive(msg) abort dict
     call l:self._request(l:req, l:self.receive)
     " update from ThreadEvent
     call l:self._recvEvent(a:msg)
-  elseif a:msg['typename'] ==# 'ThreadsResponse'
+  elseif l:typename ==# 'ThreadsResponse'
     call l:self._recvResponse(a:msg)
   endif
 endfunction

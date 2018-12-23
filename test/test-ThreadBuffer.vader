@@ -9,7 +9,6 @@ Then:
 Execute (ThreadBuffer: Receive ThreadEvent, started):
   let g:msg = dapper#dap#Event#new(0, 'ThreadEvent')
   let g:msg['event'] = 'ThreadEvent'
-  let g:msg['typename'] = 'ThreadEvent'
   let g:msg['body'] = {'threadId': 123, 'reason': 'started'}
   call g:tb.receive(g:msg)
   call g:tb.open()
@@ -21,3 +20,28 @@ Then (Check for ThreadsRequest):
   let g:Cb  = g:last_req[1]
   AssertEqual 'request', g:req['type']
   AssertEqual 'threads', g:req['command']
+
+Execute (ThreadBuffer: New Thread Started):
+  let g:msg = dapper#dap#Event#new(0, 'ThreadEvent')
+  let g:msg['event'] = 'ThreadEvent'
+  let g:msg['body'] = {'threadId': 789, 'reason': 'started'}
+  call g:tb.receive(g:msg)
+  call g:tb.open()
+Expect:
+  thread	id: 789	name: unnamed	status: started
+  thread	id: 123	name: unnamed	status: started
+  
+Execute (ThreadBuffer: Update With Response):
+  let g:msg = dapper#dap#Response#new(0, 'ThreadsResponse')
+  let g:msg['command'] = 'threads'
+  let g:msg['success'] = v:true
+  let g:msg['body'] = {'threads': [
+    \ {'id': 123, 'name': 'foo'},
+    \ {'id': 789, 'name': 'bar'},
+  \ ]}
+  call g:tb.receive(g:msg)
+  call g:tb.open()
+Expect:
+  thread	id: 789	name: bar	status: started
+  thread	id: 123	name: foo	status: started
+  
