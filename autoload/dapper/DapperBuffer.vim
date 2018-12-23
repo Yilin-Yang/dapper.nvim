@@ -1,9 +1,10 @@
 " BRIEF:  A Buffer, with additional methods for use in the dapper UI.
 
 " BRIEF:  Construct a DapperBuffer.
-function! dapper#DapperBuffer#new(...) abort
+function! dapper#DapperBuffer#new(message_passer, ...) abort
   let l:new = call('dapper#Buffer#new', a:000)
   let l:new['TYPE']['DapperBuffer'] = 1
+  let l:new['___message_passer___'] = a:message_passer
 
   let l:new['receive'] =
     \ function('dapper#DapperBuffer#__noImpl', ['receive'])
@@ -11,6 +12,12 @@ function! dapper#DapperBuffer#new(...) abort
     \ function('dapper#DapperBuffer#__noImpl', ['getRange'])
   let l:new['setMappings'] =
     \ function('dapper#DapperBuffer#__noImpl', ['setMappings'])
+
+  let l:new['_request'] =
+    \ function('dapper#DapperBuffer#_request')
+  let l:new['_subscribe'] =
+    \ function('dapper#DapperBuffer#_subscribe')
+
   return l:new
 endfunction
 
@@ -23,6 +30,21 @@ endfunction
 function! dapper#DapperBuffer#__noImpl(func_name, ...) abort dict
   call dapper#DapperBuffer#CheckType(l:self)
   throw '(dapper#DapperBuffer) Invoked pure virtual function: '.a:func_name
+endfunction
+
+" BRIEF:  Subscribe to the message passer.
+" DETAILS:  - Meant to be called from derived class constructors.
+"           - Shall have the same interface as `MiddleTalker::subscribe`.
+function! dapper#DapperBuffer#_subscribe(pattern, Callback) abort dict
+  call dapper#DapperBuffer#CheckType(l:self)
+  call l:self['___message_passer___'].subscribe(a:pattern, a:Callback)
+endfunction
+
+" BRIEF:  Pass a request to the message passer.
+" DETAILS:  - Shall have the same interface as `MiddleTalker::request`.
+function! dapper#DapperBuffer#_request(request_msg, Callback) abort dict
+  call dapper#DapperBuffer#CheckType(l:self)
+  call l:self['___message_passer___'].request(a:request_msg, a:Callback)
 endfunction
 
 " BRIEF:  Accept an incoming message and update this buffer.
