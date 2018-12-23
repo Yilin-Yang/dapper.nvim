@@ -16,6 +16,7 @@ function! dapper#ThreadBuffer#new(bufname, message_passer, ...) abort
   let l:new['_recvResponse'] = function('dapper#ThreadBuffer#_recvResponse')
   let l:new['makeEntry'] = function('dapper#ThreadBuffer#makeEntry')
 
+  call l:new._subscribe('Thread', function('dapper#ThreadBuffer#receive', l:new))
   return l:new
 endfunction
 
