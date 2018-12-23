@@ -1,0 +1,14 @@
+Execute (Declare Mock MiddleTalker):
+  " mock middletalker
+  function! MockSub(pattern, Callback) abort
+    let g:last_sub = [a:pattern, a:Callback]
+  endfunction
+
+  function! MockReq(request, Callback) abort
+    let g:last_req = [a:request, a:Callback]
+  endfunction
+
+  let g:mock_mt = {
+    \ 'subscribe': function('MockSub'),
+    \ 'request': function('MockReq'),
+  \ }
