@@ -1,15 +1,19 @@
 " BRIEF:  Show active threads in the debuggee; 'drill down' into callstacks.
 
 " BRIEF:  Construct a ThreadBuffer.
-" PARAM:  bufname   (v:t_string)  The name to be displayed in the statusline.
-function! dapper#ThreadBuffer#new(bufname) abort
-  let l:new = dapper#DapperBuffer#new({'fname': a:bufname})
+" PARAM:  bufname     (v:t_string)  The name to be displayed in the statusline.
+function! dapper#ThreadBuffer#new(bufname, message_passer, ...) abort
+  let l:new = dapper#DapperBuffer#new(a:message_passer, {'fname': a:bufname})
   let l:new['TYPE']['ThreadBuffer'] = 1
+  let l:new['_ids_to_threads'] = dapper#ThreadsCache#new()
 
   let l:new['receive']     = function('dapper#ThreadBuffer#receive')
   let l:new['getRange']    = function('dapper#ThreadBuffer#getRange')
   let l:new['setMappings'] = function('dapper#ThreadBuffer#setMappings')
 
+  let l:new['_addThreadEntry'] = function('dapper#ThreadBuffer#_addThreadEntry')
+  let l:new['_recvEvent'] = function('dapper#ThreadBuffer#_recvEvent')
+  let l:new['_recvResponse'] = function('dapper#ThreadBuffer#_recvResponse')
   let l:new['makeEntry'] = function('dapper#ThreadBuffer#makeEntry')
 
   return l:new
@@ -25,33 +29,16 @@ endfunction
 " PARAM:  msg   (DebugProtocol.ThreadEvent)
 function! dapper#ThreadBuffer#receive(msg) abort dict
   call dapper#ThreadBuffer#CheckType(l:self)
-  let l:body = a:msg['body']
-  let l:reason = l:body['reason']
-  let l:tid    = l:body['threadId']
-  " TODO make ThreadsRequest after receiving a ThreadEvent
-  if l:reason ==# 'started'
-    try
-      " check for existing thread (i.e. if this ThreadEvent was just a 'bump'
-      " from the debug adapter, rather than an actual new thread)
-      let [l:start, l:end] = l:self.getRange(l:tid)
-      call l:self.replaceLines(
-        \ l:start-1,
-        \ l:end,
-        \ l:self.makeEntry(l:tid, 'unnamed', l:reason))
-    catch /EntryNotFound/
-      " insert at top
-      call l:self.insertLines(0, l:self.makeEntry(l:tid, 'unnamed', l:reason))
-    endtry
-  elseif l:reason ==# 'exited'
-    try
-      let [l:start, l:end] = l:self.getRange(l:tid)
-      call l:self.deleteLines(l:start, l:end)
-      call l:self.insertLines(-1, l:self.makeEntry(l:tid, 'unnamed', ))
-    catch /EntryNotFound/
-      " TODO debug log?
-    endtry
-  else
-    " TODO add thread, if it's new: return flag?
+  if a:msg['typename'] ==# 'ThreadEvent'
+    " make ThreadsRequest
+    " basic ThreadsRequest will return a list of all threads
+    let l:req = dapper#dap#Event#new()
+    let l:req['command'] = 'threads'
+    call l:self._request(l:req, l:self.receive)
+    " update from ThreadEvent
+    call l:self._recvEvent(a:msg)
+  elseif a:msg['typename'] ==# 'ThreadsResponse'
+    call l:self._recvResponse(a:msg)
   endif
 endfunction
 
@@ -75,13 +62,68 @@ function! dapper#ThreadBuffer#setMappings() abort dict
   " TODO
 endfunction
 
-" BRIEF:  Generate the text representing information about a Thread.
+" BRIEF:  Add a new Thread to the buffer, or replace/update what's there.
+" PARAM:  dap_thread  (dapper#Thread)
+" PARAM:  add_at_top  (v:t_bool?) `v:true` if a new entry should be added at
+"                                 the top of the buffer; `v:false` if it
+"                                 should be appended to the bottom.
+function! dapper#ThreadBuffer#_addThreadEntry(dap_thread, ...) abort dict
+  call dapper#ThreadBuffer#CheckType(l:self)
+  let a:add_at_top = get(a:000, 0, v:true)
+  let l:dp = a:dap_thread
+  let l:tid    = l:dp['id']
+  let l:name   = l:dp['name']
+  let l:status = l:dp['status']
+  try
+    " replace existing entry
+    let [l:start, l:end] = l:self.getRange(l:tid)
+      call l:self.replaceLines(
+        \ l:start-1,
+        \ l:end,
+        \ l:self.makeEntry(l:tid))
+  catch /EntryNotFound/
+    let l:insert_after = (a:add_at_top) ? 0 : -1
+    call l:self.insertLines(l:insert_after, l:self.makeEntry(l:tid))
+  endtry
+endfunction
+
+" BRIEF:  Handle an incoming ThreadEvent. Update internal Threads cache.
+" PARAM:  thread_event  (DebugProtocol.ThreadEvent)
+function! dapper#ThreadBuffer#_recvEvent(thread_event) abort dict
+  call dapper#ThreadBuffer#CheckType(l:self)
+  let l:body = a:thread_event['body']
+  let l:reason = l:body['reason']
+  let l:tid    = l:body['threadId']
+  let l:new_thread =
+    \ l:self['_ids_to_threads'].update(l:tid, {'id': l:tid, 'status': l:reason})
+  if l:reason ==# 'started'
+    call l:self._addThreadEntry(l:new_thread, v:true)
+  elseif l:reason ==# 'exited'
+    call l:self._addThreadEntry(l:new_thread, v:false)
+  else
+    " TODO debug log?
+    call l:self._addThreadEntry(l:new_thread, v:true)
+  endif
+endfunction
+
+" BRIEF:  Update Threads cache; update the existing entry in the buffer.
+" PARAM:  thread_response  (DebugProtocol.ThreadResponse)
+function! dapper#ThreadBuffer#_recvResponse(thread_response) abort dict
+  call dapper#ThreadBuffer#CheckType(l:self)
+  let l:tlist = a:thread_response['body']['threads']
+  for l:dp in l:tlist
+    let l:thread = l:self['_ids_to_threads'].update(l:dp['id'], l:dp)
+    call l:self._addThreadEntry(l:thread, v:true)
+  endfor
+endfunction
+
+" BRIEF:  Generate the text representing a Thread, using cached info.
 " RETURNS:  (v:t_list)  Line-by-line, the text representing the Thread.
 " PARAM:  tid     (v:t_number)  A unique identifier for the thread.
-" PARAM:  name    (v:t_string)  A name of the thread.
-" PARAM:  status  (v:t_string)  The thread's status (exited, running, etc.)
-function! dapper#ThreadBuffer#makeEntry(tid, name, status) abort dict
+function! dapper#ThreadBuffer#makeEntry(tid) abort dict
   call dapper#ThreadBuffer#CheckType(l:self)
-  " TODO refine
+  let l:thread = l:self['_ids_to_threads'].get(a:tid)
+  let a:name   = l:thread['name']
+  let a:status = l:thread['status']
   return [printf("thread\tid: %d\tname: %s\tstatus: %s", a:tid, a:name, a:status)]
 endfunction
