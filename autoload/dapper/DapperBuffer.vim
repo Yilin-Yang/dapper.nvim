@@ -3,6 +3,8 @@
 " BRIEF:  Construct a DapperBuffer.
 function! dapper#DapperBuffer#new(...) abort
   let l:new = call('dapper#Buffer#new', a:000)
+  let l:new['TYPE']['DapperBuffer'] = 1
+
   let l:new['receive'] =
     \ function('dapper#DapperBuffer#__noImpl', ['receive'])
   let l:new['getRange'] =
