@@ -70,9 +70,13 @@ function! dapper#MiddleTalker#request(request, Callback) abort dict
       \.v:t_dict.', '.v:t_func.'): '
       \.type(a:request).', '.type(a:Callback)
   endif
-  let l:self['__ids_to_callbacks'][l:self.__getID()] = a:Callback
-  " TODO: set up this pipeline properly
-  call DapperRequest(a:request)
+  let l:req = copy(a:request)
+  " set vim_id but not vim_msg_typename: since this message is outgoing and
+  " the latter isn't needed on the middle-end, vim_msg_typename shouldn't matter
+  let l:vim_id = l:self.__getID()
+  let l:req['vim_id'] = l:vim_id
+  let l:self['__ids_to_callbacks'][l:vim_id] = a:Callback
+  call DapperRequest(l:req)
 endfunction
 
 " BRIEF:  Register a subscription to messages whose typenames match a pattern.
