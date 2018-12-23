@@ -33,7 +33,7 @@ function! dapper#ThreadBuffer#receive(msg) abort dict
   if a:msg['typename'] ==# 'ThreadEvent'
     " make ThreadsRequest
     " basic ThreadsRequest will return a list of all threads
-    let l:req = dapper#dap#Event#new()
+    let l:req = dapper#dap#Request#new()
     let l:req['command'] = 'threads'
     call l:self._request(l:req, l:self.receive)
     " update from ThreadEvent

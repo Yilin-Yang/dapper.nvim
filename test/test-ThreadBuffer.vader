@@ -16,4 +16,8 @@ Execute (ThreadBuffer: Receive ThreadEvent, started):
 Expect:
   thread	id: 123	name: unnamed	status: started
   
-
+Then (Check for ThreadsRequest):
+  let g:req = g:last_req[0]
+  let g:Cb  = g:last_req[1]
+  AssertEqual 'request', g:req['type']
+  AssertEqual 'threads', g:req['command']
