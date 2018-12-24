@@ -21,7 +21,7 @@
   "license": "MIT",
   "keywords": [],
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "mocha --require ts-node/register test/*ts",
     "check": "gts check",
     "clean": "gts clean",
     "compile": "tsc -p . && cp package.json rplugin/node/dapper.nvim",
@@ -38,8 +38,11 @@
     "vscode-debugprotocol": "1.32.0"
   },
   "devDependencies": {
+    "@types/mocha": "^5.2.5",
     "@types/node": "^10.12.9",
     "es6-promise": "^4.2.5",
-    "neovim": "^4.2.1"
+    "mocha": "^5.2.0",
+    "neovim": "^4.2.1",
+    "ts-node": "^7.0.1"
   }
 }
