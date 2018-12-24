@@ -1,5 +1,6 @@
-import {NvimPlugin} from 'neovim';
 import Middleman = require('./middleman');
+import {DapperEvent, DapperRequest, DapperResponse} from './messages';
+import {NvimPlugin} from 'neovim';
 import {DebugProtocol} from 'vscode-debugprotocol';
 
 let middleman: Middleman;
@@ -15,13 +16,17 @@ export function initialize(api: NvimPlugin): void {
 /**
  * Start a debug adapter.
  */
-export function start(adapterID: string, command?: string): Promise<string> {
+export function start(
+    env: string, exe: string, adapter: string,
+    locale = 'en-US'): Promise<string> {
   return new Promise<string>(async (resolve, reject) => {
     try {
-      const msg: string = await middleman.success();
-      resolve(msg);
+      const success: boolean =
+          await middleman.startAdapter(env, exe, adapter, locale);
+      if (!success) reject('Failed to start debug adapter!');
+      resolve('Successfully initialized debug adapter.');
     } catch {
-      reject('failed from inside start');
+      reject('Debug adapter threw an exception during initialization!');
     }
   });
 }
@@ -30,34 +35,9 @@ export const CM_START_OPTIONS = {
   nargs: '+'
 };
 
-export function resolve_two_seconds() {
-  return new Promise<string>((resolve, reject) => {
-    try {
-      // note, this return value is ignored in async calls
-      setTimeout(() => {
-        resolve('resolved!');
-      }, 2000);
-    } catch (e) {
-      reject(e.what);
-    }
-  });
-}
-
-export function return_dict() {
-  return new Promise<DebugProtocol.ProtocolMessage>((resolve, reject) => {
-    try {
-      const dict = {
-        seq: 1,
-        type: 'response',
-        vim_id: 0,
-        vim_msg_typename: 'ProtocolMessage'
-      };
-      resolve(dict);
-    } catch (e) {
-      reject(e.what);
-    }
-  });
+export function request(req: DapperRequest): Promise<DebugProtocol.Response> {
+  return middleman.request(req);  // TODO
 }
 export const FN_REQUEST_OPTIONS = {
-  sync: true
+  sync: false
 };

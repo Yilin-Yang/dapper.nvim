@@ -11,5 +11,5 @@ module.exports = (api: NvimPlugin) => {
   dapper.initialize(api);
   api.registerCommand('DapperStart', dapper.start, dapper.CM_START_OPTIONS);
   api.registerFunction(
-      'DapperRequest', dapper.return_dict, dapper.FN_REQUEST_OPTIONS);
+      'DapperRequest', dapper.request, dapper.FN_REQUEST_OPTIONS);
 };
