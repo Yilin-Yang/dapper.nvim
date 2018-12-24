@@ -2,7 +2,7 @@ import {Neovim, NvimPlugin} from 'neovim';
 import {DebugClient} from 'vscode-debugadapter-testsupport';
 import {DebugProtocol} from 'vscode-debugprotocol';
 
-import {DapperEvent, DapperRequest, DapperResponse, typenameOf, NULL_VIM_ID} from './messages';
+import {DapperEvent, DapperRequest, DapperResponse, NULL_VIM_ID, typenameOf} from './messages';
 
 /**
  * The middleman between dapper's VimL frontend and the debug adapter backend.
@@ -19,7 +19,8 @@ class Middleman {
   private dc: DebugClient;
   private capabilities: DebugProtocol.Capabilities;
 
-  private oldEmit: (eventName:string, ...args:any[]) => boolean;
+  // tslint:disable-next-line:no-any
+  private oldEmit: (eventName: string, ...args: any[]) => boolean;
 
   constructor(api: NvimPlugin) {
     this.nvim = api.nvim;
@@ -31,11 +32,13 @@ class Middleman {
   }
 
   /**
-   * Send `DebugProtocol.Event`s to the frontend, on top of emitting them normally.
+   * Send `DebugProtocol.Event`s to the frontend, on top of emitting them
+   * normally.
    *
    * Comparable to the `tee` program available in most Unix terminals.
    */
-  private teeEmit(eventName: string, ...args: any): boolean {
+  // tslint:disable-next-line:no-any
+  private teeEmit(eventName: string, ...args: any[]): boolean {
     // TODO: make sure this doesn't also redirect Responses
     if (args.length === 1 && (args[0] as DapperEvent).seq) {
       // assume that this is a DAP Event
@@ -47,7 +50,7 @@ class Middleman {
 
     // perform ordinary event emission
     // TODO: test cases for emission
-    return this.oldEmit.apply(this, [eventName] + args);
+    return this.oldEmit.apply(this, [eventName].concat(args));
   }
 
   /**
