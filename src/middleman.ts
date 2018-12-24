@@ -1,4 +1,5 @@
 import {Neovim, NvimPlugin} from 'neovim';
+import {isUndefined} from 'util';
 import {DebugClient} from 'vscode-debugadapter-testsupport';
 import {DebugProtocol} from 'vscode-debugprotocol';
 
@@ -56,7 +57,9 @@ class Middleman {
   /**
    * Start a debug adapter.
    *
-   * See DebugClient for additional parameter documentation.
+   * Runs through the startup sequence for a protocol-compliant debug adapter:
+   * starts the adapter, initializes it, logs the adapter's capabilities, then
+   * sends 'configurationDone'.
    * @param   runtimeEnv  The environment in which to run the debug adapter,
    *                      e.g. `python`, `node`.
    * @param   exeFilepath The filepath to the debug adapter executable.
@@ -85,12 +88,46 @@ class Middleman {
             await this.dc.initializeRequest(args);
         this.capabilities = response.body as DebugProtocol.Capabilities;
         console.log(this.capabilities);
+        // TODO frontend needs to configureAdapter()
         resolve(true);
       } catch (e) {
         // TODO: log exception
         resolve(false);
       }
     });
+  }
+
+  /**
+   * Finish configuring the debug adapter, i.e. complete the 'startup sequence.'
+   *
+   * Shall only be invoked after a call to `startAdapter`.
+   * @param   bps         Ordinary breakpoints to be set on initialization.
+   * @param   funcBps     Breakpoints to be set on particular functions.
+   * @param   exBps       Filters for exceptions on which to stop execution.
+   */
+  configureAdapter(
+      bps?: DebugProtocol.SetBreakpointsArguments,
+      funcBps?: DebugProtocol.SetFunctionBreakpointsArguments,
+      exBps?: DebugProtocol.SetExceptionBreakpointsArguments):
+      Promise<DebugProtocol.ConfigurationDoneResponse|DebugProtocol.Response> {
+    // TODO reject if exBps contains filters not contained in Capabilities
+    // TODO: send all requests "in parallel"?
+    if (!isUndefined(bps)) {
+      this.dc.setBreakpointsRequest(bps);
+    }
+    if (!isUndefined(funcBps)) {
+      this.dc.setFunctionBreakpointsRequest(funcBps);
+    }
+    if (isUndefined(exBps)) {
+      return this.dc.configurationDoneRequest({});
+    }
+    // send exception breakpoints, and only send configurationDone if
+    // supported, to avoid clobbering user-set exception breakpoints
+    const exBpsResp = this.dc.setExceptionBreakpointsRequest(exBps);
+    if (this.capabilities.supportsConfigurationDoneRequest) {
+      return this.dc.configurationDoneRequest({});
+    }
+    return exBpsResp;
   }
 
   /**

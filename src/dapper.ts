@@ -35,6 +35,18 @@ export const CM_START_OPTIONS = {
   nargs: '+'
 };
 
+export function configure(
+    bps?: DebugProtocol.SetBreakpointsArguments,
+    funcBps?: DebugProtocol.SetFunctionBreakpointsArguments,
+    exBps?: DebugProtocol.SetExceptionBreakpointsArguments): void {
+  // try {
+  middleman.configureAdapter(bps, funcBps, exBps);
+  // } catch (e) {
+  // TODO log failure
+  // }
+}
+
+
 export function request(req: DapperRequest): Promise<DebugProtocol.Response> {
   return middleman.request(req);  // TODO
 }
