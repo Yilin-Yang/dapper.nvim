@@ -1,5 +1,5 @@
 /**
- *  Types and helper functions for working with DebugProtocol messages.
+ * Types and helper functions for working with DebugProtocol messages.
  */
 
 import {DebugProtocol} from 'vscode-debugprotocol';
@@ -10,18 +10,18 @@ import DPEvent = DebugProtocol.Event;
 export const NULL_VIM_ID = 0;
 
 /**
- *  The additional properties needed by the VimL frontend.
+ * The additional properties needed by the VimL frontend.
  */
 export interface DapperMessage {
   /**
-   *  Dapper-specific ID of the initiating requester/recipient.
-   *  If none is applicable (e.g. if this message is an event), shall be 0.
+   * Dapper-specific ID of the initiating requester/recipient.
+   * If none is applicable (e.g. if this message is an event), shall be 0.
    */
   vim_id: number;
 
   /**
-   *  The full, human-readable 'name' of the messagetype.
-   *  Values: 'ErrorResponse', 'ThreadEvent', 'LaunchRequest', etc.
+   * The full, human-readable 'name' of the messagetype.
+   * Values: 'ErrorResponse', 'ThreadEvent', 'LaunchRequest', etc.
    */
   vim_msg_typename: string;
 }
@@ -29,6 +29,7 @@ export interface DapperMessage {
 export type DapperRequest = DapperMessage&DPRequest;
 export type DapperResponse = DapperMessage&DPResponse;
 export type DapperEvent = DapperMessage&DPEvent;
+export type DapperAnyMsg = DapperRequest|DapperResponse|DapperEvent;
 
 function firstCharToUpper(str: string): string {
   return str.charAt(0).toUpperCase() + str.slice(1);
