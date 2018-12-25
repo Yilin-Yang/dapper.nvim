@@ -35,13 +35,14 @@ function firstCharToUpper(str: string): string {
 }
 
 export function typenameOf(msg: DPRequest|DPResponse|DPEvent): string {
-  if ((msg as DPEvent).event) {
+  const type: string = msg.type;
+  if (type === 'event') {
     const evt: string = (msg as DPEvent).event;
     return firstCharToUpper(evt) + 'Event';
-  } else if ((msg as DPResponse).request_seq) {
+  } else if (type === 'response') {
     const com: string = (msg as DPResponse).command;
     return firstCharToUpper(com) + 'Response';
-  } else if ((msg as DPRequest).command) {
+  } else if (type === 'request') {
     const com: string = (msg as DPRequest).command;
     return firstCharToUpper(com) + 'Request';
   }
