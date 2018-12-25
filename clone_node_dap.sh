@@ -1,11 +1,20 @@
 #!/bin/bash
 
-# EFFECTS:  Clones and `npm install`s vscode-mock-debug into the build folder,
-#           at a location hardcoded into the repo's current TypeScript source.
+# EFFECTS:  - Manually "installs" vscode-mock-debug and vscode-node-debug2 into
+#           `node_modules`.
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-mkdir -p build
-git clone https://github.com/Microsoft/vscode-mock-debug.git "$DIR/build/vscode-mock-debug"
-cd build/vscode-mock-debug
-npm install
+mkdir -p "$DIR/node_modules"
+
+DEPS="
+    Microsoft/vscode-mock-debug
+    Microsoft/vscode-node-debug2
+"
+for PACKAGE in $DEPS; do
+    REPO="`echo $PACKAGE | cut -d'/' -f2`"
+    cd "$DIR/node_modules"
+    git clone "https://github.com/$PACKAGE"
+    cd $REPO
+    npm install
+done
