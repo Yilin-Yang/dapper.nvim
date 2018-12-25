@@ -6,15 +6,15 @@ import {DebugProtocol} from 'vscode-debugprotocol';
 let middleman: Middleman;
 
 /**
- * Initialize Middleman singleton with nvim API object.
- * @param api   nvim node-client API.
+ *  Initialize Middleman singleton with nvim API object.
+ *  @param api  nvim node-client API.
  */
 export function initialize(api: NvimPlugin): void {
   middleman = new Middleman(api);
 }
 
 /**
- * Start a debug adapter.
+ *  Start a debug adapter.
  */
 export function start(
     env: string, exe: string, adapter: string,

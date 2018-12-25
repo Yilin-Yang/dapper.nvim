@@ -6,7 +6,7 @@ import {DebugProtocol} from 'vscode-debugprotocol';
 import {DapperEvent, DapperRequest, DapperResponse, NULL_VIM_ID, typenameOf} from './messages';
 
 /**
- * The middleman between dapper's VimL frontend and the debug adapter backend.
+ *  The middleman between dapper's VimL frontend and the debug adapter backend.
  */
 class Middleman {
   static readonly CLIENT_NAME: string = 'dapper.nvim';
@@ -14,7 +14,7 @@ class Middleman {
   private static readonly EMPTY_DC: DebugClient = {} as DebugClient;
 
   /**
-   * For manipulating the user-facing neovim instance.
+   *  For manipulating the user-facing neovim instance.
    */
   private nvim: Neovim;
   private dc: DebugClient;
@@ -33,10 +33,10 @@ class Middleman {
   }
 
   /**
-   * Send `DebugProtocol.Event`s to the frontend, on top of emitting them
-   * normally.
+   *  Send `DebugProtocol.Event`s to the frontend, on top of emitting them
+   *  normally.
    *
-   * Comparable to the `tee` program available in most Unix terminals.
+   *  Comparable to the `tee` program available in most Unix terminals.
    */
   // tslint:disable-next-line:no-any
   private teeEmit(eventName: string, ...args: any[]): boolean {
@@ -55,16 +55,16 @@ class Middleman {
   }
 
   /**
-   * Start a debug adapter.
+   *  Start a debug adapter.
    *
-   * Runs through the startup sequence for a protocol-compliant debug adapter:
-   * starts the adapter, initializes it, logs the adapter's capabilities, then
-   * sends 'configurationDone'.
-   * @param   runtimeEnv  The environment in which to run the debug adapter,
+   *  Runs through the startup sequence for a protocol-compliant debug adapter:
+   *  starts the adapter, initializes it, logs the adapter's capabilities, then
+   *  sends 'configurationDone'.
+   *  @param  runtimeEnv  The environment in which to run the debug adapter,
    *                      e.g. `python`, `node`.
-   * @param   exeFilepath The filepath to the debug adapter executable.
-   * @param   adapterID   The name of the debug adapter.
-   * @returns {} `true` when the initialization succeeded, `false` otherwise.
+   *  @param  exeFilepath The filepath to the debug adapter executable.
+   *  @param  adapterID   The name of the debug adapter.
+   *  @return {}  `true` when the initialization succeeded, `false` otherwise.
    */
   startAdapter(
       runtimeEnv: string, exeFilepath: string, adapterID: string,
@@ -98,12 +98,12 @@ class Middleman {
   }
 
   /**
-   * Finish configuring the debug adapter, i.e. complete the 'startup sequence.'
+   *  Finish configuring the debug adapter, i.e. complete the 'startup sequence.'
    *
-   * Shall only be invoked after a call to `startAdapter`.
-   * @param   bps         Ordinary breakpoints to be set on initialization.
-   * @param   funcBps     Breakpoints to be set on particular functions.
-   * @param   exBps       Filters for exceptions on which to stop execution.
+   *  Shall only be invoked after a call to `startAdapter`.
+   *  @param  bps     Ordinary breakpoints to be set on initialization.
+   *  @param  funcBps Breakpoints to be set on particular functions.
+   *  @param  exBps   Filters for exceptions on which to stop execution.
    */
   configureAdapter(
       bps?: DebugProtocol.SetBreakpointsArguments,
@@ -131,10 +131,11 @@ class Middleman {
   }
 
   /**
-   * Send a request, returning the corresponding response from the DebugAdapter.
+   *  Send a request, returning the response from the DebugAdapter.
    */
   async request(req: DapperRequest): Promise<DapperResponse> {
     // make sure that this actually returns a value to the frontend?
+    // TODO: emit the Response as an Event(?)
     const resp = await this.dc.send(req.command, req) as DapperResponse;
     resp.vim_id = req.vim_id;
     resp.vim_msg_typename = typenameOf(resp);

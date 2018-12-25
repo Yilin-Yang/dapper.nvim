@@ -14,14 +14,14 @@ export const NULL_VIM_ID = 0;
  */
 export interface DapperMessage {
   /**
-   * Dapper-specific ID of the initiating requester/recipient.
-   * If none is applicable (e.g. if this message is an event), shall be 0.
+   *  Dapper-specific ID of the initiating requester/recipient.
+   *  If none is applicable (e.g. if this message is an event), shall be 0.
    */
   vim_id: number;
 
   /**
-   * The full, human-readable 'name' of the messagetype.
-   * Values: 'ErrorResponse', 'ThreadEvent', 'LaunchRequest', etc.
+   *  The full, human-readable 'name' of the messagetype.
+   *  Values: 'ErrorResponse', 'ThreadEvent', 'LaunchRequest', etc.
    */
   vim_msg_typename: string;
 }
