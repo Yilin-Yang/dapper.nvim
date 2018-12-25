@@ -5,11 +5,9 @@ console.log('Hello, World!');
 
 let dc: DebugClient;
 
-// dc = new DebugClient('node', './build/vscode-mock-debug/out/debugAdapter.js',
-// 'mock');
 dc = new DebugClient(
     'node',
-    '/home/yiliny/plugin/dapper.nvim/rplugin/node/dapper.nvim/vscode-mock-debug/out/debugAdapter.js',
+    '/home/yiliny/plugin/dapper.nvim/node_modules/vscode-mock-debug/out/debugAdapter.js',
     'mock');
 
 dc.start()
