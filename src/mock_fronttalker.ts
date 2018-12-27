@@ -1,11 +1,11 @@
 import {BasicFrontTalker} from './basic_fronttalker';
-import { DapperAnyMsg } from './messages';
+import {DapperAnyMsg} from './messages';
 
 /**
  * FrontTalker implementation for use in test cases.
  */
 export class MockFrontTalker extends BasicFrontTalker {
-  private lastMessage: DapperAnyMsg | undefined;
+  private lastMessage: DapperAnyMsg|undefined;
 
   constructor() {
     super();
@@ -17,7 +17,7 @@ export class MockFrontTalker extends BasicFrontTalker {
     this.lastMessage = JSON.parse(JSON.stringify(msg));
   }
 
-  getLast(): DapperAnyMsg | undefined {
+  getLast(): DapperAnyMsg|undefined {
     return JSON.parse(JSON.stringify(this.lastMessage));
   }
 }

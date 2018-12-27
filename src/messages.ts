@@ -58,7 +58,8 @@ export function isDAP(arg: any): arg is DebugProtocol.ProtocolMessage {
 }
 
 export function isDAPRequest(arg: any): arg is DebugProtocol.Request {
-  return isDAP(arg) && arg.hasOwnProperty('command') && !arg.hasOwnProperty('request_seq');
+  return isDAP(arg) && arg.hasOwnProperty('command') &&
+      !arg.hasOwnProperty('request_seq');
 }
 
 export function isDAPEvent(arg: any): arg is DebugProtocol.Event {
