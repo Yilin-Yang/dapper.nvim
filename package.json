@@ -21,7 +21,7 @@
   "license": "MIT",
   "keywords": [],
   "scripts": {
-    "test": "mocha --require ts-node/register test/*ts",
+    "test": "mocha --require ts-node/register test/test*ts",
     "check": "gts check",
     "clean": "gts clean",
     "compile": "tsc -p . && cp package.json rplugin/node/dapper.nvim",
