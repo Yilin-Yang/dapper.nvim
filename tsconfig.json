@@ -1,10 +1,7 @@
 {
   "extends": "./node_modules/gts/tsconfig-google.json",
   "compilerOptions": {
-    "rootDirs": [
-      ".",
-      "src"
-    ],
+    "rootDirs": ["./src", "./test"],
     "lib": ["es2015"],
     "outDir": "rplugin/node/dapper.nvim",
     "skipLibCheck": true
@@ -14,5 +11,8 @@
     "src/**/*.ts",
     "test/*.ts",
     "test/**/*.ts"
+  ],
+  "exclude": [
+    "test"
   ]
 }
