@@ -3,7 +3,8 @@ import {isUndefined} from 'util';
 import {FrontTalker} from './fronttalker';
 import {DapperAnyMsg, DapperRequest} from './messages';
 
-type Callback = (req: DapperAnyMsg) => void;
+// tslint:disable-next-line:no-any
+type Callback = (req: DapperAnyMsg) => any;
 interface CallbackOrArr {
   cb: Callback|Callback[];
 }
@@ -37,12 +38,12 @@ export class BasicFrontTalker implements FrontTalker {
   on(reqType: string, callback: (req: DapperRequest) => any): void {
     const cbs: CallbackOrArr = this.typesToCbs[reqType];
     if (isUndefined(cbs)) {
-      this.typesToCbs[reqType] = {cb: callback};
+      this.typesToCbs[reqType] = {cb: callback as Callback};
     } else if (isCallback(cbs.cb)) {
       const cb = cbs.cb;
-      cbs.cb = [cb, callback];
+      cbs.cb = [cb, callback] as Callback[];
     } else if (isCallbackArr(cbs.cb)) {
-      cbs.cb.push(callback);
+      cbs.cb.push(callback as Callback);
     } else {
       throw new TypeError(
           'Object with unexpected type in callbacks dictionary: ' + cbs.cb);
