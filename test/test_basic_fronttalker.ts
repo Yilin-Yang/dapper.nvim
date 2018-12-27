@@ -1,6 +1,5 @@
 import * as assert from 'assert';
 import {describe, it} from 'mocha';
-import {DebugProtocol} from 'vscode-debugprotocol';
 
 import {BasicFrontTalker} from '../src/basic_fronttalker';
 import {DapperRequest} from '../src/messages';
