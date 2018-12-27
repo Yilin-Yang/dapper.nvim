@@ -6,6 +6,8 @@ import {DebugProtocol} from 'vscode-debugprotocol';
 import {Middleman} from '../src/middleman';
 import {MockFrontTalker} from '../src/mock_fronttalker';
 
+const TIMEOUT_LEN = 5000;  // ms
+
 let mm: Middleman;
 const ft: MockFrontTalker = new MockFrontTalker();
 
@@ -26,11 +28,16 @@ describe('Middleman initialization', () => {
     assert.equal(result, true);
     assert.deepEqual(mm.getCapabilities(), mockCapabilities);
     return result;
-  }).timeout(5000);
+  }).timeout(TIMEOUT_LEN);
+
+  it('can configure the mock debug adapter', async () => {
+    const result = await mm.configureAdapter();
+    return result;
+  }).timeout(TIMEOUT_LEN);
 });
 describe('Middleman termination', () => {
   it('can terminate the running debug adapter and debuggee process', async () => {
      const result = await mm.terminate();
      return result;
-  }).timeout(5000);
+  }).timeout(TIMEOUT_LEN);
 });
