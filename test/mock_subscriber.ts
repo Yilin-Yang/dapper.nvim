@@ -25,6 +25,11 @@ export class MockSubscriber {
   }
 
   /**
+   * A "bad" callback function that does not bind `this` explicitly.
+   */
+  readonly receiveWrong = this.receiveImpl;
+
+  /**
    * "Empty" the contents of this MockSubscriber.
    */
   reset(): void {

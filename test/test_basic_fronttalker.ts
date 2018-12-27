@@ -29,14 +29,14 @@ describe('BasicFrontTalker', () => {
     const testObj = new BasicFrontTalker();
     const sub = new MockSubscriber();
     testObj.on('initialize', sub.receive);
-    testObj.emit('initialize', initializeRequest);
+    assert.equal(testObj.emit('initialize', initializeRequest), true);
     assert.deepEqual(sub.getLastAndReset(), initializeRequest);
   });
   it('only calls back with types to which others have subscribed', () => {
     const testObj = new BasicFrontTalker();
     const sub = new MockSubscriber();
     testObj.on('initialize', sub.receive);
-    testObj.emit('launch', launchRequest);
+    assert.equal(testObj.emit('launch', launchRequest), false);
     assert.deepEqual(sub.getLastAndReset(), {} as DapperRequest);
   });
   it('correctly calls back multiple subscribers to the same type', () => {
@@ -55,7 +55,7 @@ describe('BasicFrontTalker', () => {
         }
       }
     }
-    testObj.emit('initialize', initializeRequest);
+    assert.equal(testObj.emit('initialize', initializeRequest), true);
     for (let i = 0; i < subDict['initialize'].length; ++i) {
       const sub = subDict['initialize'][i];
       assert.deepEqual(sub.getLastAndReset(), initializeRequest);
@@ -68,5 +68,49 @@ describe('BasicFrontTalker', () => {
       const sub = subDict['threads'][i];
       assert.deepEqual(sub.getLastAndReset(), {} as DapperRequest);
     }
+  });
+  it('correctly removes subscribers, in order', () => {
+    const testObj = new BasicFrontTalker();
+    const subArr =
+        [new MockSubscriber(), new MockSubscriber(), new MockSubscriber()];
+    for (let i = 0; i < subArr.length; ++i) {
+      testObj.on('initialize', subArr[i].receive);
+    }
+    testObj.off('initialize', subArr[0].receive);
+
+    // bind generates a new functor that won't compare equal to the original
+    // subArr[1].receive
+    testObj.off('initialize', subArr[1].receiveWrong.bind(subArr[1]));
+
+    assert.equal(testObj.emit('initialize', initializeRequest), true);
+
+    assert.deepEqual(subArr[0].getLastAndReset(), {});
+    assert.deepEqual(subArr[1].getLastAndReset(), {});
+    assert.deepEqual(subArr[2].getLastAndReset(), initializeRequest);
+  });
+  it('correctly removes single subscriber', () => {
+    const testObj = new BasicFrontTalker();
+    const sub = new MockSubscriber();
+    testObj.on('initialize', sub.receive);
+    testObj.off('initialize', sub.receive);
+    assert.equal(testObj.emit('initialize', initializeRequest), false);
+    assert.deepEqual(sub.getLastAndReset(), {});
+  });
+  it('correctly removes multiple subscribers', () => {
+    const testObj = new BasicFrontTalker();
+    const subArr =
+        [new MockSubscriber(), new MockSubscriber(), new MockSubscriber()];
+    for (let i = 0; i < subArr.length; ++i) {
+      testObj.on('initialize', subArr[i].receive);
+    }
+    testObj.off('initialize', subArr[0].receive);
+    testObj.off('initialize', subArr[1].receiveWrong.bind(subArr[1]));
+    testObj.off('initialize', subArr[2].receive);
+
+    assert.equal(testObj.emit('initialize', initializeRequest), false);
+
+    assert.deepEqual(subArr[0].getLastAndReset(), {});
+    assert.deepEqual(subArr[1].getLastAndReset(), {});
+    assert.deepEqual(subArr[2].getLastAndReset(), {});
   });
 });

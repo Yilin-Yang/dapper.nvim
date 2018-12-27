@@ -14,17 +14,27 @@ export interface FrontTalker {
   /**
    * Subscribe to incoming requests from the VimL frontend.
    *
-   * @param reqType   String compared against the `command` property of the
+   * @param {reqType}   String compared against the `command` property of the
    *     incoming DebugProtocol.Request.
-   * @param callback  The callback function.
+   * @param {callback}  The callback function.
+   * @returns {this}    Reference to this FrontTalker.
    */
   // tslint:disable-next-line:no-any
-  on(reqType: string, callback: (req: DapperRequest) => any): void;
+  on(reqType: string, callback: (req: DapperRequest) => any): FrontTalker;
+
+  /**
+   * Removes the given callback from the list of listeners, if present.
+   *
+   * @returns {this}    Reference to this FrontTalker.
+   */
+  // tslint:disable-next-line:no-any
+  off(reqType: string, callback: (req: DapperRequest) => any): FrontTalker;
 
   /**
    * Notify subscribers of a request from the VimL frontend.
    *
    * Intended to be invoked by the VimL frontend as a remote procedure call.
+   * @returns {hadListeners}  Whether the given `reqName` had listeners.
    */
-  emit(reqName: string, request: DapperRequest): void;
+  emit(reqName: string, request: DapperRequest): boolean;
 }

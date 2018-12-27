@@ -35,7 +35,7 @@ export class BasicFrontTalker implements FrontTalker {
   }
 
   // tslint:disable-next-line:no-any
-  on(reqType: string, callback: (req: DapperRequest) => any): void {
+  on(reqType: string, callback: (req: DapperRequest) => any): FrontTalker {
     const cbs: CallbackOrArr = this.typesToCbs[reqType];
     if (isUndefined(cbs)) {
       this.typesToCbs[reqType] = {cb: callback as Callback};
@@ -48,18 +48,43 @@ export class BasicFrontTalker implements FrontTalker {
       throw new TypeError(
           'Object with unexpected type in callbacks dictionary: ' + cbs.cb);
     }
+    return this;
   }
 
-  emit(reqType: string, request: DapperRequest): void {
-    if (!(reqType in this.typesToCbs)) return;
+  // tslint:disable-next-line:no-any
+  off(reqType: string, callback: (req: DapperRequest) => any): FrontTalker {
+    const cbs: CallbackOrArr = this.typesToCbs[reqType];
+    if (isUndefined(cbs)) {
+    } else if (isCallback(cbs.cb)) {
+      delete this.typesToCbs[reqType];
+    } else if (isCallbackArr(cbs.cb)) {
+      const cbArr = cbs.cb;
+      for (let i = 0; i < cbArr.length; ++i) {
+        const storedCb = cbArr[i];
+        if (storedCb.toString() === callback.toString()) {
+          cbArr.splice(i, 1);
+          break;
+        }
+      }
+    } else {
+      throw new TypeError(
+          'Object with unexpected type in callbacks dictionary: ' + cbs.cb);
+    }
+    return this;
+  }
+
+  emit(reqType: string, request: DapperRequest): boolean {
+    if (!(reqType in this.typesToCbs)) return false;
     const cbs = this.typesToCbs[reqType];
     if (isCallback(cbs.cb)) {
       cbs.cb(request);
-      return;
+      return true;
     } else if (isCallbackArr(cbs.cb)) {
+      if (!cbs.cb.length) return false;
       cbs.cb.forEach((callbackFunction: Callback) => {
         callbackFunction(request);
       });
+      return true;
     } else {
       throw new TypeError(
           'Object with unexpected type in callbacks dictionary: ' + cbs.cb);
