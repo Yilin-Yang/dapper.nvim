@@ -20,7 +20,8 @@ export interface FrontTalker {
    * @returns {this}    Reference to this FrontTalker.
    */
   // tslint:disable-next-line:no-any
-  on(reqType: string, callback: (req: DapperRequest) => any): FrontTalker;
+  on(reqType: string|RegExp,
+     callback: (req: DapperRequest) => any): FrontTalker;
 
   /**
    * Removes the given callback from the list of listeners, if present.
@@ -28,7 +29,8 @@ export interface FrontTalker {
    * @returns {this}    Reference to this FrontTalker.
    */
   // tslint:disable-next-line:no-any
-  off(reqType: string, callback: (req: DapperRequest) => any): FrontTalker;
+  off(reqType: string|RegExp,
+      callback: (req: DapperRequest) => any): FrontTalker;
 
   /**
    * Notify subscribers of a request from the VimL frontend.

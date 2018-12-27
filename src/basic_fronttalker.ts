@@ -6,8 +6,12 @@ import {DapperAnyMsg, DapperRequest} from './messages';
 // tslint:disable-next-line:no-any
 type Callback = (req: DapperAnyMsg) => any;
 interface CallbackOrArr {
-  cb: Callback|Callback[];
+  cb: Callback|Callback[]|undefined;
 }
+
+// tslint:disable-next-line:no-any
+type ReqCallback = (req: DapperRequest) => any;
+
 // tslint:disable-next-line:no-any
 function isCallback(arg: any): arg is Callback {
   // note:  doesn't check whether arg has the Callback function signature,
@@ -25,9 +29,12 @@ function isCallbackArr(arg: any): arg is Callback[] {
  */
 export class BasicFrontTalker implements FrontTalker {
   private typesToCbs: {[name: string]: CallbackOrArr};
+  private strToRegexCbs:
+      {[regexStr: string]: {regex: RegExp, cb: CallbackOrArr}};
 
   constructor() {
     this.typesToCbs = {};
+    this.strToRegexCbs = {};
   }
 
   send(msg: DapperAnyMsg): void {
@@ -35,48 +42,122 @@ export class BasicFrontTalker implements FrontTalker {
   }
 
   // tslint:disable-next-line:no-any
-  on(reqType: string, callback: (req: DapperRequest) => any): FrontTalker {
-    const cbs: CallbackOrArr = this.typesToCbs[reqType];
-    if (isUndefined(cbs)) {
-      this.typesToCbs[reqType] = {cb: callback as Callback};
-    } else if (isCallback(cbs.cb)) {
-      const cb = cbs.cb;
-      cbs.cb = [cb, callback] as Callback[];
-    } else if (isCallbackArr(cbs.cb)) {
-      cbs.cb.push(callback as Callback);
+  on(reqType: string|RegExp, callback: ReqCallback): FrontTalker {
+    if (typeof reqType === 'string') {
+      return this.onStr(reqType, callback);
+    } else if (reqType instanceof RegExp) {
+      return this.onReg(reqType, callback);
     } else {
-      throw new TypeError(
-          'Object with unexpected type in callbacks dictionary: ' + cbs.cb);
+      throw new TypeError('Bad type on given reqType: ' + reqType);
+    }
+  }
+
+  // tslint:disable-next-line:no-any
+  private onStr(reqType: string, callback: ReqCallback): FrontTalker {
+    let cbs: CallbackOrArr = this.typesToCbs[reqType];
+    if (isUndefined(cbs)) {
+      cbs = {cb: undefined};
+      this.typesToCbs[reqType] = this.addCallback(cbs, callback);
+    } else {
+      this.addCallback(cbs, callback);
     }
     return this;
   }
 
   // tslint:disable-next-line:no-any
-  off(reqType: string, callback: (req: DapperRequest) => any): FrontTalker {
-    const cbs: CallbackOrArr = this.typesToCbs[reqType];
-    if (isUndefined(cbs)) {
+  private onReg(regex: RegExp, callback: ReqCallback): FrontTalker {
+    const regStr = regex.toString();
+    const regAndCbs = this.strToRegexCbs[regStr];
+    regAndCbs.regex = regex;
+    this.addCallback(regAndCbs.cb, callback);
+    return this;
+  }
+
+  /**
+   * Append the given callback `toAdd` to the given `CallbackOrArr`.
+   *
+   * Also, return a reference to it.
+   */
+  // tslint:disable-next-line:no-any
+  private addCallback(cbs: CallbackOrArr, toAdd: ReqCallback): CallbackOrArr {
+    if (isUndefined(cbs) || isUndefined(cbs.cb)) {
+      cbs.cb = toAdd as Callback;
     } else if (isCallback(cbs.cb)) {
-      delete this.typesToCbs[reqType];
+      cbs.cb = [cbs.cb, toAdd] as Callback[];
+    } else if (isCallbackArr(cbs.cb)) {
+      cbs.cb.push(toAdd as Callback);
+    }
+    return cbs;
+  }
+
+  // tslint:disable-next-line:no-any
+  off(reqType: string|RegExp, callback: ReqCallback): FrontTalker {
+    if (typeof reqType === 'string') {
+      return this.offStr(reqType, callback);
+    } else if (reqType instanceof RegExp) {
+      return this.offReg(reqType, callback);
+    } else {
+      throw new TypeError('Bad type on given reqType: ' + reqType);
+    }
+  }
+
+  private offStr(reqType: string, callback: ReqCallback): FrontTalker {
+    const cbs: CallbackOrArr = this.typesToCbs[reqType];
+    this.removeCallback(cbs, callback);
+    return this;
+  }
+
+  private offReg(regex: RegExp, callback: ReqCallback): FrontTalker {
+    const regStr = regex.toString();
+    const regAndCbs = this.strToRegexCbs[regStr];
+    this.removeCallback(regAndCbs.cb, callback);
+    return this;
+  }
+
+  private removeCallback(cbs: CallbackOrArr, toRem: ReqCallback):
+      CallbackOrArr {
+    if (isUndefined(cbs) || isUndefined(cbs.cb)) {
+    } else if (isCallback(cbs.cb)) {
+      if (cbs.cb.toString() === toRem.toString()) {
+        delete cbs.cb;
+      }
     } else if (isCallbackArr(cbs.cb)) {
       const cbArr = cbs.cb;
       for (let i = 0; i < cbArr.length; ++i) {
         const storedCb = cbArr[i];
-        if (storedCb.toString() === callback.toString()) {
+        if (storedCb.toString() === toRem.toString()) {
           cbArr.splice(i, 1);
           break;
         }
       }
-    } else {
-      throw new TypeError(
-          'Object with unexpected type in callbacks dictionary: ' + cbs.cb);
     }
-    return this;
+    return cbs;
   }
 
   emit(reqType: string, request: DapperRequest): boolean {
-    if (!(reqType in this.typesToCbs)) return false;
-    const cbs = this.typesToCbs[reqType];
-    if (isCallback(cbs.cb)) {
+    let reqSent = false;
+    if (reqType in this.typesToCbs) {
+      // callback "string subscribers"
+      const cbs = this.typesToCbs[reqType];
+      reqSent = this.callback(cbs, request);
+    }
+    if (Object.keys(this.strToRegexCbs).length) {
+      // test with regex subscribers
+      for (const regStr of Object.keys(this.strToRegexCbs)) {
+        const regexCb = this.strToRegexCbs[regStr];
+        if (regexCb.regex.test(reqType)) {
+          const sent = this.callback(regexCb.cb, request);
+          if (!reqSent) reqSent = sent;
+        }
+      }
+    }
+    return reqSent;
+  }
+
+  private callback(cbs: CallbackOrArr, request: DapperRequest): boolean {
+    if (isUndefined(cbs) || (!isUndefined(cbs) && isUndefined(cbs.cb))) {
+      return false;
+    } else if (isCallback(cbs.cb)) {
       cbs.cb(request);
       return true;
     } else if (isCallbackArr(cbs.cb)) {
@@ -87,7 +168,8 @@ export class BasicFrontTalker implements FrontTalker {
       return true;
     } else {
       throw new TypeError(
-          'Object with unexpected type in callbacks dictionary: ' + cbs.cb);
+          'Object with unexpected type in callbacks dictionary: ' +
+          JSON.stringify(cbs));
     }
   }
 }
