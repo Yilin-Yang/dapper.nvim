@@ -28,3 +28,9 @@ describe('Middleman initialization', () => {
     return result;
   }).timeout(5000);
 });
+describe('Middleman termination', () => {
+  it('can terminate the running debug adapter and debuggee process', async () => {
+     const result = await mm.terminate();
+     return result;
+  }).timeout(5000);
+});

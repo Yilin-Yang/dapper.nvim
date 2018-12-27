@@ -2,8 +2,8 @@ import {isUndefined} from 'util';
 import {DebugClient} from 'vscode-debugadapter-testsupport';
 import {DebugProtocol} from 'vscode-debugprotocol';
 
-import {DapperEvent, DapperRequest, DapperResponse, NULL_VIM_ID, typenameOf, isDAPEvent} from './messages';
 import {FrontTalker} from './fronttalker';
+import {DapperEvent, DapperRequest, DapperResponse, isDAPEvent, NULL_VIM_ID, typenameOf} from './messages';
 
 /**
  * The middleman between dapper's VimL frontend and the debug adapter backend.
@@ -20,6 +20,8 @@ export class Middleman {
   private ft: FrontTalker;
   private dc: DebugClient;
   private capabilities: DebugProtocol.Capabilities;
+
+  private terminatePending = false;
 
   // tslint:disable-next-line:no-any
   private oldEmit: (eventName: string, ...args: any[]) => boolean;
@@ -69,7 +71,9 @@ export class Middleman {
    * @return  {}  `true` when the initialization succeeded, `false` otherwise.
    */
   async startAdapter(
-    runtimeEnv: string, exeFilepath: string, adapterID: string, locale = 'en-US'): Promise<boolean> {
+      runtimeEnv: string, exeFilepath: string, adapterID: string,
+      locale = 'en-US'): Promise<boolean> {
+    this.terminatePending = false;
     try {
       // TODO: if dc != EMPTY_DC, terminate the still running process
       this.dc = new DebugClient(runtimeEnv, exeFilepath, adapterID);
@@ -87,7 +91,7 @@ export class Middleman {
       };
       await this.dc.start().then;
       const response: DebugProtocol.InitializeResponse =
-        await this.dc.initializeRequest(args);
+          await this.dc.initializeRequest(args);
       this.capabilities = response.body as DebugProtocol.Capabilities;
       console.log(this.capabilities);
 
@@ -142,6 +146,25 @@ export class Middleman {
       return await this.dc.configurationDoneRequest({});
     }
     return exBpsResp;
+  }
+
+  /**
+   * Gracefully (or ungracefully) kill the running debug adapter.
+   */
+  async terminate(restart = false): Promise<DebugProtocol.TerminateResponse> {
+    if (this.terminatePending || !this.capabilities.supportsTerminateRequest) {
+      this.disconnect();
+    }
+    this.terminatePending = true;
+    return await this.dc.terminateRequest({restart});
+  }
+
+  /**
+   * Detach from an already running debuggee.
+   */
+  async disconnect(restart = false, terminateDebuggee = false):
+      Promise<DebugProtocol.DisconnectResponse> {
+    return this.dc.disconnectRequest({restart, terminateDebuggee});
   }
 
   /**
