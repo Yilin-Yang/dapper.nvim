@@ -1,4 +1,3 @@
-import {Neovim, NvimPlugin} from 'neovim';
 import {isUndefined} from 'util';
 import {DebugClient} from 'vscode-debugadapter-testsupport';
 import {DebugProtocol} from 'vscode-debugprotocol';
@@ -31,10 +30,9 @@ export class Middleman {
     this.ft = ft;
     this.dc = Middleman.EMPTY_DC;
     this.capabilities = {};
-
-    // monkey-patch DebugClient to support 'subscribe to All'
-    this.oldEmit = this.dc.emit.bind(this.dc);
-    this.dc.emit = this.teeEmit.bind(this);
+    this.oldEmit = (evtName: string) => {
+      return false;
+    };
   }
 
   /**
@@ -70,36 +68,40 @@ export class Middleman {
    * @param {adapterID}   The name of the debug adapter.
    * @return  {}  `true` when the initialization succeeded, `false` otherwise.
    */
-  startAdapter(
-      runtimeEnv: string, exeFilepath: string, adapterID: string,
-      locale: string): Promise<boolean> {
-    return new Promise<boolean>(async (resolve, reject) => {
-      try {
-        // TODO: if dc != EMPTY_DC, terminate the still running process
-        this.dc = new DebugClient(runtimeEnv, exeFilepath, adapterID);
-        const args: DebugProtocol.InitializeRequestArguments = {
-          clientName: Middleman.CLIENT_NAME,
-          adapterID,
-          linesStartAt1: true,
-          columnsStartAt1: true,
-          locale,
-          // TODO support the items below
-          // supportsVariableType: true,
-          // supportsVariablePaging: true,
-          // supportsRunInTerminalRequest: true,
-        };
-        const response: DebugProtocol.InitializeResponse =
-            await this.dc.initializeRequest(args);
-        this.capabilities = response.body as DebugProtocol.Capabilities;
-        console.log(this.capabilities);
-        // TODO frontend needs to configureAdapter()
-        resolve(true);
-      } catch (e) {
-        // TODO: log exception
-        console.log(e);
-        resolve(false);
-      }
-    });
+  async startAdapter(
+    runtimeEnv: string, exeFilepath: string, adapterID: string, locale = 'en-US'): Promise<boolean> {
+    try {
+      // TODO: if dc != EMPTY_DC, terminate the still running process
+      this.dc = new DebugClient(runtimeEnv, exeFilepath, adapterID);
+      const args: DebugProtocol.InitializeRequestArguments = {
+        clientName: Middleman.CLIENT_NAME,
+        adapterID,
+        linesStartAt1: true,
+        columnsStartAt1: true,
+        locale,
+        pathFormat: 'path',
+        // TODO support the items below
+        // supportsVariableType: true,
+        // supportsVariablePaging: true,
+        // supportsRunInTerminalRequest: true,
+      };
+      await this.dc.start().then;
+      const response: DebugProtocol.InitializeResponse =
+        await this.dc.initializeRequest(args);
+      this.capabilities = response.body as DebugProtocol.Capabilities;
+      console.log(this.capabilities);
+
+      // monkey-patch DebugClient to support 'subscribe to All'
+      this.oldEmit = this.dc.emit.bind(this.dc);
+      this.dc.emit = this.teeEmit.bind(this);
+
+      // TODO frontend needs to configureAdapter()
+      return true;
+    } catch (e) {
+      // TODO: log exception
+      console.log(e);
+      return false;
+    }
   }
 
   /**
@@ -152,5 +154,12 @@ export class Middleman {
     resp.vim_id = req.vim_id;
     resp.vim_msg_typename = typenameOf(resp);
     return resp;
+  }
+
+  /**
+   * Get the capabilities reported by the active debug adapter.
+   */
+  getCapabilities(): DebugProtocol.Capabilities {
+    return this.capabilities;
   }
 }

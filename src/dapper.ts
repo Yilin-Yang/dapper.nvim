@@ -3,6 +3,7 @@ import {DebugProtocol} from 'vscode-debugprotocol';
 
 import {DapperEvent, DapperRequest, DapperResponse} from './messages';
 import {Middleman} from './middleman';
+import {NvimFrontTalker} from './nvim_fronttalker';
 
 let middleman: Middleman;
 
@@ -11,7 +12,7 @@ let middleman: Middleman;
  * @param api  nvim node-client API.
  */
 export function initialize(api: NvimPlugin): void {
-  middleman = new Middleman(api);
+  middleman = new Middleman(new NvimFrontTalker(api));
 }
 
 /**
