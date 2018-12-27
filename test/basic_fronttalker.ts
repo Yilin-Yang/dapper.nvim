@@ -8,10 +8,10 @@ import {DapperRequest} from '../src/messages';
 const testSubscriber = {
   lastRequest: {} as DapperRequest,
   receive(msg: DapperRequest): void {
-    this.lastRequest = msg;
+    this.lastRequest = {...msg} as DapperRequest;
   },
   getLast(): DapperRequest {
-    const toReturn = this.lastRequest;
+    const toReturn = {...this.lastRequest};  // shallow copy by spread
     this.lastRequest = {} as DapperRequest;  // reset variable
     return toReturn;
   }
@@ -37,9 +37,9 @@ const launchRequest: DapperRequest = {
 
 describe('BasicFrontTalker', () => {
   it('allows subscription to incoming Requests', () => {
-    testObj.on('initialize', testSubscriber.receive);
+    testObj.on('initialize', testSubscriber.receive.bind(testSubscriber));
     testObj.emit('initialize', initializeRequest);
-    assert.equal(testSubscriber.getLast(), initializeRequest);
+    assert.deepEqual(testSubscriber.getLast(), initializeRequest);
   });
   it('only calls back with types to which others have subscribed', () => {
     testObj.emit('launch', launchRequest);
