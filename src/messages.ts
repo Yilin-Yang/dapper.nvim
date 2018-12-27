@@ -51,3 +51,20 @@ export function typenameOf(msg: DPRequest|DPResponse|DPEvent): string {
       'Given message doesn\'t seem to be a DebugProtocol type: ' + msg as
       string);
 }
+
+// tslint:disable:no-any
+export function isDAP(arg: any): arg is DebugProtocol.ProtocolMessage {
+  return arg.hasOwnProperty('seq') && arg.hasOwnProperty('type');
+}
+
+export function isDAPRequest(arg: any): arg is DebugProtocol.Request {
+  return isDAP(arg) && arg.hasOwnProperty('command') && !arg.hasOwnProperty('request_seq');
+}
+
+export function isDAPEvent(arg: any): arg is DebugProtocol.Event {
+  return isDAP(arg) && arg.hasOwnProperty('event');
+}
+
+export function isDAPResponse(arg: any): arg is DebugProtocol.Response {
+  return isDAP(arg) && arg.hasOwnProperty('request_seq');
+}

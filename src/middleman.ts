@@ -3,7 +3,8 @@ import {isUndefined} from 'util';
 import {DebugClient} from 'vscode-debugadapter-testsupport';
 import {DebugProtocol} from 'vscode-debugprotocol';
 
-import {DapperEvent, DapperRequest, DapperResponse, NULL_VIM_ID, typenameOf} from './messages';
+import {DapperEvent, DapperRequest, DapperResponse, NULL_VIM_ID, typenameOf, isDAPEvent} from './messages';
+import {FrontTalker} from './fronttalker';
 
 /**
  * The middleman between dapper's VimL frontend and the debug adapter backend.
@@ -12,24 +13,28 @@ export class Middleman {
   static readonly CLIENT_NAME: string = 'dapper.nvim';
 
   private static readonly EMPTY_DC: DebugClient = {} as DebugClient;
+  private static readonly MATCH_EVERY: RegExp = new RegExp('');
 
   /**
    * For manipulating the user-facing neovim instance.
    */
-  private nvim: Neovim;
+  private ft: FrontTalker;
   private dc: DebugClient;
   private capabilities: DebugProtocol.Capabilities;
 
   // tslint:disable-next-line:no-any
   private oldEmit: (eventName: string, ...args: any[]) => boolean;
 
-  constructor(api: NvimPlugin) {
-    this.nvim = api.nvim;
+  constructor(ft: FrontTalker) {
+    // subscribe to incoming requests, forward them to the adapter
+    ft.on(Middleman.MATCH_EVERY, this.request.bind(this));
+    this.ft = ft;
     this.dc = Middleman.EMPTY_DC;
     this.capabilities = {};
 
     // monkey-patch DebugClient to support 'subscribe to All'
-    this.oldEmit = this.dc.emit;
+    this.oldEmit = this.dc.emit.bind(this.dc);
+    this.dc.emit = this.teeEmit.bind(this);
   }
 
   /**
@@ -41,12 +46,11 @@ export class Middleman {
   // tslint:disable-next-line:no-any
   private teeEmit(eventName: string, ...args: any[]): boolean {
     // TODO: make sure this doesn't also redirect Responses
-    if (args.length === 1 && (args[0] as DapperEvent).seq) {
-      // assume that this is a DAP Event
+    if (isDAPEvent(args[0])) {
       const event = args[0] as DapperEvent;
       event.vim_id = NULL_VIM_ID;
       event.vim_msg_typename = typenameOf(event);
-      this.nvim.call('dapper#receive', event);
+      this.ft.send(event);
     }
 
     // perform ordinary event emission
@@ -92,6 +96,7 @@ export class Middleman {
         resolve(true);
       } catch (e) {
         // TODO: log exception
+        console.log(e);
         resolve(false);
       }
     });
@@ -106,27 +111,33 @@ export class Middleman {
    * @param {funcBps} Breakpoints to be set on particular functions.
    * @param {exBps}   Filters for exceptions on which to stop execution.
    */
-  configureAdapter(
+  async configureAdapter(
       bps?: DebugProtocol.SetBreakpointsArguments,
       funcBps?: DebugProtocol.SetFunctionBreakpointsArguments,
       exBps?: DebugProtocol.SetExceptionBreakpointsArguments):
       Promise<DebugProtocol.ConfigurationDoneResponse|DebugProtocol.Response> {
     // TODO reject if exBps contains filters not contained in Capabilities
-    // TODO: send all requests "in parallel"?
+    const responses: Array<Promise<DebugProtocol.Response>> = [];
     if (!isUndefined(bps)) {
-      this.dc.setBreakpointsRequest(bps);
+      responses.push(this.dc.setBreakpointsRequest(bps));
     }
     if (!isUndefined(funcBps)) {
-      this.dc.setFunctionBreakpointsRequest(funcBps);
+      responses.push(this.dc.setFunctionBreakpointsRequest(funcBps));
     }
+    await Promise.all(responses);
+
     if (isUndefined(exBps)) {
-      return this.dc.configurationDoneRequest({});
+      if (this.capabilities.supportsConfigurationDoneRequest) {
+        return await this.dc.configurationDoneRequest({});
+      } else {
+        return await this.dc.setExceptionBreakpointsRequest({filters: ['any']});
+      }
     }
     // send exception breakpoints, and only send configurationDone if
     // supported, to avoid clobbering user-set exception breakpoints
-    const exBpsResp = this.dc.setExceptionBreakpointsRequest(exBps);
+    const exBpsResp = await this.dc.setExceptionBreakpointsRequest(exBps);
     if (this.capabilities.supportsConfigurationDoneRequest) {
-      return this.dc.configurationDoneRequest({});
+      return await this.dc.configurationDoneRequest({});
     }
     return exBpsResp;
   }
