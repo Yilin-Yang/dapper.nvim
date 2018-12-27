@@ -1,7 +1,8 @@
-import Middleman = require('./middleman');
-import {DapperEvent, DapperRequest, DapperResponse} from './messages';
 import {NvimPlugin} from 'neovim';
 import {DebugProtocol} from 'vscode-debugprotocol';
+
+import {DapperEvent, DapperRequest, DapperResponse} from './messages';
+import {Middleman} from './middleman';
 
 let middleman: Middleman;
 

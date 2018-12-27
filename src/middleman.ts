@@ -8,7 +8,7 @@ import {DapperEvent, DapperRequest, DapperResponse, NULL_VIM_ID, typenameOf} fro
 /**
  * The middleman between dapper's VimL frontend and the debug adapter backend.
  */
-class Middleman {
+export class Middleman {
   static readonly CLIENT_NAME: string = 'dapper.nvim';
 
   private static readonly EMPTY_DC: DebugClient = {} as DebugClient;
@@ -143,5 +143,3 @@ class Middleman {
     return resp;
   }
 }
-
-export = Middleman;
