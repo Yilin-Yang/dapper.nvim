@@ -1,4 +1,5 @@
 import {DapperAnyMsg, DapperRequest} from './messages';
+// tslint:disable:no-any
 
 /**
  * The interface used to send and receive messages to/from the VimL frontend.
@@ -19,7 +20,6 @@ export interface FrontTalker {
    * @param {callback}  The callback function.
    * @returns {this}    Reference to this FrontTalker.
    */
-  // tslint:disable-next-line:no-any
   on(reqType: string|RegExp,
      callback: (req: DapperRequest) => any): FrontTalker;
 
@@ -28,7 +28,6 @@ export interface FrontTalker {
    *
    * @returns {this}    Reference to this FrontTalker.
    */
-  // tslint:disable-next-line:no-any
   off(reqType: string|RegExp,
       callback: (req: DapperRequest) => any): FrontTalker;
 

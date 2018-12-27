@@ -24,7 +24,7 @@ const launchRequest: DapperRequest = {
   arguments: {},
 };
 
-describe('BasicFrontTalker', () => {
+describe('BasicFrontTalker, with string typenames only,', () => {
   it('allows subscription to incoming Requests', () => {
     const testObj = new BasicFrontTalker();
     const sub = new MockSubscriber();
@@ -112,5 +112,17 @@ describe('BasicFrontTalker', () => {
     assert.deepEqual(subArr[0].getLastAndReset(), {});
     assert.deepEqual(subArr[1].getLastAndReset(), {});
     assert.deepEqual(subArr[2].getLastAndReset(), {});
+  });
+});
+
+describe('BasicFrontTalker, with regex subscriptions only,', () => {
+  it('allows subscriptions to all incoming messages', () => {
+    const testObj = new BasicFrontTalker();
+    const sub = new MockSubscriber();
+    testObj.on(new RegExp('.*'), sub.receive);
+    assert.equal(testObj.emit('initialize', initializeRequest), true);
+    assert.deepEqual(sub.getLastAndReset(), initializeRequest);
+    assert.equal(testObj.emit('launch', launchRequest), true);
+    assert.deepEqual(sub.getLastAndReset(), launchRequest);
   });
 });

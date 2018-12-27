@@ -3,22 +3,19 @@ import {isUndefined} from 'util';
 import {FrontTalker} from './fronttalker';
 import {DapperAnyMsg, DapperRequest} from './messages';
 
-// tslint:disable-next-line:no-any
+// tslint:disable:no-any
 type Callback = (req: DapperAnyMsg) => any;
 interface CallbackOrArr {
   cb: Callback|Callback[]|undefined;
 }
 
-// tslint:disable-next-line:no-any
 type ReqCallback = (req: DapperRequest) => any;
 
-// tslint:disable-next-line:no-any
 function isCallback(arg: any): arg is Callback {
   // note:  doesn't check whether arg has the Callback function signature,
   //        only that it *is* a function
   return typeof arg as string === 'function';
 }
-// tslint:disable-next-line:no-any
 function isCallbackArr(arg: any): arg is Callback[] {
   // note:  not robust; doesn't check the *entire* array for type homogeneity
   return arg.length !== undefined && (!arg.length || isCallback(arg[0]));
@@ -29,8 +26,7 @@ function isCallbackArr(arg: any): arg is Callback[] {
  */
 export class BasicFrontTalker implements FrontTalker {
   private typesToCbs: {[name: string]: CallbackOrArr};
-  private strToRegexCbs:
-      {[regexStr: string]: {regex: RegExp, cb: CallbackOrArr}};
+  private strToRegexCbs: {[regexStr: string]: {regex: RegExp}&CallbackOrArr};
 
   constructor() {
     this.typesToCbs = {};
@@ -41,7 +37,6 @@ export class BasicFrontTalker implements FrontTalker {
     throw Error('send() not implemented in basic superclass');
   }
 
-  // tslint:disable-next-line:no-any
   on(reqType: string|RegExp, callback: ReqCallback): FrontTalker {
     if (typeof reqType === 'string') {
       return this.onStr(reqType, callback);
@@ -52,7 +47,6 @@ export class BasicFrontTalker implements FrontTalker {
     }
   }
 
-  // tslint:disable-next-line:no-any
   private onStr(reqType: string, callback: ReqCallback): FrontTalker {
     let cbs: CallbackOrArr = this.typesToCbs[reqType];
     if (isUndefined(cbs)) {
@@ -64,12 +58,16 @@ export class BasicFrontTalker implements FrontTalker {
     return this;
   }
 
-  // tslint:disable-next-line:no-any
   private onReg(regex: RegExp, callback: ReqCallback): FrontTalker {
     const regStr = regex.toString();
-    const regAndCbs = this.strToRegexCbs[regStr];
-    regAndCbs.regex = regex;
-    this.addCallback(regAndCbs.cb, callback);
+    let regAndCbs = this.strToRegexCbs[regStr];
+    if (isUndefined(regAndCbs)) {
+      regAndCbs = {regex, cb: undefined};
+      regAndCbs.cb = this.addCallback({cb: undefined}, callback).cb;
+      this.strToRegexCbs[regStr] = regAndCbs;
+    } else {
+      this.addCallback(regAndCbs, callback);
+    }
     return this;
   }
 
@@ -78,7 +76,6 @@ export class BasicFrontTalker implements FrontTalker {
    *
    * Also, return a reference to it.
    */
-  // tslint:disable-next-line:no-any
   private addCallback(cbs: CallbackOrArr, toAdd: ReqCallback): CallbackOrArr {
     if (isUndefined(cbs) || isUndefined(cbs.cb)) {
       cbs.cb = toAdd as Callback;
@@ -90,7 +87,6 @@ export class BasicFrontTalker implements FrontTalker {
     return cbs;
   }
 
-  // tslint:disable-next-line:no-any
   off(reqType: string|RegExp, callback: ReqCallback): FrontTalker {
     if (typeof reqType === 'string') {
       return this.offStr(reqType, callback);
@@ -110,7 +106,7 @@ export class BasicFrontTalker implements FrontTalker {
   private offReg(regex: RegExp, callback: ReqCallback): FrontTalker {
     const regStr = regex.toString();
     const regAndCbs = this.strToRegexCbs[regStr];
-    this.removeCallback(regAndCbs.cb, callback);
+    this.removeCallback(regAndCbs, callback);
     return this;
   }
 
@@ -146,7 +142,7 @@ export class BasicFrontTalker implements FrontTalker {
       for (const regStr of Object.keys(this.strToRegexCbs)) {
         const regexCb = this.strToRegexCbs[regStr];
         if (regexCb.regex.test(reqType)) {
-          const sent = this.callback(regexCb.cb, request);
+          const sent = this.callback(regexCb, request);
           if (!reqSent) reqSent = sent;
         }
       }
