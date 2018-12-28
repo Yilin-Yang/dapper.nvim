@@ -1,7 +1,7 @@
 import {NvimPlugin} from 'neovim';
 import {DebugProtocol} from 'vscode-debugprotocol';
 
-import {DapperEvent, DapperRequest, DapperResponse} from './messages';
+import * as Config from './config';
 import {Middleman} from './middleman';
 import {NvimFrontTalker} from './nvim_fronttalker';
 
@@ -20,30 +20,29 @@ export function initialize(api: NvimPlugin): void {
 /**
  * Start a debug adapter.
  */
-export function start(
-    env: string, exe: string, adapter: string,
-    locale = 'en-US'): Promise<string> {
+export function start(args: Config.StartArgs): Promise<string> {
   return new Promise<string>(async (resolve, reject) => {
     try {
-      const success = await middleman.startAdapter(env, exe, adapter, locale);
+      const success = await middleman.startAdapter(
+          args.runtime_env, args.exe_filepath, args.adapter_id, args.locale);
       if (!success) reject('Failed to start debug adapter!');
       resolve('Successfully initialized debug adapter.');
     } catch {
+      // TODO debug log
       reject('Debug adapter threw an exception during initialization!');
     }
   });
 }
-export const CM_START_OPTIONS = {
+export const FN_START_OPTIONS = {
   sync: false,
-  nargs: '+'
 };
 
-export function configure(
-    bps?: DebugProtocol.SetBreakpointsArguments,
-    funcBps?: DebugProtocol.SetFunctionBreakpointsArguments,
-    exBps?: DebugProtocol.SetExceptionBreakpointsArguments): void {
+/**
+ * Specify pre-launch configuration settings.
+ */
+export function configure(args: Config.InitialBreakpoints): void {
   // try {
-  middleman.configureAdapter(bps, funcBps, exBps);
+  middleman.configureAdapter(args.bps, args.function_bps, args.exception_bps);
   // } catch (e) {
   // TODO log failure
   // }
