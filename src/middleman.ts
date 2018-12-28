@@ -63,8 +63,7 @@ export class Middleman {
    * Start a debug adapter.
    *
    * Runs through the startup sequence for a protocol-compliant debug adapter:
-   * starts the adapter, initializes it, logs the adapter's capabilities, then
-   * sends 'configurationDone'.
+   * starts the adapter, initializes it, then sends 'configurationDone'.
    * @param {runtimeEnv}  The environment in which to run the debug adapter,
    *                      e.g. `python`, `node`.
    * @param {exeFilepath} The filepath to the debug adapter executable.
@@ -95,7 +94,6 @@ export class Middleman {
     const response: DebugProtocol.InitializeResponse =
         await this.dc.initializeRequest(args);
     this.capabilities = response.body as DebugProtocol.Capabilities;
-    console.log(this.capabilities);
 
     // monkey-patch DebugClient to support 'subscribe to All'
     this.oldEmit = this.dc.emit.bind(this.dc);
