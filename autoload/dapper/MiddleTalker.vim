@@ -63,20 +63,19 @@ function! dapper#MiddleTalker#receive(msg) abort dict
 endfunction
 
 " BRIEF:  Make a request of the debug adapter.
-function! dapper#MiddleTalker#request(request, Callback) abort dict
+function! dapper#MiddleTalker#request(command, request_args, Callback) abort dict
   call dapper#MiddleTalker#CheckType(l:self)
-  if type(a:request) !=# v:t_dict || type(a:Callback) !=# v:t_func
+  if type(a:request_args) !=# v:t_dict || type(a:Callback) !=# v:t_func
     throw '(dapper#MiddleTalker) Bad argument types (should be '
       \.v:t_dict.', '.v:t_func.'): '
-      \.type(a:request).', '.type(a:Callback)
+      \.type(a:request_args).', '.type(a:Callback)
   endif
-  let l:req = copy(a:request)
+  let l:req_args = deepcopy(a:request_args)
   " set vim_id but not vim_msg_typename: since this message is outgoing and
   " the latter isn't needed on the middle-end, vim_msg_typename shouldn't matter
   let l:vim_id = l:self.__getID()
-  let l:req['vim_id'] = l:vim_id
   let l:self['__ids_to_callbacks'][l:vim_id] = a:Callback
-  call DapperRequest(l:req)
+  call DapperRequest(a:command, l:vim_id, l:req_args)
 endfunction
 
 " BRIEF:  Register a subscription to messages whose typenames match a pattern.
