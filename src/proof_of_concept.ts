@@ -30,7 +30,7 @@ dc.waitForEvent('initialized')
       console.log('Initial configuration complete!');
       console.log(response.body);
       return dc.launch({
-        program: '/home/yiliny/plugin/dapper.nvim/README.md',
+        program: '/home/yiliny/plugin/dapper.nvim/test/TEST_README.md',
         stopOnEntry: true
       });
     })
@@ -46,11 +46,14 @@ dc.waitForEvent('stopped')
       console.log(
           'stop reason: ' + response.body.reason + '\n' +
           'thread id: ' + response.body.threadId);
-      return dc.stackTraceRequest({threadId: response.body.threadId});
+      return dc.threadsRequest();
+      // return dc.stackTraceRequest({threadId: response.body.threadId});
     })
     .then(response => {
-      console.log('Obtained stack frame information!');
-      console.log(response.body.stackFrames);
+      console.log('Obtained threads information!');
+      console.log(response.body.threads);
+      // console.log('Obtained stack frame information!');
+      // console.log(response.body.stackFrames);
     });
 
 // })

@@ -1,4 +1,4 @@
-# Mock Debugger "Source File"
+# Mock Debugger Source File
 
 This is a markdown file meant for use with [vscode-mock-debug](https://github.com/Microsoft/vscode-mock-debug)
 in test cases.

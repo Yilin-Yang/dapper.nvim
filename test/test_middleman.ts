@@ -1,6 +1,7 @@
 import * as assert from 'assert';
 import {describe, it} from 'mocha';
 import * as path from 'path';
+import * as fs from 'fs';
 
 import {DebugProtocol} from 'vscode-debugprotocol';
 
@@ -45,15 +46,36 @@ describe('Middleman interaction, mock debug adapter', () => {
       program: path.join(__dirname, 'TEST_README.md'),
       stopOnEntry: true
     };
-    // TODO: refine Middleman interface, only pass 'args' structs, not
-    // full-blown requests
-    let result;
-    result = await mm.request('launch', 3, launchRequestArgs);
+    const result = await mm.request('launch', 3, launchRequestArgs);
     return result;
   }).timeout(TIMEOUT_LEN);
 
-  // it('can retrieve a list of all active threads', async () => {
-  // });
+  let threadId: number;
+  it('can retrieve a list of all active threads', async () => {
+    const expected =
+        JSON.parse(
+            fs.readFileSync(path.join(__dirname, 'TEST_README_threads.json'),
+                'utf8'));
+    threadId = expected[0].id;
+    // console.log('expected: ' + JSON.stringify(expected));
+    const threadsResp = await mm.request('threads', 4, {});
+    assert.deepEqual(threadsResp.body.threads, expected);
+    return threadsResp;
+  });
+
+  it('can retrieve the active stackframes', async () => {
+    const stackFramesArgs = {
+      threadId,
+    };
+    const expected =
+        JSON.parse(
+            fs.readFileSync(path.join(__dirname, 'TEST_README_stackframes.json'),
+                'utf8'));
+    // console.log('expected: ' + JSON.stringify(expected));
+    const stackResp = await mm.request('stackTrace', 4, stackFramesArgs);
+    assert.deepEqual(stackResp.body.stackFrames, expected);
+    return stackResp;
+  });
 });
 
 describe('Middleman termination, mock debug adapter', () => {
