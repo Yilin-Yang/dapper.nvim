@@ -5,6 +5,8 @@ import {DapperEvent, DapperRequest, DapperResponse} from './messages';
 import {Middleman} from './middleman';
 import {NvimFrontTalker} from './nvim_fronttalker';
 
+// tslint:disable:no-any
+
 let middleman: Middleman;
 
 /**
@@ -23,8 +25,7 @@ export function start(
     locale = 'en-US'): Promise<string> {
   return new Promise<string>(async (resolve, reject) => {
     try {
-      const success: boolean =
-          await middleman.startAdapter(env, exe, adapter, locale);
+      const success = await middleman.startAdapter(env, exe, adapter, locale);
       if (!success) reject('Failed to start debug adapter!');
       resolve('Successfully initialized debug adapter.');
     } catch {
@@ -49,8 +50,9 @@ export function configure(
 }
 
 
-export function request(req: DapperRequest): Promise<DebugProtocol.Response> {
-  return middleman.request(req);  // TODO
+export function request(command: string, vimID: number, args: any):
+    Promise<DebugProtocol.Response> {
+  return middleman.request(command, vimID, args);  // TODO
 }
 export const FN_REQUEST_OPTIONS = {
   sync: false

@@ -3,7 +3,7 @@ import {DebugClient} from 'vscode-debugadapter-testsupport';
 import {DebugProtocol} from 'vscode-debugprotocol';
 
 import {FrontTalker} from './fronttalker';
-import {DapperEvent, DapperRequest, DapperResponse, isDAPEvent, NULL_VIM_ID, typenameOf} from './messages';
+import {DapperEvent, DapperResponse, isDAPEvent, NULL_VIM_ID, typenameOf} from './messages';
 
 /**
  * The middleman between dapper's VimL frontend and the debug adapter backend.
@@ -21,6 +21,7 @@ export class Middleman {
   private dc: DebugClient;
   private capabilities: DebugProtocol.Capabilities;
 
+  private initialized: Promise<DebugProtocol.Event>|undefined = undefined;
   private terminatePending = false;
 
   // tslint:disable-next-line:no-any
@@ -32,7 +33,7 @@ export class Middleman {
     this.ft = ft;
     this.dc = Middleman.EMPTY_DC;
     this.capabilities = {};
-    this.oldEmit = (evtName: string) => {
+    this.oldEmit = () => {
       return false;
     };
   }
@@ -72,40 +73,36 @@ export class Middleman {
    */
   async startAdapter(
       runtimeEnv: string, exeFilepath: string, adapterID: string,
-      locale = 'en-US'): Promise<boolean> {
+      locale = 'en-US'): Promise<DebugProtocol.InitializeResponse> {
     this.terminatePending = false;
-    try {
-      // TODO: if dc != EMPTY_DC, terminate the still running process
-      this.dc = new DebugClient(runtimeEnv, exeFilepath, adapterID);
-      const args: DebugProtocol.InitializeRequestArguments = {
-        clientName: Middleman.CLIENT_NAME,
-        adapterID,
-        linesStartAt1: true,
-        columnsStartAt1: true,
-        locale,
-        pathFormat: 'path',
-        // TODO support the items below
-        // supportsVariableType: true,
-        // supportsVariablePaging: true,
-        // supportsRunInTerminalRequest: true,
-      };
-      await this.dc.start().then;
-      const response: DebugProtocol.InitializeResponse =
-          await this.dc.initializeRequest(args);
-      this.capabilities = response.body as DebugProtocol.Capabilities;
-      console.log(this.capabilities);
+    // TODO: if dc != EMPTY_DC, terminate the still running process
+    this.dc = new DebugClient(runtimeEnv, exeFilepath, adapterID);
+    const args: DebugProtocol.InitializeRequestArguments = {
+      clientName: Middleman.CLIENT_NAME,
+      adapterID,
+      linesStartAt1: true,
+      columnsStartAt1: true,
+      locale,
+      pathFormat: 'path',
+      // TODO support the items below
+      // supportsVariableType: true,
+      // supportsVariablePaging: true,
+      // supportsRunInTerminalRequest: true,
+    };
+    // only proceed with configuration after initialization is complete
+    this.initialized = this.dc.waitForEvent('initialized');
+    await this.dc.start();
+    const response: DebugProtocol.InitializeResponse =
+        await this.dc.initializeRequest(args);
+    this.capabilities = response.body as DebugProtocol.Capabilities;
+    console.log(this.capabilities);
 
-      // monkey-patch DebugClient to support 'subscribe to All'
-      this.oldEmit = this.dc.emit.bind(this.dc);
-      this.dc.emit = this.teeEmit.bind(this);
+    // monkey-patch DebugClient to support 'subscribe to All'
+    this.oldEmit = this.dc.emit.bind(this.dc);
+    this.dc.emit = this.teeEmit.bind(this);
 
-      // TODO frontend needs to configureAdapter()
-      return true;
-    } catch (e) {
-      // TODO: log exception
-      console.log(e);
-      return false;
-    }
+    // TODO frontend needs to configureAdapter()
+    return response;
   }
 
   /**
@@ -122,6 +119,8 @@ export class Middleman {
       funcBps?: DebugProtocol.SetFunctionBreakpointsArguments,
       exBps?: DebugProtocol.SetExceptionBreakpointsArguments):
       Promise<DebugProtocol.ConfigurationDoneResponse|DebugProtocol.Response> {
+    // wait for initialization to complete before configuring
+    await this.initialized;
     // TODO reject if exBps contains filters not contained in Capabilities
     const responses: Array<Promise<DebugProtocol.Response>> = [];
     if (!isUndefined(bps)) {
@@ -169,14 +168,21 @@ export class Middleman {
 
   /**
    * Send a request, returning the response from the DebugAdapter.
+   * @param {command} The `command` property that would go in the corresponding
+   *                  `DebugProtocol.Request`.
+   * @param {vimID}   An ID for the VimL class instance that initiated the
+   *                  request, so that the response can be "addressed" to the
+   *                  original requester.
+   * @param {args}    A `DebugProtocol.[*]Arguments` dictionary.
    */
-  async request(req: DapperRequest): Promise<DapperResponse> {
-    // make sure that this actually returns a value to the frontend?
-    // TODO: emit the Response as an Event(?)
-    const resp = await this.dc.send(req.command, req) as DapperResponse;
-    resp.vim_id = req.vim_id;
+  // tslint:disable-next-line:no-any
+  async request(command: string, vimID: number, args: any):
+      Promise<DapperResponse> {
+    const resp = await this.dc.send(command, args) as DapperResponse;
+    resp.vim_id = vimID;
     resp.vim_msg_typename = typenameOf(resp);
-    return resp;
+    this.ft.send(resp);  // actually send response to frontend
+    return resp;  // mostly for test cases; neovim ignores async return values
   }
 
   /**
