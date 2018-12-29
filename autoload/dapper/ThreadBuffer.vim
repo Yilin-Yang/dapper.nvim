@@ -22,8 +22,16 @@ function! dapper#ThreadBuffer#new(bufname, message_passer, ...) abort
 endfunction
 
 function! dapper#ThreadBuffer#CheckType(object) abort
-  if type(a:object) !=# v:t_dict || !has_key(a:object['TYPE'], 'ThreadBuffer')
-    throw '(dapper#ThreadBuffer) Object is not of type ThreadBuffer: ' . a:object
+  if type(a:object) !=# v:t_dict || !has_key(a:object, 'TYPE') || !has_key(a:object['TYPE'], 'ThreadBuffer')
+  try
+    let l:err = '(dapper#ThreadBuffer) Object is not of type ThreadBuffer: '.string(a:object)
+  catch
+    redir => l:object
+    echo a:object
+    redir end
+    let l:err = '(dapper#ThreadBuffer) This object failed type check: '.l:object
+  endtry
+  throw l:err
   endif
 endfunction
 
@@ -34,7 +42,7 @@ function! dapper#ThreadBuffer#receive(msg) abort dict
   let l:typename = a:msg['vim_msg_typename']
   if l:typename ==# 'ThreadEvent'
     " make ThreadsRequest
-    call l:self._request('threads', {}, l:self.receive)
+    call l:self._request('threads', {}, function('dapper#ThreadBuffer#receive', l:self))
     " update from ThreadEvent
     call l:self._recvEvent(a:msg)
   elseif l:typename ==# 'ThreadsResponse'
@@ -47,8 +55,7 @@ endfunction
 "           adapter.
 function! dapper#ThreadBuffer#update() abort dict
   call dapper#ThreadBuffer#CheckType(l:self)
-  call l:self._request(
-      \ 'threads', {}, l:self.receive)
+  call l:self._request('threads', {}, function('dapper#ThreadBuffer#receive', l:self))
 endfunction
 
 " BRIEF:  Get the line range of a particular Thread entry.

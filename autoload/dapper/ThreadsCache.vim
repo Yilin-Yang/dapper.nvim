@@ -18,8 +18,16 @@ function! dapper#ThreadsCache#new() abort
 endfunction
 
 function! dapper#ThreadsCache#CheckType(object) abort
-  if type(a:object) !=# v:t_dict || !has_key(a:object['TYPE'], 'ThreadsCache')
-    throw '(dapper#ThreadsCache) Object is not of type ThreadsCache: ' . a:object
+  if type(a:object) !=# v:t_dict || !has_key(a:object, 'TYPE') || !has_key(a:object['TYPE'], 'ThreadsCache')
+  try
+    let l:err = '(dapper#ThreadsCache) Object is not of type ThreadsCache: '.string(a:object)
+  catch
+    redir => l:object
+    echo a:object
+    redir end
+    let l:err = '(dapper#ThreadsCache) This object failed type check: '.l:object
+  endtry
+  throw l:err
   endif
 endfunction
 

@@ -22,8 +22,16 @@ function! dapper#DapperBuffer#new(message_passer, ...) abort
 endfunction
 
 function! dapper#DapperBuffer#CheckType(object) abort
-  if type(a:object) !=# v:t_dict || !has_key(a:object['TYPE'], 'DapperBuffer')
-    throw '(dapper#DapperBuffer) Object is not of type DapperBuffer: ' . a:object
+  if type(a:object) !=# v:t_dict || !has_key(a:object, 'TYPE') || !has_key(a:object['TYPE'], 'DapperBuffer')
+  try
+    let l:err = '(dapper#DapperBuffer) Object is not of type DapperBuffer: '.string(a:object)
+  catch
+    redir => l:object
+    echo a:object
+    redir end
+    let l:err = '(dapper#DapperBuffer) This object failed type check: '.l:object
+  endtry
+  throw l:err
   endif
 endfunction
 
