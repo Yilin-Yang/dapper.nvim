@@ -1,7 +1,7 @@
-function! dapper#config#AttachArgs#new() abort
+function! dapper#config#AttachArgs#new(restart) abort
   let l:new = {
     \ 'TYPE': {'AttachArgs': 1},
-    \ '__restart': {},
+    \ '__restart': a:restart,
   \ }
   return l:new
 endfunction

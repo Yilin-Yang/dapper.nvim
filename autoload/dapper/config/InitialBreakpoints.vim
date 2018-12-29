@@ -1,9 +1,12 @@
-function! dapper#config#InitialBreakpoints#new() abort
+function! dapper#config#InitialBreakpoints#new(
+    \ bps,
+    \ function_bps,
+    \ exception_bps) abort
   let l:new = {
     \ 'TYPE': {'InitialBreakpoints': 1},
-    \ 'bps': {},
-    \ 'function_bps': {},
-    \ 'exception_bps': {},
+    \ 'bps': a:bps,
+    \ 'function_bps': a:function_bps,
+    \ 'exception_bps': a:exception_bps,
   \ }
   return l:new
 endfunction
