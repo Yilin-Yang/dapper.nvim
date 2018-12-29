@@ -25,6 +25,14 @@ describe('Middleman initialization, mock debug adapter', () => {
     return result;
   }).timeout(TIMEOUT_LEN);
 
+  it('will terminate an already running adapter before starting a new one',
+      async () => {
+    const result =
+        await mm.startAdapter('node', MOCK_ADAPTER_EXE_FPATH, 'mock');
+    assert.deepEqual(mm.getCapabilities(), MOCK_ADAPTER_CAPABILITIES);
+    return result;
+  }).timeout(TIMEOUT_LEN);
+
   it('can configure the mock debug adapter', async () => {
     const result = await mm.configureAdapter();
     return result;

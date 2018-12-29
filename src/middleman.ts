@@ -38,6 +38,7 @@ export class Middleman {
 
   private initialized: Promise<DebugProtocol.Event>|undefined = undefined;
   private terminatePending = false;
+  private wasAttachment = false;
 
   // tslint:disable-next-line:no-any
   private oldEmit: (eventName: string, ...args: any[]) => boolean;
@@ -90,8 +91,13 @@ export class Middleman {
     this.terminatePending = false;
     // TODO: if dc != EMPTY_DC, terminate the still running process
     if (!deepEqual(this.dc, Middleman.EMPTY_DC)) {
-      await this.terminate();
+      if (this.wasAttachment) {
+        await this.disconnect();
+      } else {
+        await this.terminate();
+      }
     }
+    this.wasAttachment = false;
     this.dc = new DebugClient(runtimeEnv, exeFilepath, adapterID);
     const args: DebugProtocol.InitializeRequestArguments = {
       clientName: Middleman.CLIENT_NAME,
