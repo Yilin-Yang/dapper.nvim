@@ -1,9 +1,8 @@
-import {NvimPlugin} from 'neovim';
 import {DebugProtocol} from 'vscode-debugprotocol';
 
 import * as Config from './config';
+import {FrontTalker} from './fronttalker';
 import {Middleman} from './middleman';
-import {NvimFrontTalker} from './nvim_fronttalker';
 
 // tslint:disable:no-any
 
@@ -11,43 +10,59 @@ let middleman: Middleman;
 
 /**
  * Initialize Middleman singleton with nvim API object.
- * @param api  nvim node-client API.
  */
-export function initialize(api: NvimPlugin): void {
-  middleman = new Middleman(new NvimFrontTalker(api));
+export function initialize(ft: FrontTalker): void {
+  middleman = new Middleman(ft);
 }
 
 /**
- * Start a debug adapter.
+ * Start a debug adapter, optionally setting breakpoints (during pre-launch
+ * configuration).
  */
-export function start(args: Config.StartArgs): Promise<string> {
-  return new Promise<string>(async (resolve, reject) => {
-    try {
-      const success = await middleman.startAdapter(
-          args.runtime_env, args.exe_filepath, args.adapter_id, args.locale);
-      if (!success) reject('Failed to start debug adapter!');
-      resolve('Successfully initialized debug adapter.');
-    } catch {
-      // TODO debug log
-      reject('Debug adapter threw an exception during initialization!');
+export function startAndConfigure(config: Config.DapperConfig):
+    Promise<boolean> {
+  return new Promise<boolean>(async (resolve, reject) => {
+    if (!config.is_start || !config.attributes.hasOwnProperty('runtime_env')) {
+      reject('Attaching to a running process is currently unsupported.');
     }
+    const args = config.attributes as Config.StartArgs;
+    const started = await middleman.startAdapter(
+        args.runtime_env, args.exe_filepath, args.adapter_id, args.locale);
+    if (!started) resolve(false);
+
+    const bps = config.breakpoints;
+    const configured = await middleman.configureAdapter(
+        bps.bps, bps.function_bps, bps.exception_bps);
+    if (!configured) resolve(false);
+    resolve(true);
   });
 }
-export const FN_START_OPTIONS = {
-  sync: false,
+export const FN_START_AND_CONFIGURE_OPTIONS = {
+  sync: false
 };
 
 /**
- * Specify pre-launch configuration settings.
+ * Terminate a running debug adapter process.
  */
-export function configure(args: Config.InitialBreakpoints): void {
-  // try {
-  middleman.configureAdapter(args.bps, args.function_bps, args.exception_bps);
-  // } catch (e) {
-  // TODO log failure
-  // }
-}
+export function terminate(restart = false): Promise<boolean> {
+  const term = new Promise<boolean>(async (resolve) => {
+    await middleman.terminate(restart);
+    resolve(true);
+  });
+  const timeout = new Promise<boolean>((resolve, reject) => {
+    const id = setTimeout(() => {
+      // prevent erroneous timeout from an older, "stale" terminate request
+      clearTimeout(id);
 
+      reject('Terminate request timed out.');
+      return false;
+    }, 5000);
+  });
+  return Promise.race([term, timeout]);
+}
+export const FN_TERMINATE_OPTIONS = {
+  sync: false
+};
 
 export function request(command: string, vimID: number, args: any):
     Promise<DebugProtocol.Response> {

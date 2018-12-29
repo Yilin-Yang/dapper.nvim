@@ -148,9 +148,11 @@ export class Middleman {
   /**
    * Gracefully (or ungracefully) kill the running debug adapter.
    */
-  async terminate(restart = false): Promise<DebugProtocol.TerminateResponse> {
+  async terminate(restart = false):
+      Promise<DebugProtocol.TerminateResponse|
+              DebugProtocol.DisconnectResponse> {
     if (this.terminatePending || !this.capabilities.supportsTerminateRequest) {
-      this.disconnect();
+      return this.disconnect();
     }
     this.terminatePending = true;
     return await this.dc.terminateRequest({restart});
