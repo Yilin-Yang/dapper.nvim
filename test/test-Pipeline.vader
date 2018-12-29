@@ -22,10 +22,12 @@ Execute (Pipeline: Launch Debuggee):
   let g:launch_args = dapper#dap#LaunchRequestArguments#new()
   let g:launch_args['program'] = g:project_root
   call DapperRequest('launch', 0, g:launch_args)
+  sleep 2
 
 Execute (Pipeline: Request Threads):
   call g:tb.open()
   call g:tb.update()
   sleep 1
 Expect:
-  thread	id: 1	name: thread 1	started
+  thread	id: 1	name: thread 1	status: (N/A)
+  
