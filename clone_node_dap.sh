@@ -14,7 +14,8 @@ DEPS="
 for PACKAGE in $DEPS; do
     REPO="`echo $PACKAGE | cut -d'/' -f2`"
     cd "$DIR/node_modules"
+    rm -rf "$REPO"
     git clone "https://github.com/$PACKAGE"
-    cd $REPO
-    npm install
+    cd "$REPO"
+    yarn install
 done

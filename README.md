@@ -46,7 +46,7 @@ We recommend installing dapper.nvim using [vim-plug.](https://github.com/junegun
 " .vimrc
 call plug#begin('~/.vim/bundle')
 " ...
-Plug 'Yilin-Yang/dapper.nvim', { 'do': 'npm install --production && npm run compile', }
+Plug 'Yilin-Yang/dapper.nvim', { 'do': 'yarn install --production', }
 " ...
 call plug#end()
 ```
@@ -77,20 +77,69 @@ Contribution
 --------------------------------------------------------------------------------
 
 ### Prerequisites
-Install development dependencies using:
+Install development dependencies and compile the TypeScript source using:
 
 ```bash
-npm install   # without --production flag
+yarn install
 ```
+
+### Running Tests
+
+#### vim Frontend Test Cases (vader)
+
+```bash
+# from project root,
+cd test
+./run_tests_nvim [-v | --visible] [-i | --international]
+```
+
+dapper.nvim uses [vader.vim](https://github.com/junegunn/vader.vim) as its
+testing framework; you must have vader.vim installed to run the vim tests. (See
+`.travis_vimrc` in the project root for the necessary installation path.)
+
+Specifying `--visible` will run the tests in an active neovim GUI. Specifying
+`--international` will re-run the same test suites in other locales (e.g.
+in German, in Spanish), to catch bugs that only occur when running neovim in
+a [non-English language.](https://github.com/Yilin-Yang/vim-markbar/issues/5)
+International test cases require that those other locales be installed on your
+machine; see `.travis.yml` for (Debian/Ubuntu) installation instructions.
+
+#### TypeScript "Middle-end" Test Cases (mocha)
+
+```bash
+# from project root
+./clone_node_dap.sh  # "install" vscode-mock-debug into node_modules
+npm run test
+```
+dapper.nvim uses [mocha](https://mochajs.org/) as its testing library. `yarn
+install` should also install mocha, and all necessary dependencies for running
+it.
+
+Note that, since the Debug Adapter Protocol (and dapper.nvim, by extension) rely
+heavily on inter-process communication (e.g. launching debug adapters in the
+background, terminating those adapters after tests are complete), it's possible
+for tests to fail by timing out; the test case timeouts are generously long
+(5000ms, as of the time of writing) for this reason. This is probably only an
+issue on slower machines/environments (e.g. thin-and-light notebooks, WSL), but
+if you encounter it, try setting your computer to a "High performance" power
+state.
+
+If `npm run test` does not terminate (e.g. if all tests pass, but mocha hangs,
+and the command doesn't get to run `npx gts check`), this means that [one of the
+test cases failed to "clean up",](https://boneskull.com/mocha-v4-nears-release/#mochawontforceexit)
+which should be treated as a failure.
 
 ### Coding Style
 This repository has an [EditorConfig](https://editorconfig.org/) file in its
-top-level directory. If contributing from vim, you can use
-[editorconfig-vim](https://editorconfig.org/) to load settings from this file
-automatically.
+top-level directory. If contributing using vim, you can use [editorconfig-vim](https://editorconfig.org/)
+to load settings from `.editorconfig` automatically.
 
-This repository is written in a mixture of VimL and TypeScript. For the latter,
-try to follow Google's style wherever possible, as enforced by the
+This repository is written in a mixture of VimL and TypeScript, and
+tries to follow Google's style guides wherever possible.
+
+A link to Google's VimL style guide can be found [here.](https://google.github.io/styleguide/vimscriptguide.xml)
+
+Adherence to Google's TypeScript style guide can be easily checked/fixed by the
 [ts-style](https://github.com/google/ts-style) tool.
 
 `ts-style` provides the following commands, among others:

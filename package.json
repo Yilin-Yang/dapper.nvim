@@ -31,6 +31,8 @@
     "posttest": "npm run check"
   },
   "dependencies": {
+    "@types/deep-equal": "^1.0.1",
+    "deep-equal": "^1.0.1",
     "gts": "^0.9.0",
     "typescript": "~3.1.0",
     "vscode-debugadapter": "1.32.0",
