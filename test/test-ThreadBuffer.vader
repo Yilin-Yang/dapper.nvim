@@ -44,3 +44,6 @@ Expect:
   thread	id: 789	name: bar	status: started
   thread	id: 123	name: foo	status: started
   
+Execute (ThreadBuffer: Cleanup):
+  call g:tb.open()
+  normal! ggVGd

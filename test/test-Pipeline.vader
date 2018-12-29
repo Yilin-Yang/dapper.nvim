@@ -31,3 +31,6 @@ Execute (Pipeline: Request Threads):
 Expect:
   thread	id: 1	name: thread 1	status: (N/A)
   
+Execute (Pipeline: Cleanup):
+  call g:tb.open()
+  normal! ggVGd
