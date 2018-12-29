@@ -8,6 +8,14 @@ endfunction
 
 function! dapper#dap#ValueFormat#CheckType(object) abort
   if type(a:object) !=# v:t_dict || !has_key(a:object, 'TYPE') || !has_key(a:object['TYPE'], 'ValueFormat')
-    throw '(dapper#dap#ValueFormat) Object is not of type ValueFormat: ' . string(a:object)
+  try
+    let l:err = '(dapper#dap#ValueFormat) Object is not of type ValueFormat: '.string(a:object)
+  catch
+    redir => l:object
+    echo a:object
+    redir end
+    let l:err = '(dapper#dap#ValueFormat) This object failed type check: '.l:object
+  endtry
+  throw l:err
   endif
 endfunction

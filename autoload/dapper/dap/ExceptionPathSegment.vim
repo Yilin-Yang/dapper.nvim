@@ -9,6 +9,14 @@ endfunction
 
 function! dapper#dap#ExceptionPathSegment#CheckType(object) abort
   if type(a:object) !=# v:t_dict || !has_key(a:object, 'TYPE') || !has_key(a:object['TYPE'], 'ExceptionPathSegment')
-    throw '(dapper#dap#ExceptionPathSegment) Object is not of type ExceptionPathSegment: ' . string(a:object)
+  try
+    let l:err = '(dapper#dap#ExceptionPathSegment) Object is not of type ExceptionPathSegment: '.string(a:object)
+  catch
+    redir => l:object
+    echo a:object
+    redir end
+    let l:err = '(dapper#dap#ExceptionPathSegment) This object failed type check: '.l:object
+  endtry
+  throw l:err
   endif
 endfunction

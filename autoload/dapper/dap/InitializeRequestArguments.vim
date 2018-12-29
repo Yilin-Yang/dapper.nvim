@@ -17,6 +17,14 @@ endfunction
 
 function! dapper#dap#InitializeRequestArguments#CheckType(object) abort
   if type(a:object) !=# v:t_dict || !has_key(a:object, 'TYPE') || !has_key(a:object['TYPE'], 'InitializeRequestArguments')
-    throw '(dapper#dap#InitializeRequestArguments) Object is not of type InitializeRequestArguments: ' . string(a:object)
+  try
+    let l:err = '(dapper#dap#InitializeRequestArguments) Object is not of type InitializeRequestArguments: '.string(a:object)
+  catch
+    redir => l:object
+    echo a:object
+    redir end
+    let l:err = '(dapper#dap#InitializeRequestArguments) This object failed type check: '.l:object
+  endtry
+  throw l:err
   endif
 endfunction
