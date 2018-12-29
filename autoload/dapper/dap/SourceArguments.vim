@@ -1,4 +1,4 @@
-function! dapper#dap#SourceArguments() abort
+function! dapper#dap#SourceArguments#new() abort
   let l:new = {
     \ 'TYPE': {'SourceArguments': 1},
     \ 'source': {},

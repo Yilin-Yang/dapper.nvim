@@ -1,4 +1,4 @@
-function! dapper#dap#Module() abort
+function! dapper#dap#Module#new() abort
   let l:new = {
     \ 'TYPE': {'Module': 1},
     \ 'id': 0,

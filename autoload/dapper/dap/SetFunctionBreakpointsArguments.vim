@@ -1,4 +1,4 @@
-function! dapper#dap#SetFunctionBreakpointsArguments() abort
+function! dapper#dap#SetFunctionBreakpointsArguments#new() abort
   let l:new = {
     \ 'TYPE': {'SetFunctionBreakpointsArguments': 1},
     \ 'breakpoints': [],

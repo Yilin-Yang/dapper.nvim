@@ -1,4 +1,4 @@
-function! dapper#dap#StackTraceArguments() abort
+function! dapper#dap#StackTraceArguments#new() abort
   let l:new = {
     \ 'TYPE': {'StackTraceArguments': 1},
     \ 'threadId': 0,

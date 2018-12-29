@@ -1,4 +1,4 @@
-function! dapper#dap#SetExpressionArguments() abort
+function! dapper#dap#SetExpressionArguments#new() abort
   let l:new = {
     \ 'TYPE': {'SetExpressionArguments': 1},
     \ 'expression': '',

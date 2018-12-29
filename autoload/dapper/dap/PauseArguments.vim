@@ -1,4 +1,4 @@
-function! dapper#dap#PauseArguments() abort
+function! dapper#dap#PauseArguments#new() abort
   let l:new = {
     \ 'TYPE': {'PauseArguments': 1},
     \ 'threadId': 0,

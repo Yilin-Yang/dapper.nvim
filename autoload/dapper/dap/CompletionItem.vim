@@ -1,4 +1,4 @@
-function! dapper#dap#CompletionItem() abort
+function! dapper#dap#CompletionItem#new() abort
   let l:new = {
     \ 'TYPE': {'CompletionItem': 1},
     \ 'label': '',

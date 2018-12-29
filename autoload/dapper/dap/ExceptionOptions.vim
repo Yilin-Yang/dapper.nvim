@@ -1,4 +1,4 @@
-function! dapper#dap#ExceptionOptions() abort
+function! dapper#dap#ExceptionOptions#new() abort
   let l:new = {
     \ 'TYPE': {'ExceptionOptions': 1},
     \ 'path': [],

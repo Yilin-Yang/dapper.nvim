@@ -1,4 +1,4 @@
-function! dapper#dap#Variable() abort
+function! dapper#dap#Variable#new() abort
   let l:new = {
     \ 'TYPE': {'Variable': 1},
     \ 'name': '',

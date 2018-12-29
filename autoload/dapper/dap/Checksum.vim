@@ -1,4 +1,4 @@
-function! dapper#dap#Checksum() abort
+function! dapper#dap#Checksum#new() abort
   let l:new = {
     \ 'TYPE': {'Checksum': 1},
     \ 'algorithm': {},

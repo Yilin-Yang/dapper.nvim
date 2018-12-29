@@ -1,4 +1,4 @@
-function! dapper#dap#Breakpoint() abort
+function! dapper#dap#Breakpoint#new() abort
   let l:new = {
     \ 'TYPE': {'Breakpoint': 1},
     \ 'id': 0,

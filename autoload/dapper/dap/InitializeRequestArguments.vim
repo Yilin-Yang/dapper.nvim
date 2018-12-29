@@ -1,4 +1,4 @@
-function! dapper#dap#InitializeRequestArguments() abort
+function! dapper#dap#InitializeRequestArguments#new() abort
   let l:new = {
     \ 'TYPE': {'InitializeRequestArguments': 1},
     \ 'clientID': '',

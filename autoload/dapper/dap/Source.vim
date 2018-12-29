@@ -1,4 +1,4 @@
-function! dapper#dap#Source() abort
+function! dapper#dap#Source#new() abort
   let l:new = {
     \ 'TYPE': {'Source': 1},
     \ 'name': '',

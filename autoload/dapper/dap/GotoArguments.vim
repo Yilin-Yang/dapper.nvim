@@ -1,4 +1,4 @@
-function! dapper#dap#GotoArguments() abort
+function! dapper#dap#GotoArguments#new() abort
   let l:new = {
     \ 'TYPE': {'GotoArguments': 1},
     \ 'threadId': 0,

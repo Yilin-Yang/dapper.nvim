@@ -1,4 +1,4 @@
-function! dapper#dap#LaunchRequestArguments() abort
+function! dapper#dap#LaunchRequestArguments#new() abort
   let l:new = {
     \ 'TYPE': {'LaunchRequestArguments': 1},
     \ 'noDebug': v:false,

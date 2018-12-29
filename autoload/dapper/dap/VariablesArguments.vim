@@ -1,4 +1,4 @@
-function! dapper#dap#VariablesArguments() abort
+function! dapper#dap#VariablesArguments#new() abort
   let l:new = {
     \ 'TYPE': {'VariablesArguments': 1},
     \ 'variablesReference': 0,

@@ -1,4 +1,4 @@
-function! dapper#dap#SourceBreakpoint() abort
+function! dapper#dap#SourceBreakpoint#new() abort
   let l:new = {
     \ 'TYPE': {'SourceBreakpoint': 1},
     \ 'line': 0,

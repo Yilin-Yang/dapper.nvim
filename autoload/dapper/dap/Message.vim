@@ -1,4 +1,4 @@
-function! dapper#dap#Message() abort
+function! dapper#dap#Message#new() abort
   let l:new = {
     \ 'TYPE': {'Message': 1},
     \ 'id': 0,

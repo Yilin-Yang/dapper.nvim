@@ -1,4 +1,4 @@
-function! dapper#dap#ValueFormat() abort
+function! dapper#dap#ValueFormat#new() abort
   let l:new = {
     \ 'TYPE': {'ValueFormat': 1},
     \ 'hex': v:false,

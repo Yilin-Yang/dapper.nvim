@@ -1,4 +1,4 @@
-function! dapper#dap#StackFrameFormat() abort
+function! dapper#dap#StackFrameFormat#new() abort
   let l:new = {
     \ 'TYPE': {'StackFrameFormat': 1},
     \ 'parameters': v:false,

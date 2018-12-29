@@ -1,4 +1,4 @@
-function! dapper#dap#Scope() abort
+function! dapper#dap#Scope#new() abort
   let l:new = {
     \ 'TYPE': {'Scope': 1},
     \ 'name': '',

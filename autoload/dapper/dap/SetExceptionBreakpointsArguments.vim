@@ -1,4 +1,4 @@
-function! dapper#dap#SetExceptionBreakpointsArguments() abort
+function! dapper#dap#SetExceptionBreakpointsArguments#new() abort
   let l:new = {
     \ 'TYPE': {'SetExceptionBreakpointsArguments': 1},
     \ 'filters': '',

@@ -1,4 +1,4 @@
-function! dapper#dap#VariablePresentationHint() abort
+function! dapper#dap#VariablePresentationHint#new() abort
   let l:new = {
     \ 'TYPE': {'VariablePresentationHint': 1},
     \ 'kind': '',

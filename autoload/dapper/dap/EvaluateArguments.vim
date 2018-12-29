@@ -1,4 +1,4 @@
-function! dapper#dap#EvaluateArguments() abort
+function! dapper#dap#EvaluateArguments#new() abort
   let l:new = {
     \ 'TYPE': {'EvaluateArguments': 1},
     \ 'expression': '',

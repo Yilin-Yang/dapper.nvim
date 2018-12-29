@@ -1,4 +1,4 @@
-function! dapper#dap#Terminaterguments() abort
+function! dapper#dap#Terminaterguments#new() abort
   let l:new = {
     \ 'TYPE': {'TerminateArguments': 1},
     \ 'restart': v:false,

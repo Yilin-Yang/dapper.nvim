@@ -1,4 +1,4 @@
-function! dapper#dap#GotoTargetsArguments() abort
+function! dapper#dap#GotoTargetsArguments#new() abort
   let l:new = {
     \ 'TYPE': {'GotoTargetsArguments': 1},
     \ 'source': {},

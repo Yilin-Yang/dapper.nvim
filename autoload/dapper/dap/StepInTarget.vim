@@ -1,4 +1,4 @@
-function! dapper#dap#StepInTarget() abort
+function! dapper#dap#StepInTarget#new() abort
   let l:new = {
     \ 'TYPE': {'StepInTarget': 1},
     \ 'id': 0,

@@ -1,4 +1,4 @@
-function! dapper#dap#LoadedSourcesArguments() abort
+function! dapper#dap#LoadedSourcesArguments#new() abort
   let l:new = {
     \ 'TYPE': {'LoadedSourcesArguments': 1},
   \ }

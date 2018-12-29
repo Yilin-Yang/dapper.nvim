@@ -1,4 +1,4 @@
-function! dapper#dap#StepInTargetsArguments() abort
+function! dapper#dap#StepInTargetsArguments#new() abort
   let l:new = {
     \ 'TYPE': {'StepInTargetsArguments': 1},
     \ 'frameId': 0,

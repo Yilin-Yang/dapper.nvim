@@ -1,4 +1,4 @@
-function! dapper#dap#StackFrame() abort
+function! dapper#dap#StackFrame#new() abort
   let l:new = {
     \ 'TYPE': {'StackFrame': 1},
     \ 'id': 0,

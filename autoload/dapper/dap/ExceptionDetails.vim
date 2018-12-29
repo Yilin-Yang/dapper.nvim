@@ -1,4 +1,4 @@
-function! dapper#dap#ExceptionDetails() abort
+function! dapper#dap#ExceptionDetails#new() abort
   let l:new = {
     \ 'TYPE': {'ExceptionDetails': 1},
     \ 'message': '',

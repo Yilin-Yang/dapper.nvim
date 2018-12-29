@@ -1,4 +1,4 @@
-function! dapper#dap#ColumnDescriptor() abort
+function! dapper#dap#ColumnDescriptor#new() abort
   let l:new = {
     \ 'TYPE': {'ColumnDescriptor': 1},
     \ 'attributeName': '',
