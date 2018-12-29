@@ -15,7 +15,7 @@ function! dapper#config#StartArgs#new(
   return l:new
 endfunction
 
-function! dapper#dap#StartArgs#CheckType(object) abort
+function! dapper#config#StartArgs#CheckType(object) abort
   if type(a:object) !=# v:t_dict || !has_key(a:object['TYPE'], 'StartArgs')
     throw '(dapper#dap#StartArgs) Object is not of type StartArgs: ' . a:object
   endif
