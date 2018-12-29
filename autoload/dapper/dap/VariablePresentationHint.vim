@@ -7,3 +7,9 @@ function! dapper#dap#VariablePresentationHint#new() abort
   \ }
   return l:new
 endfunction
+
+function! dapper#dap#VariablePresentationHint#CheckType(object) abort
+  if type(a:object) !=# v:t_dict || !has_key(a:object, 'TYPE') || !has_key(a:object['TYPE'], 'VariablePresentationHint')
+    throw '(dapper#dap#VariablePresentationHint) Object is not of type VariablePresentationHint: ' . string(a:object)
+  endif
+endfunction

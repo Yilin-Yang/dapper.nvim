@@ -14,3 +14,9 @@ function! dapper#dap#InitializeRequestArguments#new() abort
   \ }
   return l:new
 endfunction
+
+function! dapper#dap#InitializeRequestArguments#CheckType(object) abort
+  if type(a:object) !=# v:t_dict || !has_key(a:object, 'TYPE') || !has_key(a:object['TYPE'], 'InitializeRequestArguments')
+    throw '(dapper#dap#InitializeRequestArguments) Object is not of type InitializeRequestArguments: ' . string(a:object)
+  endif
+endfunction

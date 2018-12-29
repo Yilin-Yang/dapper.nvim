@@ -9,3 +9,9 @@ function! dapper#dap#SourceBreakpoint#new() abort
   \ }
   return l:new
 endfunction
+
+function! dapper#dap#SourceBreakpoint#CheckType(object) abort
+  if type(a:object) !=# v:t_dict || !has_key(a:object, 'TYPE') || !has_key(a:object['TYPE'], 'SourceBreakpoint')
+    throw '(dapper#dap#SourceBreakpoint) Object is not of type SourceBreakpoint: ' . string(a:object)
+  endif
+endfunction

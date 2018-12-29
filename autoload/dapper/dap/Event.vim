@@ -5,3 +5,9 @@ function! dapper#dap#Event#new(...)
   let l:new['body'] = ''
   return l:new
 endfunction
+
+function! dapper#dap#Event#CheckType(object) abort
+  if type(a:object) !=# v:t_dict || !has_key(a:object, 'TYPE') || !has_key(a:object['TYPE'], 'Event')
+    throw '(dapper#dap#Event) Object is not of type Event: ' . string(a:object)
+  endif
+endfunction

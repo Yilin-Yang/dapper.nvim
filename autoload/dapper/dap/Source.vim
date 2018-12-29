@@ -12,3 +12,9 @@ function! dapper#dap#Source#new() abort
   \ }
   return l:new
 endfunction
+
+function! dapper#dap#Source#CheckType(object) abort
+  if type(a:object) !=# v:t_dict || !has_key(a:object, 'TYPE') || !has_key(a:object['TYPE'], 'Source')
+    throw '(dapper#dap#Source) Object is not of type Source: ' . string(a:object)
+  endif
+endfunction

@@ -6,3 +6,9 @@ function! dapper#dap#StepInArguments#new() abort
   \ }
   return l:new
 endfunction
+
+function! dapper#dap#StepInArguments#CheckType(object) abort
+  if type(a:object) !=# v:t_dict || !has_key(a:object, 'TYPE') || !has_key(a:object['TYPE'], 'StepInArguments')
+    throw '(dapper#dap#StepInArguments) Object is not of type StepInArguments: ' . string(a:object)
+  endif
+endfunction

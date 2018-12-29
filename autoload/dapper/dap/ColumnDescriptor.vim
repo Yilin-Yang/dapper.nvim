@@ -9,3 +9,9 @@ function! dapper#dap#ColumnDescriptor#new() abort
   \ }
   return l:new
 endfunction
+
+function! dapper#dap#ColumnDescriptor#CheckType(object) abort
+  if type(a:object) !=# v:t_dict || !has_key(a:object, 'TYPE') || !has_key(a:object['TYPE'], 'ColumnDescriptor')
+    throw '(dapper#dap#ColumnDescriptor) Object is not of type ColumnDescriptor: ' . string(a:object)
+  endif
+endfunction

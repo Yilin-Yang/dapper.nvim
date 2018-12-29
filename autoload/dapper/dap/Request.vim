@@ -5,3 +5,9 @@ function! dapper#dap#Request#new(...)
   let l:new['arguments'] = ''
   return l:new
 endfunction
+
+function! dapper#dap#Request#CheckType(object) abort
+  if type(a:object) !=# v:t_dict || !has_key(a:object, 'TYPE') || !has_key(a:object['TYPE'], 'Request')
+    throw '(dapper#dap#Request) Object is not of type Request: ' . string(a:object)
+  endif
+endfunction

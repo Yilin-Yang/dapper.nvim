@@ -5,3 +5,9 @@ function! dapper#dap#SetFunctionBreakpointsArguments#new() abort
   \ }
   return l:new
 endfunction
+
+function! dapper#dap#SetFunctionBreakpointsArguments#CheckType(object) abort
+  if type(a:object) !=# v:t_dict || !has_key(a:object, 'TYPE') || !has_key(a:object['TYPE'], 'SetFunctionBreakpointsArguments')
+    throw '(dapper#dap#SetFunctionBreakpointsArguments) Object is not of type SetFunctionBreakpointsArguments: ' . string(a:object)
+  endif
+endfunction

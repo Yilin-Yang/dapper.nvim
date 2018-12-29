@@ -14,3 +14,9 @@ function! dapper#dap#ProtocolMessage#new(...)
     \ 'vim_msg_typename': l:vim_msg_typename,
   \ }
 endfunction
+
+function! dapper#dap#ProtocolMessage#CheckType(object) abort
+  if type(a:object) !=# v:t_dict || !has_key(a:object, 'TYPE') || !has_key(a:object['TYPE'], 'ProtocolMessage')
+    throw '(dapper#dap#ProtocolMessage) Object is not of type ProtocolMessage: ' . string(a:object)
+  endif
+endfunction

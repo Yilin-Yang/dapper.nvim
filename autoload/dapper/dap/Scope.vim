@@ -14,3 +14,9 @@ function! dapper#dap#Scope#new() abort
   \ }
   return l:new
 endfunction
+
+function! dapper#dap#Scope#CheckType(object) abort
+  if type(a:object) !=# v:t_dict || !has_key(a:object, 'TYPE') || !has_key(a:object['TYPE'], 'Scope')
+    throw '(dapper#dap#Scope) Object is not of type Scope: ' . string(a:object)
+  endif
+endfunction

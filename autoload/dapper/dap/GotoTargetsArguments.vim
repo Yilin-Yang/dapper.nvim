@@ -7,3 +7,9 @@ function! dapper#dap#GotoTargetsArguments#new() abort
   \ }
   return l:new
 endfunction
+
+function! dapper#dap#GotoTargetsArguments#CheckType(object) abort
+  if type(a:object) !=# v:t_dict || !has_key(a:object, 'TYPE') || !has_key(a:object['TYPE'], 'GotoTargetsArguments')
+    throw '(dapper#dap#GotoTargetsArguments) Object is not of type GotoTargetsArguments: ' . string(a:object)
+  endif
+endfunction

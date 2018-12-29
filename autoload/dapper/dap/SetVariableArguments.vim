@@ -8,3 +8,9 @@ function! dapper#dap#SetVariableArguments#new() abort
   \ }
   return l:new
 endfunction
+
+function! dapper#dap#SetVariableArguments#CheckType(object) abort
+  if type(a:object) !=# v:t_dict || !has_key(a:object, 'TYPE') || !has_key(a:object['TYPE'], 'SetVariableArguments')
+    throw '(dapper#dap#SetVariableArguments) Object is not of type SetVariableArguments: ' . string(a:object)
+  endif
+endfunction

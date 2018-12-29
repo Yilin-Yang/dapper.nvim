@@ -12,3 +12,9 @@ function! dapper#dap#Variable#new() abort
   \ }
   return l:new
 endfunction
+
+function! dapper#dap#Variable#CheckType(object) abort
+  if type(a:object) !=# v:t_dict || !has_key(a:object, 'TYPE') || !has_key(a:object['TYPE'], 'Variable')
+    throw '(dapper#dap#Variable) Object is not of type Variable: ' . string(a:object)
+  endif
+endfunction

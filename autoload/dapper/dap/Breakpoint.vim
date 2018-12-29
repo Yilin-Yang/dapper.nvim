@@ -12,3 +12,9 @@ function! dapper#dap#Breakpoint#new() abort
   \ }
   return l:new
 endfunction
+
+function! dapper#dap#Breakpoint#CheckType(object) abort
+  if type(a:object) !=# v:t_dict || !has_key(a:object, 'TYPE') || !has_key(a:object['TYPE'], 'Breakpoint')
+    throw '(dapper#dap#Breakpoint) Object is not of type Breakpoint: ' . string(a:object)
+  endif
+endfunction
