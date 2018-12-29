@@ -1,12 +1,27 @@
+import 'deep-equal';
 import {isUndefined} from 'util';
 import {DebugClient} from 'vscode-debugadapter-testsupport';
 import {DebugProtocol} from 'vscode-debugprotocol';
 
 import {FrontTalker} from './fronttalker';
 import {DapperEvent, DapperResponse, isDAPEvent, NULL_VIM_ID, typenameOf} from './messages';
+import deepEqual = require('deep-equal');
+import {clearTimeout} from 'timers';
 
 /**
  * The middleman between dapper's VimL frontend and the debug adapter backend.
+ *
+ * Serves two main purposes:
+ * - To deliver requests from the frontend to the backend, and to return
+ * (properly addressed) responses from the backend to the frontend.
+ * - To forward events (and reverse requests) from the backend to the
+ * frontend.
+ *
+ * Middleman communicates with the frontend using a `FrontTalker` interface:
+ * in actual use, it would use `NvimFrontTalker`, which communicates with
+ * neovim through its remote plugin API; in testing, it can use
+ * `MockFrontTalker`, which stores the frontend-bound responses/events that
+ * Middleman delivers so that they can be checked in test cases.
  */
 export class Middleman {
   static readonly CLIENT_NAME: string = 'dapper.nvim';
@@ -46,7 +61,6 @@ export class Middleman {
    */
   // tslint:disable-next-line:no-any
   private teeEmit(eventName: string, ...args: any[]): boolean {
-    // TODO: make sure this doesn't also redirect Responses
     if (isDAPEvent(args[0])) {
       const event = args[0] as DapperEvent;
       event.vim_id = NULL_VIM_ID;
@@ -75,6 +89,9 @@ export class Middleman {
       locale = 'en-US'): Promise<DebugProtocol.InitializeResponse> {
     this.terminatePending = false;
     // TODO: if dc != EMPTY_DC, terminate the still running process
+    if (!deepEqual(this.dc, Middleman.EMPTY_DC)) {
+      await this.terminate();
+    }
     this.dc = new DebugClient(runtimeEnv, exeFilepath, adapterID);
     const args: DebugProtocol.InitializeRequestArguments = {
       clientName: Middleman.CLIENT_NAME,
@@ -99,7 +116,6 @@ export class Middleman {
     this.oldEmit = this.dc.emit.bind(this.dc);
     this.dc.emit = this.teeEmit.bind(this);
 
-    // TODO frontend needs to configureAdapter()
     return response;
   }
 
@@ -158,7 +174,25 @@ export class Middleman {
       return this.disconnect();
     }
     this.terminatePending = true;
-    return await this.request('terminate', NULL_VIM_ID, {restart});
+    const termResp = this.request('terminate', NULL_VIM_ID, {restart});
+    const timeout = new Promise<string>(async (resolve, reject) => {
+      const id = setTimeout(() => {
+        // prevent erroneous timeout from an older, "stale" terminate request
+        clearTimeout(id);
+        reject('Terminate request timed out. Forcibly disconnecting.');
+      }, 5000);  // TODO magic number
+    });
+
+    const result = Promise.race([termResp, timeout]);
+    return result.then(
+        (fulfilled) => {
+          // only reachable after successful termination
+          this.dc = Middleman.EMPTY_DC;
+          return fulfilled as DapperResponse;
+        },
+        () => {  // rejection
+          return this.disconnect();
+        });
   }
 
   /**
@@ -166,8 +200,12 @@ export class Middleman {
    */
   async disconnect(restart = false, terminateDebuggee = false):
       Promise<DebugProtocol.DisconnectResponse> {
-    return this.request(
-        'disconnect', NULL_VIM_ID, {restart, terminateDebuggee});
+    this.terminatePending = false;
+    const response =
+        this.request('disconnect', NULL_VIM_ID, {restart, terminateDebuggee});
+    // only reachable after successful detachment/forced adapter shutdown
+    this.dc = Middleman.EMPTY_DC;
+    return response;
   }
 
   /**

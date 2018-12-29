@@ -45,20 +45,7 @@ export const FN_START_AND_CONFIGURE_OPTIONS = {
  * Terminate a running debug adapter process.
  */
 export function terminate(restart = false): Promise<boolean> {
-  const term = new Promise<boolean>(async (resolve) => {
-    await middleman.terminate(restart);
-    resolve(true);
-  });
-  const timeout = new Promise<boolean>((resolve, reject) => {
-    const id = setTimeout(() => {
-      // prevent erroneous timeout from an older, "stale" terminate request
-      clearTimeout(id);
-
-      reject('Terminate request timed out.');
-      return false;
-    }, 5000);
-  });
-  return Promise.race([term, timeout]);
+  return middleman.terminate(restart).then(() => true, () => false);
 }
 export const FN_TERMINATE_OPTIONS = {
   sync: false
