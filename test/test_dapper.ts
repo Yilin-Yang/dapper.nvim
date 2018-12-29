@@ -1,10 +1,14 @@
 import * as assert from 'assert';
 import {describe, it} from 'mocha';
-import * as path from 'path';
+
+import {DebugProtocol} from 'vscode-debugprotocol';
 
 import {MockFrontTalker} from '../src/mock_fronttalker';
 import * as dapper from '../src/dapper';
 import {StartArgs, InitialBreakpoints, DapperConfig} from '../src/config';
+
+import {MOCK_ADAPTER_EXE_FPATH, THREADS, TEST_README_FPATH} from './test_readme';
+import { DapperAnyMsg } from '../src/messages';
 
 const TIMEOUT_LEN = 5000;  // ms
 const ft: MockFrontTalker = new MockFrontTalker();
@@ -13,11 +17,11 @@ describe('dapper\'s remote plugin interface, facing nvim', () => {
   it('can initialize the Middleman', () => {
     dapper.initialize(ft);
   }),
-  it('can start/configure the mock debug adapter', async () => {
+  it('can start/configure the mock debug adapter, notify of initialization',
+      async () => {
     const startArgs: StartArgs = {
       runtime_env: 'node',
-      exe_filepath: path.join(__dirname, '..', 'node_modules',
-          'vscode-mock-debug', 'out', 'debugAdapter.js'),
+      exe_filepath: MOCK_ADAPTER_EXE_FPATH,
       adapter_id: 'mock',
       locale: 'en-US'
     };
@@ -27,12 +31,40 @@ describe('dapper\'s remote plugin interface, facing nvim', () => {
       attributes: startArgs,
       breakpoints: bps,
     };
-    const result = await dapper.startAndConfigure(config);
+    await dapper.startAndConfigure(config);
+    assert.ok(ft.hasReceived('InitializeResponse'));
+    assert.ok(ft.hasReceived('ConfigurationDoneResponse'));
+    assert.ok(ft.hasReceived('InitializedEvent'));
+    return;
+  }).timeout(TIMEOUT_LEN);
+  it('can launch a debuggee process and notify the frontend', async () => {
+    const launchRequestArgs = {
+      noDebug: false,
+      program: TEST_README_FPATH,
+      stopOnEntry: true,
+    };
+    await dapper.request('launch', 3, launchRequestArgs);
+    const result = ft.getLast() as DapperAnyMsg;
+    assert.equal(result.vim_id, 3);
+    assert.equal(result.vim_msg_typename, 'LaunchResponse');
     return result;
+  }).timeout(TIMEOUT_LEN);
+  it('can forward running threads to the frontend', async () => {
+    await dapper.request('threads', 4, {});
+    const threads = ft.getLast() as DapperAnyMsg;
+    assert.equal(threads.vim_id, 4);
+    assert.equal(threads.vim_msg_typename, 'ThreadsResponse');
+    assert.deepEqual(
+        (threads as DebugProtocol.ThreadsResponse).body.threads,
+        THREADS);
   }).timeout(TIMEOUT_LEN);
   it('can deactivate the Middleman afterwards', async () => {
     const result = await dapper.terminate();
     assert.equal(result, true);
+    const resp = ft.getLast() as DapperAnyMsg;
+    assert.ok(
+        resp.vim_msg_typename === 'TerminateResponse' ||
+        resp.vim_msg_typename === 'DisconnectResponse');
     return result;
   }).timeout(TIMEOUT_LEN);
 });
