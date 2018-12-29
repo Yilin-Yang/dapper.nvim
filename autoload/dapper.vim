@@ -10,11 +10,13 @@
 function! dapper#AddDapperConfig(runtime_env, exe_filepath, adapter_id, ...) abort
   let l:args = [a:runtime_env, a:exe_filepath, a:adapter_id]
   " handle locale
-  if a:0 | l:args += [a:1] | endif
+  let a:locale = a:0 ? [ a:1 ] : []
+  let l:args += a:locale
   let l:cfg = call('dapper#config#StartArgs#new', l:args)
   " TODO: handle multiple adapter types for a single filetype,
   "       e.g. Node.js and Angular for filetype=javascript
-  let g:dapper_filetypes_to_configs[a:adapter_id] = l:cfg
+  let l:fts_to_cfgs = dapper#settings#FiletypesToConfigs()
+  let l:fts_to_cfgs[a:adapter_id] = l:cfg
 endfunction
 
 " BRIEF:  Receive a response or event from the TypeScript middle-end.
