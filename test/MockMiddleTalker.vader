@@ -4,8 +4,8 @@ Execute (Declare Mock MiddleTalker):
     let g:last_sub = [a:pattern, a:Callback]
   endfunction
 
-  function! MockReq(request, Callback) abort
-    let g:last_req = [a:request, a:Callback]
+  function! MockReq(command, request_args, Callback) abort
+    let g:last_req = [a:command, a:request_args, a:Callback]
   endfunction
 
   let g:mock_mt = {

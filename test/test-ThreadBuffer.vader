@@ -18,8 +18,7 @@ Expect:
 Then (Check for ThreadsRequest):
   let g:req = g:last_req[0]
   let g:Cb  = g:last_req[1]
-  AssertEqual 'request', g:req['type']
-  AssertEqual 'threads', g:req['command']
+  AssertEqual 'threads', g:req
 
 Execute (ThreadBuffer: New Thread Started):
   let g:msg = dapper#dap#Event#new(0, 'ThreadEvent')
