@@ -9,7 +9,9 @@ syntax enable
 set autoread
 set hidden
 
+let g:project_root = split(getcwd(), '/test')[0]
+
 call dapper#AddDapperConfig(
   \ 'node',
-  \ getcwd().'/node_modules/vscode-mock-debug/out/debugAdapter.js',
+  \ g:project_root.'/node_modules/vscode-mock-debug/out/debugAdapter.js',
   \ 'mock')

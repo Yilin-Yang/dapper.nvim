@@ -1,5 +1,6 @@
 import {DebugProtocol} from 'vscode-debugprotocol';
 
+import {VimList,isVimList} from './nvim';
 import * as Config from './config';
 import {FrontTalker} from './fronttalker';
 import {Middleman} from './middleman';
@@ -19,9 +20,24 @@ export function initialize(ft: FrontTalker): void {
  * Start a debug adapter, optionally setting breakpoints (during pre-launch
  * configuration).
  */
-export function startAndConfigure(config: Config.DapperConfig):
+export function startAndConfigure(conf: Config.DapperConfig|VimList):
     Promise<boolean> {
   return new Promise<boolean>(async (resolve, reject) => {
+    let config: Config.DapperConfig = conf as Config.DapperConfig;
+    let bad = false;
+    if (Config.isDapperConfig(conf)) {
+      // all is well
+    } else if (isVimList(conf)) {
+      if (Config.isDapperConfig(conf[0])) {
+        config = conf[0];
+      } else {
+        bad = true;
+      }
+    } else {
+      bad = true;
+    }
+    if (bad) reject('Bad argument types: ' + JSON.stringify(conf));
+    console.log('Given DapperConfig: ' + conf);
     if (!config.is_start || !config.attributes.hasOwnProperty('runtime_env')) {
       reject('Attaching to a running process is currently unsupported.');
     }

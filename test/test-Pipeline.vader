@@ -7,13 +7,25 @@ Execute (Pipeline: Setup ThreadBuffer, Subscribe, Initialize Mock Debug Adapter)
   call g:dapper_middletalker.subscribe('.*', function('StoreMessage'))
 
   " setup ThreadBuffer, which should (itself) subscribe
+  if exists('g:tb') | unlet g:tb | endif
   let g:tb = dapper#ThreadBuffer#new('[dapper] Threads', g:dapper_middletalker)
 
   " start mock debug adapter
-  call DapperStart(g:dapper_filetypes_to_configs['mock'])
+  let g:start_args = dapper#config#DapperConfig#new(
+      \ v:true,
+      \ g:dapper_filetypes_to_configs['mock'],
+      \ {})
+  call DapperStart(g:start_args)
+  sleep 2
+
+Execute (Pipeline: Launch Debuggee):
+  let g:launch_args = dapper#dap#LaunchRequestArguments#new()
+  let g:launch_args['program'] = g:project_root
+  call DapperRequest('launch', 0, g:launch_args)
 
 Execute (Pipeline: Request Threads):
   call g:tb.open()
   call g:tb.update()
+  sleep 1
 Expect:
   thread	id: 1	name: thread 1	started

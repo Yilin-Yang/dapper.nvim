@@ -1,7 +1,7 @@
-function! dapper#config#InitialBreakpoints#new(
-    \ bps,
-    \ function_bps,
-    \ exception_bps) abort
+function! dapper#config#InitialBreakpoints#new(...) abort
+  let a:bps = get(a:000, 0, {})
+  let a:function_bps = get(a:000, 0, {})
+  let a:exception_bps = get(a:000, 0, {})
   let l:new = {
     \ 'TYPE': {'InitialBreakpoints': 1},
     \ 'bps': a:bps,

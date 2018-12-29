@@ -1,6 +1,5 @@
 function! dapper#config#DapperConfig#new(is_start, attr, bps) abort
-  call dapper#dap#StartArgs#CheckType(a:attr)
-  call dapper#dap#InitialBreakpoints#CheckType(a:bps)
+  call dapper#config#StartArgs#CheckType(a:attr)
   let l:new = {
     \ 'TYPE': {'DapperConfig': 1},
     \ 'is_start': a:is_start,
