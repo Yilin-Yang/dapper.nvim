@@ -6,13 +6,17 @@ Execute (MiddleTalker: Set Up):
   endfunction
 
   function! TestCbList(msg)
-    if !exists('g:received') | let g:received = [] | endif
-    let g:received += [a:msg]
+    if !exists('g:received') || type(g:received) !=# v:t_list
+      let g:received = []
+    endif
+    let g:received += [ a:msg ]
     return v:true
   endfunction
 
   function! TestAltCbList(msg)
-    if !exists('g:alt_received') | let g:alt_received = [] | endif
+    if !exists('g:alt_received') || type(g:alt_received) !=# v:t_list
+      let g:alt_received = []
+    endif
     let g:alt_received += [a:msg]
     return v:true
   endfunction
@@ -25,15 +29,28 @@ Then:
   AssertEqual g:will_match, g:received
   unlet g:received
 
-Execute (MiddleTalker: Test Won't Match):
-  let g:wont_match = dapper#dap#ProtocolMessage#new(0, 'justbar')
-  call g:middletalker.receive(g:wont_match)
-Then:
-  Assert !exists('g:received')
-
 Execute (MiddleTalker: Test Unsubscribe):
   call g:middletalker.unsubscribe('foo', function('TestCbSingle'))
   call g:middletalker.receive(g:will_match)
+Then:
+  Assert !exists('g:received')
+
+Execute (MiddleTalker: Test Regex Subscription, Unsubscribe):
+  let g:received = []
+  call g:middletalker.subscribe('.*', function('TestCbList'))
+  let g:alphabet = dapper#dap#ProtocolMessage#new(0, 'ABCDEFGH')
+  let g:will_match = dapper#dap#ProtocolMessage#new(0, 'foobar')
+  call g:middletalker.receive(g:will_match)
+  call g:middletalker.receive(g:alphabet)
+Then:
+  AssertEqual g:will_match, g:received[0]
+  AssertEqual g:alphabet, g:received[1]
+  call g:middletalker.unsubscribe('.*', function('TestCbList'))
+  unlet g:received
+
+Execute (MiddleTalker: Test Won't Match):
+  let g:wont_match = dapper#dap#ProtocolMessage#new(0, 'justbar')
+  call g:middletalker.receive(g:wont_match)
 Then:
   Assert !exists('g:received')
 
