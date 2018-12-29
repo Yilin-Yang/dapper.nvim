@@ -8,3 +8,8 @@ filetype plugin indent on
 syntax enable
 set autoread
 set hidden
+
+call dapper#AddDapperConfig(
+  \ 'node',
+  \ getcwd().'/node_modules/vscode-mock-debug/out/debugClient.js',
+  \ 'mock')
