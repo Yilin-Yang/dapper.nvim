@@ -9,6 +9,13 @@ import {Middleman} from './middleman';
 
 let middleman: Middleman;
 
+function rejectBadArgs<T>(funcname: string, args: any[]): Promise<T> {
+  const err =
+      'Bad argument types in call to ' + funcname +': ' + JSON.stringify(args);
+  console.log(err);
+  return Promise.reject<T>(err);
+}
+
 /**
  * Initialize Middleman singleton with nvim API object.
  */
@@ -16,28 +23,26 @@ export function initialize(ft: FrontTalker): void {
   middleman = new Middleman(ft);
 }
 
+
+export function startAndConfigureUnpack(args: any[]): Promise<boolean> {
+  let config = undefined;
+  if (Config.isDapperConfig(args)) {
+    config = args as Config.DapperConfig;
+  } else if (isVimList(args) && Config.isDapperConfig(args[0])) {
+    config = args[0];
+  } else {
+    rejectBadArgs('startAndConfigure', args);
+  }
+  return startAndConfigure(config);
+}
 /**
  * Start a debug adapter, optionally setting breakpoints (during pre-launch
  * configuration).
  */
-export function startAndConfigure(conf: Config.DapperConfig|VimList):
+function startAndConfigure(config: Config.DapperConfig):
     Promise<boolean> {
   return new Promise<boolean>(async (resolve, reject) => {
-    let config: Config.DapperConfig = conf as Config.DapperConfig;
-    let bad = false;
-    if (Config.isDapperConfig(conf)) {
-      // all is well
-    } else if (isVimList(conf)) {
-      if (Config.isDapperConfig(conf[0])) {
-        config = conf[0];
-      } else {
-        bad = true;
-      }
-    } else {
-      bad = true;
-    }
-    if (bad) reject('Bad argument types: ' + JSON.stringify(conf));
-    console.log('Given DapperConfig: ' + conf);
+    console.log('Given DapperConfig: ' + config);
     if (!config.is_start || !config.attributes.hasOwnProperty('runtime_env')) {
       reject('Attaching to a running process is currently unsupported.');
     }
@@ -60,15 +65,50 @@ export const FN_START_AND_CONFIGURE_OPTIONS = {
 /**
  * Terminate a running debug adapter process.
  */
-export function terminate(restart = false): Promise<boolean> {
+export function terminateUnpack(args: any[]): Promise<boolean> {
+  let bad = false;
+  let restart = undefined;
+  if (typeof args === 'boolean') {
+    restart = args;
+  } else if (isVimList(args)) {
+    restart = args[0];
+    if (typeof restart !== 'boolean') bad = true;
+  }
+  if (bad) {
+    const err =
+        'Bad argument type in call to terminate: ' + JSON.stringify(args);
+    console.log(err);
+    return Promise.reject<boolean>(err);
+  }
+  return terminate(restart);
+}
+async function terminate(restart = false): Promise<boolean> {
   return middleman.terminate(restart).then(() => true, () => false);
 }
 export const FN_TERMINATE_OPTIONS = {
   sync: false
 };
 
-export function request(command: string, vimID: number, args: any):
+export function requestUnpack(args: any[]): Promise<DebugProtocol.Response> {
+  if (!args.hasOwnProperty('length') || args.length !== 3) {
+    return rejectBadArgs('request', args);
+  }
+  const command = args[0];
+  const vimID = args[1];
+  const argDict = args[2];
+
+  if (typeof command !== 'string' || typeof vimID !== 'number'
+      || (typeof argDict !== 'object' && argDict !== undefined)) {
+    return rejectBadArgs('request', args);
+  }
+
+  return request(command, vimID, argDict);
+}
+function request(command: string, vimID: number, args: any):
     Promise<DebugProtocol.Response> {
+  console.log('command:' + JSON.stringify(command));
+  console.log('vimID:' + JSON.stringify(vimID));
+  console.log('args:' + JSON.stringify(args));
   return middleman.request(command, vimID, args);  // TODO
 }
 export const FN_REQUEST_OPTIONS = {

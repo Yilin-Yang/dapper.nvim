@@ -14,12 +14,12 @@ module.exports = (api: NvimPlugin) => {
   dapper.initialize(new NvimFrontTalker(api));
 
   api.registerFunction(
-      'DapperStart', dapper.startAndConfigure,
+      'DapperStart', dapper.startAndConfigureUnpack,
       dapper.FN_START_AND_CONFIGURE_OPTIONS);
 
   api.registerFunction(
-      'DapperStop', dapper.terminate, dapper.FN_TERMINATE_OPTIONS);
+      'DapperStop', dapper.terminateUnpack, dapper.FN_TERMINATE_OPTIONS);
 
   api.registerFunction(
-      'DapperRequest', dapper.request, dapper.FN_REQUEST_OPTIONS);
+      'DapperRequest', dapper.requestUnpack, dapper.FN_REQUEST_OPTIONS);
 };
