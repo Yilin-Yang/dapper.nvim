@@ -16,7 +16,7 @@ function! dapper#MiddleTalker#get() abort
     \ '__next_id': 0,
     \ '__patterns_to_callbacks': {},
     \ '__ids_to_callbacks': {},
-    \ '__getID': function('dapper#MiddleTalker##__getID'),
+    \ '__getID': function('dapper#MiddleTalker#__getID'),
     \ 'receive': function('dapper#MiddleTalker#receive'),
     \ 'request': function('dapper#MiddleTalker#request'),
     \ 'subscribe': function('dapper#MiddleTalker#subscribe'),

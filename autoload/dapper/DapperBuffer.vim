@@ -42,9 +42,10 @@ endfunction
 
 " BRIEF:  Pass a request to the message passer.
 " DETAILS:  - Shall have the same interface as `MiddleTalker::request`.
-function! dapper#DapperBuffer#_request(request_msg, Callback) abort dict
+function! dapper#DapperBuffer#_request(command, request_args, Callback) abort dict
   call dapper#DapperBuffer#CheckType(l:self)
-  call l:self['___message_passer___'].request(a:request_msg, a:Callback)
+  call l:self['___message_passer___'].request(
+      \ a:command, a:request_args, a:Callback)
 endfunction
 
 " BRIEF:  Accept an incoming message and update this buffer.

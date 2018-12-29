@@ -8,6 +8,7 @@ function! dapper#ThreadBuffer#new(bufname, message_passer, ...) abort
   let l:new['_ids_to_threads'] = dapper#ThreadsCache#new()
 
   let l:new['receive']     = function('dapper#ThreadBuffer#receive')
+  let l:new['update']      = function('dapper#ThreadBuffer#update')
   let l:new['getRange']    = function('dapper#ThreadBuffer#getRange')
   let l:new['setMappings'] = function('dapper#ThreadBuffer#setMappings')
 
@@ -26,22 +27,28 @@ function! dapper#ThreadBuffer#CheckType(object) abort
   endif
 endfunction
 
-" BRIEF:  Update this buffer's displayed contents with a ThreadEvent.
+" BRIEF:  Process an incoming ThreadEvent.
 " PARAM:  msg   (DebugProtocol.ThreadEvent)
 function! dapper#ThreadBuffer#receive(msg) abort dict
   call dapper#ThreadBuffer#CheckType(l:self)
   let l:typename = a:msg['vim_msg_typename']
   if l:typename ==# 'ThreadEvent'
     " make ThreadsRequest
-    " basic ThreadsRequest will return a list of all threads
-    let l:req = dapper#dap#Request#new()
-    let l:req['command'] = 'threads'
-    call l:self._request(l:req, l:self.receive)
+    call l:self._request('threads', {}, l:self.receive)
     " update from ThreadEvent
     call l:self._recvEvent(a:msg)
   elseif l:typename ==# 'ThreadsResponse'
     call l:self._recvResponse(a:msg)
   endif
+endfunction
+
+" BRIEF:  Ask this ThreadBuffer to refresh its contents.
+" DETAILS:  ThreadBuffer will request a list of running threads from the debug
+"           adapter.
+function! dapper#ThreadBuffer#update() abort dict
+  call dapper#ThreadBuffer#CheckType(l:self)
+  call l:self._request(
+      \ 'threads', {}, l:self.receive)
 endfunction
 
 " BRIEF:  Get the line range of a particular Thread entry.
