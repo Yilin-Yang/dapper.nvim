@@ -92,7 +92,7 @@ export class Middleman {
     this.initialized = this.dc.waitForEvent('initialized');
     await this.dc.start();
     const response: DebugProtocol.InitializeResponse =
-        await this.dc.initializeRequest(args);
+        await this.request('initialize', NULL_VIM_ID, args);
     this.capabilities = response.body as DebugProtocol.Capabilities;
 
     // monkey-patch DebugClient to support 'subscribe to All'
@@ -122,25 +122,28 @@ export class Middleman {
     // TODO reject if exBps contains filters not contained in Capabilities
     const responses: Array<Promise<DebugProtocol.Response>> = [];
     if (!isUndefined(bps)) {
-      responses.push(this.dc.setBreakpointsRequest(bps));
+      responses.push(this.request('setBreakpoints', NULL_VIM_ID, bps));
     }
     if (!isUndefined(funcBps)) {
-      responses.push(this.dc.setFunctionBreakpointsRequest(funcBps));
+      responses.push(
+          this.request('setFunctionBreakpoints', NULL_VIM_ID, funcBps));
     }
     await Promise.all(responses);
 
     if (isUndefined(exBps)) {
       if (this.capabilities.supportsConfigurationDoneRequest) {
-        return await this.dc.configurationDoneRequest({});
+        return await this.request('configurationDone', NULL_VIM_ID, {});
       } else {
-        return await this.dc.setExceptionBreakpointsRequest({filters: ['any']});
+        return await this.request(
+            'setExceptionBreakpoints', NULL_VIM_ID, {filters: ['any']});
       }
     }
     // send exception breakpoints, and only send configurationDone if
     // supported, to avoid clobbering user-set exception breakpoints
-    const exBpsResp = await this.dc.setExceptionBreakpointsRequest(exBps);
+    const exBpsResp =
+        await this.request('setExceptionBreakpoints', NULL_VIM_ID, exBps);
     if (this.capabilities.supportsConfigurationDoneRequest) {
-      return await this.dc.configurationDoneRequest({});
+      return await this.request('configurationDone', NULL_VIM_ID, {});
     }
     return exBpsResp;
   }
@@ -155,7 +158,7 @@ export class Middleman {
       return this.disconnect();
     }
     this.terminatePending = true;
-    return await this.dc.terminateRequest({restart});
+    return await this.request('terminate', NULL_VIM_ID, {restart});
   }
 
   /**
@@ -163,11 +166,16 @@ export class Middleman {
    */
   async disconnect(restart = false, terminateDebuggee = false):
       Promise<DebugProtocol.DisconnectResponse> {
-    return this.dc.disconnectRequest({restart, terminateDebuggee});
+    return this.request(
+        'disconnect', NULL_VIM_ID, {restart, terminateDebuggee});
   }
 
   /**
-   * Send a request, returning the response from the DebugAdapter.
+   * Send a request, forwarding the DebugAdapter's response to the frontend.
+   *
+   * Middleman should use this function internally as much as is reasonably
+   * possible, so that the VimL frontend will be notified of the results of
+   * its actions. Middleman's "vimID" is 0.
    * @param {command} The `command` property that would go in the corresponding
    *                  `DebugProtocol.Request`.
    * @param {vimID}   An ID for the VimL class instance that initiated the
