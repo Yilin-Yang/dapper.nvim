@@ -11,7 +11,10 @@ Execute (Declare Await Timeout Helper Function):
   " PARAM:  should_throw  (v:t_bool)  Whether to throw an exception on timeout.
   " PARAM:  resolution  (v:t_number)  How long to wait before checking the
   "                                   condition on a given iteration, in
-  "                                   milliseconds.
+  "                                   milliseconds. When set too low, nvim will
+  "                                   be stuck busy-looping when events occur,
+  "                                   and may not respond to calls from remote
+  "                                   plugins.
   function! AwaitTimeout(Condition, timeout, ...) abort
     let a:should_throw = get(a:000, 0, v:false)
     let a:resolution = get(a:000, 1, 100)
