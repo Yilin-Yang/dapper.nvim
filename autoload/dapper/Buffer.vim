@@ -59,6 +59,8 @@ function! dapper#Buffer#new(...) abort
   endif
 
   for [l:prop, l:val] in items(l:bufparams)
+    " silently discard unrecognized options
+    if !has_key(s:bufparams_default, l:prop) | continue | endif
     if type(l:val) ==# v:t_bool | let l:val = l:val + 0 | endif
     call setbufvar(l:bufnr, '&'.l:prop, l:val)
   endfor
