@@ -31,10 +31,10 @@ function! dapper#log#DebugLogger#get() abort
   " at the top of the log buffer when writing back
   let l:new['__last_line_written'] = 1
   let l:new['__shouldWrite'] =
-      \ function('dapper#log#DebugLogger#__shouldWrite', l:new)
-  let l:new['__write'] = function('dapper#log#DebugLogger#__write', l:new)
-  let l:new['__onExit'] = function('dapper#log#DebugLogger#__onExit', l:new)
-  let l:new['log'] = function('dapper#log#DebugLogger#log', l:new)
+      \ function('dapper#log#DebugLogger#__shouldWrite')
+  let l:new['__write'] = function('dapper#log#DebugLogger#__write')
+  let l:new['__onExit'] = function('dapper#log#DebugLogger#__onExit')
+  let l:new['log'] = function('dapper#log#DebugLogger#log')
 
   let g:dapper_debug_logger = l:new
 
