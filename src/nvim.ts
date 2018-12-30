@@ -1,8 +1,10 @@
 // tslint:disable:no-any
 export declare type VimPrim = number | boolean | string;
-export declare type VimDict = {[key: string]: any;};
+export declare type VimDict = {
+  [key: string]: any;
+};
 export declare type VimList = Array<VimPrim|VimDict|any>;
-export declare type VimValue = VimDict|VimPrim|VimList;
+export declare type VimValue = VimDict | VimPrim | VimList;
 
 export function isVimList(arg: any): arg is VimList {
   if (!arg.hasOwnProperty('length')) return false;

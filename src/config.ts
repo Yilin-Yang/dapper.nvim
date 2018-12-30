@@ -26,6 +26,6 @@ export interface DapperConfig {
 
 // tslint:disable:no-any
 export function isDapperConfig(arg: any): arg is DapperConfig {
-  return arg.hasOwnProperty('is_start') && arg.hasOwnProperty('attributes')
-      && arg.hasOwnProperty('breakpoints');
+  return arg.hasOwnProperty('is_start') && arg.hasOwnProperty('attributes') &&
+      arg.hasOwnProperty('breakpoints');
 }

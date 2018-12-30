@@ -1,9 +1,9 @@
 import {DebugProtocol} from 'vscode-debugprotocol';
 
-import {VimList,isVimList} from './nvim';
 import * as Config from './config';
 import {FrontTalker} from './fronttalker';
 import {Middleman} from './middleman';
+import {isVimList, VimList} from './nvim';
 
 // tslint:disable:no-any
 
@@ -11,7 +11,7 @@ let middleman: Middleman;
 
 function rejectBadArgs<T>(funcname: string, args: any[]): Promise<T> {
   const err =
-      'Bad argument types in call to ' + funcname +': ' + JSON.stringify(args);
+      'Bad argument types in call to ' + funcname + ': ' + JSON.stringify(args);
   console.log(err);
   return Promise.reject<T>(err);
 }
@@ -39,7 +39,7 @@ export function startAndConfigureUnpack(args: any[]): Promise<boolean> {
  * Start a debug adapter, optionally setting breakpoints (during pre-launch
  * configuration).
  */
-function startAndConfigure(config: Config.DapperConfig):
+export function startAndConfigure(config: Config.DapperConfig):
     Promise<boolean> {
   return new Promise<boolean>(async (resolve, reject) => {
     console.log('Given DapperConfig: ' + config);
@@ -82,7 +82,7 @@ export function terminateUnpack(args: any[]): Promise<boolean> {
   }
   return terminate(restart);
 }
-async function terminate(restart = false): Promise<boolean> {
+export async function terminate(restart = false): Promise<boolean> {
   return middleman.terminate(restart).then(() => true, () => false);
 }
 export const FN_TERMINATE_OPTIONS = {
@@ -97,14 +97,14 @@ export function requestUnpack(args: any[]): Promise<DebugProtocol.Response> {
   const vimID = args[1];
   const argDict = args[2];
 
-  if (typeof command !== 'string' || typeof vimID !== 'number'
-      || (typeof argDict !== 'object' && argDict !== undefined)) {
+  if (typeof command !== 'string' || typeof vimID !== 'number' ||
+      (typeof argDict !== 'object' && argDict !== undefined)) {
     return rejectBadArgs('request', args);
   }
 
   return request(command, vimID, argDict);
 }
-function request(command: string, vimID: number, args: any):
+export function request(command: string, vimID: number, args: any):
     Promise<DebugProtocol.Response> {
   console.log('command:' + JSON.stringify(command));
   console.log('vimID:' + JSON.stringify(vimID));

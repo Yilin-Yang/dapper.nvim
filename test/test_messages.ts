@@ -76,6 +76,16 @@ describe('typenameOf', () => {
     };
     assert.equal(typenameOf(msg), 'TerminateThreadsResponse');
   });
+  it('recognizes LaunchResponse"', () => {
+    const msg: DebugProtocol.LaunchResponse = {
+      seq: 1,
+      request_seq: 0,
+      success: true,
+      type: 'response',
+      command: 'launch',
+    };
+    assert.equal(typenameOf(msg), 'LaunchResponse');
+  });
   it('recognizes LoadedSourcesRequest"', () => {
     const msg: DebugProtocol.LoadedSourcesRequest = {
       seq: 1,
