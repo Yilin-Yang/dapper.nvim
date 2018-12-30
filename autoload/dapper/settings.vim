@@ -71,8 +71,8 @@ endfunction
 " RETURNS:  (v:t_string)  Whether or not to write the debug log buffer out to
 "                         a file.
 let s:dapper_log_buffer_writeback_values = [
-  \ 'never', 'onclose', 'every[N_MSGS]', 'always'
-\ ]
+    \ 'never', 'onclose', 'every[N_MSGS]', 'always'
+    \ ]
 function! dapper#settings#LogBufferWriteback() abort
   if !exists('g:dapper_log_buffer_writeback')
     let g:dapper_log_buffer_writeback = 'never'
@@ -95,4 +95,49 @@ function! dapper#settings#LogBufferWriteback() abort
         \.string(s:dapper_log_buffer_writeback_values)
   endif
   return g:dapper_log_buffer_writeback
+endfunction
+
+" RETURNS:  (v:t_string)  What kinds of messages dapper should echo to the
+"     user at the commandline.
+let s:dapper_echo_messages_values = [
+    \ 'never', 'only_errors', 'all_errors', 'statuses', 'all_statuses'
+    \ ]
+function! dapper#settings#EchoMessages() abort
+  if !exists('g:dapper_echo_messages')
+    let g:dapper_echo_messages = 'only_errors'
+  endif
+  call s:AssertType(
+      \ g:dapper_echo_messages,
+      \ v:t_string,
+      \ 'g:dapper_echo_messages'
+      \ )
+  if index(s:dapper_echo_messages_values,
+        \ g:dapper_echo_messages) ==# -1
+    throw '(dapper.nvim) Value '.g:dapper_echo_messages.' for '
+        \.'g:dapper_echo_messages not in list: '
+        \.string(s:dapper_echo_messages_values)
+  endif
+  return g:dapper_echo_messages
+endfunction
+
+" RETURNS:  (v:t_string)  How much information to print when echoing a message.
+let s:dapper_echo_message_verbosity_values = [
+    \ 'kind', 'brief', 'long', 'everything'
+    \ ]
+function! dapper#settings#EchoMessageVerbosity() abort
+  if !exists('g:dapper_echo_message_verbosity')
+    let g:dapper_echo_message_verbosity = 'brief'
+  endif
+  call s:AssertType(
+      \ g:dapper_echo_message_verbosity,
+      \ v:t_string,
+      \ 'g:dapper_echo_message_verbosity'
+      \ )
+  if index(s:dapper_echo_message_verbosity_values,
+        \ g:dapper_echo_message_verbosity) ==# -1
+    throw '(dapper.nvim) Value '.g:dapper_echo_message_verbosity.' for '
+        \.'g:dapper_echo_message_verbosity not in list: '
+        \.string(s:dapper_echo_message_verbosity_values)
+  endif
+  return g:dapper_echo_message_verbosity
 endfunction
