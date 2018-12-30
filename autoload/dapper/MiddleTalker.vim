@@ -65,7 +65,7 @@ function! dapper#MiddleTalker#receive(msg) abort dict
       continue
     endif
     for l:Cb in l:Cbs
-      call l:Cbs(a:msg)
+      call l:Cb(a:msg)
     endfor
   endfor
 endfunction

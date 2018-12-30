@@ -66,14 +66,18 @@ Execute (MiddleTalker: Test Several Messages, Will/Won't Match):
   call g:middletalker.receive(g:will_match)
 Then:
   AssertEqual [g:will_match, g:will_match, g:will_match], g:received
+  call g:middletalker.unsubscribe('foo', function('TestCbList'))
   unlet g:received
 
 Execute (MiddleTalker: Test Multiple Subscriptions):
   call g:middletalker.subscribe('foob', function('TestAltCbList'))
+  call g:middletalker.subscribe('foo', function('TestCbList'))
+  call g:middletalker.subscribe('foo', function('TestCbList'))
   let g:will_match_first = dapper#dap#ProtocolMessage#new(0, 'foo')
   call g:middletalker.receive(g:will_match)
   call g:middletalker.receive(g:will_match_first)
   call g:middletalker.receive(g:wont_match)
 Then:
-  AssertEqual [g:will_match, g:will_match_first], g:received
+  AssertEqual [g:will_match, g:will_match, 
+      \ g:will_match_first, g:will_match_first], g:received
   AssertEqual [g:will_match], g:alt_received
