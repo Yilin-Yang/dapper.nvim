@@ -1,3 +1,5 @@
+Include: AwaitTimeout.vader
+
 Execute (Pipeline: Setup ThreadBuffer, Subscribe, Initialize Mock Debug Adapter):
   " subscribe to all incoming messages
   function! StoreMessage(msg) abort
