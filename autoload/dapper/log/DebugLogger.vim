@@ -25,6 +25,8 @@ function! dapper#log#DebugLogger#get() abort
   let l:new['__settings'] = l:bufset
   let l:new['__counter'] = 0
   let l:new['__last_line_written'] = 0
+  let l:new['__shouldWrite'] =
+      \ function('dapper#log#DebugLogger#__shouldWrite', l:new)
   let l:new['__write'] = function('dapper#log#DebugLogger#__write', l:new)
   let l:new['__onExit'] = function('dapper#log#DebugLogger#__onExit', l:new)
   let l:new['log'] = function('dapper#log#DebugLogger#log', l:new)
@@ -85,6 +87,20 @@ function! dapper#log#DebugLogger#CheckType(object) abort
   endif
 endfunction
 
+" RETURNS:  `v:true` if the DebugLogger should write the next message it
+"           receives.
+function! dapper#log#DebugLogger#__shouldWrite() abort dict
+  call dapper#log#DebugLogger#CheckType(l:self)
+  let l:wb = l:self['__writeback']
+  if l:wb ==# 'always'
+    return v:true
+  endif
+  if l:wb !=# 'every' | return v:false | endif
+  let l:counter = l:self['__counter']
+  let l:interval = l:self['__settings']['interval']
+  return !float2nr(fmod(l:counter, l:interval))
+endfunction
+
 " BRIEF:  Write the contents of the debug logger to a file.
 function! dapper#log#DebugLogger#__write() abort dict
   call dapper#log#DebugLogger#CheckType(l:self)
@@ -94,6 +110,7 @@ function! dapper#log#DebugLogger#__write() abort dict
   let l:fname = l:self['__settings']['fname']
   " append to file asynchronously
   call writefile(l:to_writeback, l:fname, 'aS')
+  let l:self['__counter'] += 1
 endfunction
 
 " BRIEF:  Perform last-minute cleanup, execute writebacks before closing vim.
@@ -146,14 +163,7 @@ function! dapper#log#DebugLogger#log(text, ...) abort dict
   let l:to_insert += [l:term_pfx]
   call l:self.insertLines(-1, l:to_insert)
 
-  let l:counter = l:self['__counter']
-  let l:self['__counter'] += 1
-  let l:interval = l:self['__settings']['interval']
-
-  if l:self['writeback'] ==# 'always'
-    call l:self.__write()
-  elseif l:self['writeback'] ==# 'every'
-      \ && !float2nr(fmod(l:counter, l:interval))
+  if l:self.__shouldWrite()
     call l:self.__write()
   endif
 endfunction
