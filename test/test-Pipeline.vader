@@ -6,6 +6,16 @@ Execute (Pipeline: Setup ThreadBuffer, Subscribe, Initialize Mock Debug Adapter)
   endfunction
   call g:dapper_middletalker.subscribe('.*', function('StoreMessage'))
 
+  function! ReceivedMessage(vim_msg_typename) abort
+    if !exists('g:messages') | return v:false | endif
+    let l:i = 0 | while l:i <# len(g:messages)
+      if g:messages[l:i]['vim_msg_typename'] ==# a:vim_msg_typename
+        return v:true
+      endif
+    let l:i += 1 | endwhile
+    return v:false
+  endfunction
+
   " setup ThreadBuffer, which should (itself) subscribe
   if exists('g:tb') | unlet g:tb | endif
   let g:tb = dapper#ThreadBuffer#new('[dapper] Threads', g:dapper_middletalker)
@@ -16,18 +26,18 @@ Execute (Pipeline: Setup ThreadBuffer, Subscribe, Initialize Mock Debug Adapter)
       \ g:dapper_filetypes_to_configs['mock'],
       \ {})
   call DapperStart(g:start_args)
-  sleep 2
+  call AwaitTimeout({ -> ReceivedMessage('InitializedEvent')}, 3000, v:true)
 
 Execute (Pipeline: Launch Debuggee):
   let g:launch_args = dapper#dap#LaunchRequestArguments#new()
   let g:launch_args['program'] = g:project_root
   call DapperRequest('launch', 0, g:launch_args)
-  sleep 2
+  call AwaitTimeout({ -> ReceivedMessage('LaunchResponse')}, 4000, v:true)
 
 Execute (Pipeline: Request Threads):
   call g:tb.open()
   call g:tb.update()
-  sleep 1
+  call AwaitTimeout({ -> ReceivedMessage('ThreadsResponse')}, 3000, v:true)
 Expect:
   thread	id: 1	name: thread 1	status: (N/A)
   

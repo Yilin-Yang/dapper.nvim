@@ -1,0 +1,31 @@
+Execute (Declare Await Timeout Helper Function):
+
+  " RETURNS:  (v:t_float)   Seconds since the time marked by a:reltime,
+  "                         which is a time point returned by `reltime()`.
+  function! TimeSince(reltime) abort
+    let l:diff = reltime(a:reltime, reltime())
+    return reltimefloat(l:diff)
+  endfunction
+
+  " BRIEF:  Loop until `Condition()` returns true, or `timeout` ms have passed.
+  " PARAM:  should_throw  (v:t_bool)  Whether to throw an exception on timeout.
+  " PARAM:  resolution  (v:t_number)  How long to wait before checking the
+  "                                   condition on a given iteration, in
+  "                                   milliseconds.
+  function! AwaitTimeout(Condition, timeout, ...) abort
+    let a:should_throw = get(a:000, 0, v:false)
+    let a:resolution = get(a:000, 1, 100)
+    let l:start = reltime()
+    let l:sec = a:timeout / 1000.0
+    let l:timed_out = v:true
+    while TimeSince(l:start) <# l:sec
+      if a:Condition()
+        let l:timed_out = v:false
+        break
+      endif
+      execute 'sleep '.a:resolution.'m'
+    endwhile
+    if l:timed_out && a:should_throw
+      throw '(AwaitTimeout) Timed out while waiting for event.'
+    endif
+  endfunction
