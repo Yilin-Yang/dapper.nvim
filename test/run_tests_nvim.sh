@@ -20,6 +20,7 @@ for ARG in "$@"; do
             ;;
     esac
 done
+export IS_DAPPER_DEBUG=1
 
 set -p
 export VADER_OUTPUT_FILE=/dev/stderr
@@ -31,3 +32,4 @@ if [ $TEST_INTERNATIONAL ]; then
     eval "${BASE_CMD} -c 'language de_DE.utf8' ${TEST_CMD}"
     eval "${BASE_CMD} -c 'language es_ES.utf8' ${TEST_CMD}"
 fi
+unset IS_DAPPER_DEBUG

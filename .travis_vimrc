@@ -9,6 +9,13 @@ syntax enable
 set autoread
 set hidden
 
+" try to silence 'Warning: terminal cannot highlight' warnings,
+" which prevent test cases from closing until a human user hits enter
+highlight clear
+" set noshowcmd
+" set shortmess+=aoOtTWAIcF
+" set cmdheight=5
+
 let g:project_root = split(getcwd(), '/test')[0]
 
 call dapper#AddDapperConfig(

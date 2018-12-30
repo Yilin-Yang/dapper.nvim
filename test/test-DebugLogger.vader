@@ -1,0 +1,39 @@
+Execute (DebugLogger: Setup):
+  let g:dapper_log_buffer_writeback = 'every2'
+  let g:dapper_logfile = g:project_root.'/test/LOGFILE'
+  call writefile([], g:dapper_logfile, 's')
+  let g:db = dapper#log#DebugLogger#get()
+
+Execute (DebugLogger: Feed Message, Should Write):
+  call g:db.log('foobar')
+  let g:written_back = readfile(g:dapper_logfile)
+Then:
+  Assert match(g:written_back[0], '\[NORMAL\]') != -1
+  AssertEqual ['  foobar', '[/N]'], g:written_back[1:2]
+  
+Execute (DebugLogger: Feed Another, Shouldn't Write):
+  call g:db.log('foobar')
+  let g:written_back = readfile(g:dapper_logfile)
+Then:
+  Assert match(g:written_back[0], '\[NORMAL\]') != -1
+  AssertEqual ['  foobar', '[/N]'], g:written_back[1:2]
+
+Execute (DebugLogger: Feed Another, Should Write):
+  call g:db.log('foobar')
+  let g:written_back = readfile(g:dapper_logfile)
+Then:
+  Assert match(g:written_back[0], '\[NORMAL\]') != -1
+  AssertEqual ['  foobar', '[/N]'], g:written_back[1:2]
+  Assert match(g:written_back[3], '\[NORMAL\]') != -1
+  " echoerr string(g:written_back)
+  AssertEqual ['  foobar', '[/N]'], g:written_back[4:5]
+  Assert match(g:written_back[6], '\[NORMAL\]') != -1
+  AssertEqual ['  foobar', '[/N]'], g:written_back[7:8]
+
+Execute (DebugLogger: Feed Another, Shouldn't Write):
+  Assert match(g:written_back[0], '\[NORMAL\]') != -1
+  AssertEqual ['  foobar', '[/N]'], g:written_back[1:2]
+  Assert match(g:written_back[3], '\[NORMAL\]') != -1
+  AssertEqual ['  foobar', '[/N]'], g:written_back[4:5]
+  Assert match(g:written_back[6], '\[NORMAL\]') != -1
+  AssertEqual ['  foobar', '[/N]'], g:written_back[7:8]

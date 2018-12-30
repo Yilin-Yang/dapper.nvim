@@ -1,3 +1,6 @@
+" BRIEF:  Global singleton debug logger.
+
+" BRIEF:  Get a reference to the debug logger singleton.
 function! dapper#log#DebugLogger#get() abort
   if exists('g:dapper_debug_logger')
     try
@@ -23,8 +26,10 @@ function! dapper#log#DebugLogger#get() abort
   let l:new['TYPE']['DebugLogger'] = 1
   let l:new['__writeback'] = l:writeback
   let l:new['__settings'] = l:bufset
-  let l:new['__counter'] = 0
-  let l:new['__last_line_written'] = 0
+  let l:new['__counter'] = -1
+  " set iniital 'last line written' to 1, so that we ignore the blank line
+  " at the top of the log buffer when writing back
+  let l:new['__last_line_written'] = 1
   let l:new['__shouldWrite'] =
       \ function('dapper#log#DebugLogger#__shouldWrite', l:new)
   let l:new['__write'] = function('dapper#log#DebugLogger#__write', l:new)
@@ -33,14 +38,26 @@ function! dapper#log#DebugLogger#get() abort
 
   let g:dapper_debug_logger = l:new
 
+  if !$IS_DAPPER_DEBUG
   augroup dapper_debug_logger
     au!
-    autocmd VimLeave * call g:dapper_debug_logger.__onExit()
+    " this autocommand causes nvim to throw a 'Press ENTER or type command to
+    " continue' message when running test cases in the terminal (i.e. without
+    " a GUI). The IS_DAPPER_DEBUG check exists *just* to prevent those tests
+    " from hanging.
+    autocmd VimLeavePre * call g:dapper_debug_logger.__onExit()
   augroup end
+  endif
 
   return g:dapper_debug_logger
 endfunction
 
+" NOTE: Setting `buftype=nofile` in *all* cases is a hack.
+"       When writing back, we use `writefile()` in order to save the log
+"       buffer in the background, without opening it directly; but this
+"       doesn't reset the `&modified` flag for the log buffer, so nvim will
+"       complain about unsaved buffers when exiting with `:q` or `:qa`.
+"       Setting `nofile` prevents that.
 let s:writeback_to_bufsettings = {
     \ 'never': {
         \ 'fname': dapper#settings#LogBufferName(),
@@ -50,25 +67,25 @@ let s:writeback_to_bufsettings = {
         \ 'swapfile': v:false,
         \ },
     \ 'onclose': {
-        \ 'fname': dapper#settings#LogBufferWriteback(),
+        \ 'fname': dapper#settings#Logfile(),
         \ 'bufhidden': 'hide',
         \ 'buflisted': v:false,
-        \ 'buftype' : '',
+        \ 'buftype' : 'nofile',
         \ 'swapfile': v:false,
         \ },
     \ 'every': {
-        \ 'fname': dapper#settings#LogBufferWriteback(),
+        \ 'fname': dapper#settings#Logfile(),
         \ 'bufhidden': 'hide',
         \ 'buflisted': v:false,
-        \ 'buftype' : '',
+        \ 'buftype' : 'nofile',
         \ 'swapfile': v:true,
         \ 'interval': -1,
         \ },
     \ 'always': {
-        \ 'fname': dapper#settings#LogBufferWriteback(),
+        \ 'fname': dapper#settings#Logfile(),
         \ 'bufhidden': 'hide',
         \ 'buflisted': v:false,
-        \ 'buftype' : '',
+        \ 'buftype' : 'nofile',
         \ 'swapfile': v:true,
       \ }
     \ }
@@ -108,9 +125,9 @@ function! dapper#log#DebugLogger#__write() abort dict
   let l:bufnr = l:self['__bufnr']
   let l:to_writeback = nvim_buf_get_lines(l:bufnr, l:from, -1, v:true)
   let l:fname = l:self['__settings']['fname']
-  " append to file asynchronously
+  " asynchronously append to file
   call writefile(l:to_writeback, l:fname, 'aS')
-  let l:self['__counter'] += 1
+  let l:self['__last_line_written'] += len(l:to_writeback)
 endfunction
 
 " BRIEF:  Perform last-minute cleanup, execute writebacks before closing vim.
@@ -135,6 +152,7 @@ let s:types_to_term_prefixes = {
     \ 'error':  '[/E]',
     \ 'normal': '[/N]',
     \ }
+let s:body_indent = '  '
 function! dapper#log#DebugLogger#log(text, ...) abort dict
   call dapper#log#DebugLogger#CheckType(l:self)
   let a:type = get(a:000, 0, 'normal')
@@ -158,12 +176,13 @@ function! dapper#log#DebugLogger#log(text, ...) abort dict
 
   let l:to_insert = [l:ts.': '.l:prefix] + l:to_insert
   let l:i = 1 | while l:i < len(l:to_insert)
-    let l:to_insert[l:i] = "\t".l:to_insert[l:i]
+    let l:to_insert[l:i] = s:body_indent.l:to_insert[l:i]
   let l:i += 1 | endwhile
   let l:to_insert += [l:term_pfx]
   call l:self.insertLines(-1, l:to_insert)
 
-  if l:self.__shouldWrite()
+  let l:self['__counter'] += 1  " received another message
+  if l:self.__shouldWrite()  " based on the current received count,
     call l:self.__write()
   endif
 endfunction

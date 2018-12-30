@@ -83,9 +83,11 @@ function! dapper#settings#LogBufferWriteback() abort
       \ 'g:dapper_log_buffer_writeback'
       \ )
   if g:dapper_log_buffer_writeback[0:4] ==# 'every'
-    let l:nr = split(g:dapper_log_buffer_writeback, 'every')[1] + 0
-    throw '(dapper.nvim) "every" in g:dapper_log_buffer_writeback must be '
-        \ . 'followed by a number (given: '.g:dapper_log_buffer_writeback.')'
+    let l:nr = split(g:dapper_log_buffer_writeback, 'every')[0] + 0
+    if !l:nr
+      throw '(dapper.nvim) "every" in g:dapper_log_buffer_writeback must be '
+          \ . 'followed by a number (given: '.g:dapper_log_buffer_writeback.')'
+    endif
   elseif index(s:dapper_log_buffer_writeback_values,
         \ g:dapper_log_buffer_writeback) ==# -1
     throw '(dapper.nvim) Value '.g:dapper_log_buffer_writeback.' for '
