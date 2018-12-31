@@ -2,7 +2,7 @@ import * as assert from 'assert';
 import {describe, it} from 'mocha';
 import {DebugProtocol} from 'vscode-debugprotocol';
 
-import {typenameOf} from '../src/messages';
+import {typenameOf, Report, ErrorReport, StatusReport} from '../src/messages';
 
 describe('typenameOf', () => {
   it('recognizes DebugProtocol.Event as an "Event"', () => {
@@ -30,6 +30,39 @@ describe('typenameOf', () => {
       success: true,
     };
     assert.equal(typenameOf(msg), 'Response');
+  });
+  it('recognizes Report as a "Report"', () => {
+    const msg: Report = {
+      seq: 1,
+      type: 'report',
+      kind: '',
+      brief: 'foobar',
+      long: 'foobarfoobar',
+      alert: true,
+    };
+    assert.equal(typenameOf(msg), 'Report');
+  });
+  it('recognizes ErrorReport', () => {
+    const msg: ErrorReport = {
+      seq: 1,
+      type: 'report',
+      kind: 'error',
+      brief: 'foobar',
+      long: 'foobarfoobar',
+      alert: true,
+    };
+    assert.equal(typenameOf(msg), 'ErrorReport');
+  });
+  it('recognizes StatusReport', () => {
+    const msg: StatusReport = {
+      seq: 1,
+      type: 'report',
+      kind: 'status',
+      brief: 'foobar',
+      long: 'foobarfoobar',
+      alert: true,
+    };
+    assert.equal(typenameOf(msg), 'StatusReport');
   });
   it('recognizes ThreadEvent', () => {
     const msg: DebugProtocol.Event = {

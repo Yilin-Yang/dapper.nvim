@@ -9,6 +9,8 @@ import DPEvent = DebugProtocol.Event;
 
 export const NULL_VIM_ID = 0;
 
+// tslint:disable:no-any
+
 /**
  * The additional properties needed by the VimL frontend.
  */
@@ -26,16 +28,62 @@ export interface DapperMessage {
   vim_msg_typename: string;
 }
 
+/**
+ * Used for sending status updates and error messages back to the frontend.
+ * The value of the property `type` is 'report'.
+ */
+export interface Report extends DebugProtocol.ProtocolMessage {
+  /**
+   * The "kind" of report this message represents.
+   * Values: 'normal', 'error', etc.
+   */
+  kind: string;
+
+  /**
+   * A short (<= 50 characters) summary of the report.
+   */
+  brief: string;
+
+  /**
+   * A verbose, detailed summary of the report.
+   */
+  long: string;
+
+  /**
+   * Non-binding hint on whether to echo the report directly to the user.
+   * When false, the report will (generally) just be silently logged.
+   */
+  alert: boolean;
+
+  /**
+   * Any other miscellaneous information about this report.
+   */
+  other?: any;
+}
+
+/**
+ * An error message, to be sent back to the frontend. 'kind' is 'error'.
+ */
+export interface ErrorReport extends Report {}
+
+/**
+ * An status message, to be sent back to the frontend. 'kind' is 'status'.
+ */
+export interface StatusReport extends Report {}
+
+
 export type DapperRequest = DapperMessage&DPRequest;
 export type DapperResponse = DapperMessage&DPResponse;
 export type DapperEvent = DapperMessage&DPEvent;
-export type DapperAnyMsg = DapperRequest|DapperResponse|DapperEvent;
+export type DapperReport = DapperMessage&Report;
+export type DapperAnyMsg =
+    DapperRequest|DapperResponse|DapperEvent|DapperReport;
 
 function firstCharToUpper(str: string): string {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-export function typenameOf(msg: DPRequest|DPResponse|DPEvent): string {
+export function typenameOf(msg: DPRequest|DPResponse|DPEvent|Report): string {
   const type: string = msg.type;
   if (type === 'event') {
     const evt: string = (msg as DPEvent).event;
@@ -46,13 +94,15 @@ export function typenameOf(msg: DPRequest|DPResponse|DPEvent): string {
   } else if (type === 'request') {
     const com: string = (msg as DPRequest).command;
     return firstCharToUpper(com) + 'Request';
+  } else if (type === 'report') {
+    const com: string = (msg as DapperReport).kind;
+    return firstCharToUpper(com) + 'Report';
   }
   throw new TypeError(
       'Given message doesn\'t seem to be a DebugProtocol type: ' + msg as
       string);
 }
 
-// tslint:disable:no-any
 export function isDAP(arg: any): arg is DebugProtocol.ProtocolMessage {
   return arg.hasOwnProperty('seq') && arg.hasOwnProperty('type');
 }
