@@ -47,10 +47,8 @@ endfunction
 " PARAM:  hl    (v:t_string)    The highlight group to apply to the message.
 function! dapper#log#ReportHandler#_echoMsg(msg, hl) abort dict
   call dapper#log#ReportHandler#CheckType(l:self)
-    " \ 'kind', 'brief', 'long', 'everything'
   let l:verbosity = dapper#settings#EchoMessageVerbosity()
-  let l:should_pause = v:false
-  redraw!  " prevent message from being overwritten by pending command
+  " redraw  " most recent echo will clobber those before
   execute 'echohl '.a:hl
   if l:verbosity ==# 'kind'
     echomsg '(dapper.nvim) Received update of kind: '.a:msg['kind']
@@ -73,7 +71,6 @@ function! dapper#log#ReportHandler#_echoMsg(msg, hl) abort dict
     endif
     echo l:to_print
   endif
-  if l:should_pause | call getchar() | endif
   echohl None
 endfunction
 
