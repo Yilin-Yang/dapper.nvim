@@ -43,7 +43,7 @@ function! dapper#log#ReportHandler#destroy() abort dict
   let l:dtors = l:self['DESTRUCTORS']
   let l:i = len(l:dtors) - 1 | while l:i >=# 0
     let l:Dtor = l:dtors[l:i]
-    call l:Dtor()
+    call function(l:Dtor, l:self)
   let l:i -= 1 | endwhile
 endfunction
 
