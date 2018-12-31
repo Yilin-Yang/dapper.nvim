@@ -25,15 +25,21 @@ export function initialize(ft: FrontTalker): void {
 
 
 export function startAndConfigureUnpack(args: any[]): Promise<boolean> {
-  let config = undefined;
-  if (Config.isDapperConfig(args)) {
-    config = args as Config.DapperConfig;
-  } else if (isVimList(args) && Config.isDapperConfig(args[0])) {
-    config = args[0];
-  } else {
-    rejectBadArgs('startAndConfigure', args);
+  try {
+    let config = undefined;
+    if (Config.isDapperConfig(args)) {
+      config = args as Config.DapperConfig;
+    } else if (isVimList(args) && Config.isDapperConfig(args[0])) {
+      config = args[0];
+    } else {
+      rejectBadArgs('startAndConfigure', args);
+    }
+    return startAndConfigure(config);
+  } catch (e) {
+    middleman.report(
+        'error', 'Start/Configuration failed!', e.toString(), true);
+    return Promise.resolve<boolean>(true);
   }
-  return startAndConfigure(config);
 }
 /**
  * Start a debug adapter, optionally setting breakpoints (during pre-launch
@@ -42,7 +48,6 @@ export function startAndConfigureUnpack(args: any[]): Promise<boolean> {
 export function startAndConfigure(config: Config.DapperConfig):
     Promise<boolean> {
   return new Promise<boolean>(async (resolve, reject) => {
-    console.log('Given DapperConfig: ' + config);
     if (!config.is_start || !config.attributes.hasOwnProperty('runtime_env')) {
       reject('Attaching to a running process is currently unsupported.');
     }
@@ -66,21 +71,25 @@ export const FN_START_AND_CONFIGURE_OPTIONS = {
  * Terminate a running debug adapter process.
  */
 export function terminateUnpack(args: any[]): Promise<boolean> {
-  let bad = false;
-  let restart = undefined;
-  if (typeof args === 'boolean') {
-    restart = args;
-  } else if (isVimList(args)) {
-    restart = args[0];
-    if (typeof restart !== 'boolean') bad = true;
+  try {
+    let bad = false;
+    let restart = undefined;
+    if (typeof args === 'boolean') {
+      restart = args;
+    } else if (isVimList(args)) {
+      restart = args[0];
+      if (typeof restart !== 'boolean') bad = true;
+    }
+    if (bad) {
+      const err =
+          'Bad argument type in call to terminate: ' + JSON.stringify(args);
+      return Promise.reject<boolean>(err);
+    }
+    return terminate(restart);
+  } catch (e) {
+    middleman.report('error', 'Terminate request failed!', e.toString(), true);
+    return Promise.resolve(false);
   }
-  if (bad) {
-    const err =
-        'Bad argument type in call to terminate: ' + JSON.stringify(args);
-    console.log(err);
-    return Promise.reject<boolean>(err);
-  }
-  return terminate(restart);
 }
 export async function terminate(restart = false): Promise<boolean> {
   return middleman.terminate(restart).then(() => true, () => false);
@@ -90,26 +99,32 @@ export const FN_TERMINATE_OPTIONS = {
 };
 
 export function requestUnpack(args: any[]): Promise<DebugProtocol.Response> {
-  if (!args.hasOwnProperty('length') || args.length !== 3) {
-    return rejectBadArgs('request', args);
-  }
-  const command = args[0];
-  const vimID = args[1];
-  const argDict = args[2];
+  try {
+    if (!args.hasOwnProperty('length') || args.length !== 3) {
+      return rejectBadArgs('request', args);
+    }
+    const command = args[0];
+    const vimID = args[1];
+    const argDict = args[2];
 
-  if (typeof command !== 'string' || typeof vimID !== 'number' ||
-      (typeof argDict !== 'object' && argDict !== undefined)) {
-    return rejectBadArgs('request', args);
-  }
+    if (typeof command !== 'string' || typeof vimID !== 'number' ||
+        (typeof argDict !== 'object' && argDict !== undefined)) {
+      return rejectBadArgs('request', args);
+    }
 
-  return request(command, vimID, argDict);
+    return request(command, vimID, argDict);
+  } catch (e) {
+    middleman.report('error', 'Request failed!', e.toString(), true);
+    return Promise.resolve({} as DebugProtocol.Response);
+  }
 }
 export function request(command: string, vimID: number, args: any):
     Promise<DebugProtocol.Response> {
+  console.log('Received request in dapper.request: ');
   console.log('command:' + JSON.stringify(command));
   console.log('vimID:' + JSON.stringify(vimID));
   console.log('args:' + JSON.stringify(args));
-  return middleman.request(command, vimID, args);  // TODO
+  return middleman.request(command, vimID, args);
 }
 export const FN_REQUEST_OPTIONS = {
   sync: false
