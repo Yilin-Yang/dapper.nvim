@@ -19,6 +19,10 @@ highlight clear
 
 let g:project_root = split(getcwd(), '/test')[0]
 
+" FOR test-DebugLogger
+let g:dapper_log_buffer_writeback = 'every2'
+let g:dapper_logfile = g:project_root.'/test/LOGFILE'
+
 call dapper#AddDapperConfig(
   \ 'node',
   \ g:project_root.'/node_modules/vscode-mock-debug/out/debugAdapter.js',

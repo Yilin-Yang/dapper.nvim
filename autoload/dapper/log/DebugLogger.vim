@@ -33,7 +33,7 @@ function! dapper#log#DebugLogger#get() abort
   let l:new['__shouldWrite'] =
       \ function('dapper#log#DebugLogger#__shouldWrite')
   let l:new['__write'] = function('dapper#log#DebugLogger#__write')
-  let l:new['destroy'] = function('dapper#log#DebugLogger#__onExit')
+  let l:new['__onExit'] = function('dapper#log#DebugLogger#__onExit')
   let l:new['log'] = function('dapper#log#DebugLogger#log')
 
   let g:dapper_debug_logger = l:new
@@ -45,7 +45,7 @@ function! dapper#log#DebugLogger#get() abort
     " continue' message when running test cases in the terminal (i.e. without
     " a GUI). The IS_DAPPER_DEBUG check exists *just* to prevent those tests
     " from hanging.
-    autocmd VimLeavePre * call g:dapper_debug_logger.destroy()
+    autocmd VimLeavePre * call g:dapper_debug_logger.__onExit()
   augroup end
   endif
 

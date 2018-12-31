@@ -1,6 +1,6 @@
 Execute (DebugLogger: Setup):
   " EDITED TEST_VIMRC
-  let g:dapper_logfile = g:project_root.'/test/LOGFILE'
+  call dapper#RemoveDebugLogger(['ALL', 'DESTROY'])
   call writefile([], g:dapper_logfile, 's')
   let g:db = dapper#log#DebugLogger#get()
 

@@ -72,7 +72,6 @@ let s:logger_types_to_typenames = {
     \ 'normal': 'StatusHandler',
     \ 'error': 'ErrorHandler',
     \ 'ALL': 0,
-    \ 'DESTROY': 0,
     \ }
 function! dapper#RemoveDebugLogger(logger_type) abort
   let l:types = s:ConvertLoggerType(a:logger_type, 'RemoveDebugLogger')
@@ -99,12 +98,4 @@ function! dapper#RemoveDebugLogger(logger_type) abort
     let l:j += 1 | endwhile
 
   let l:i += 1 | endwhile
-
-  if index(l:types, 'DESTROY') !=# -1
-    call g:dapper_debug_logger.destroy()
-    for l:key in keys(g:dapper_debug_logger)
-      unlet g:dapper_debug_logger[l:key]
-    endfor
-    unlet g:dapper_debug_logger
-  endif
 endfunction
