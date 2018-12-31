@@ -3,17 +3,17 @@ import {DebugProtocol} from 'vscode-debugprotocol';
 import * as Config from './config';
 import {FrontTalker} from './fronttalker';
 import {Middleman} from './middleman';
-import {isVimList, VimList} from './nvim';
+import {isVimList} from './nvim';
 
 // tslint:disable:no-any
 
 let middleman: Middleman;
 
-function rejectBadArgs<T>(funcname: string, args: any[]): Promise<T> {
+function rejectBadArgs(funcname: string, args: any[]): void {
   const err =
       'Bad argument types in call to ' + funcname + ': ' + JSON.stringify(args);
   console.log(err);
-  return Promise.reject<T>(err);
+  throw new Error(err);
 }
 
 /**
@@ -81,9 +81,7 @@ export function terminateUnpack(args: any[]): Promise<boolean> {
       if (typeof restart !== 'boolean') bad = true;
     }
     if (bad) {
-      const err =
-          'Bad argument type in call to terminate: ' + JSON.stringify(args);
-      return Promise.reject<boolean>(err);
+      rejectBadArgs('terminate', args);
     }
     return terminate(restart);
   } catch (e) {
@@ -101,7 +99,7 @@ export const FN_TERMINATE_OPTIONS = {
 export function requestUnpack(args: any[]): Promise<DebugProtocol.Response> {
   try {
     if (!args.hasOwnProperty('length') || args.length !== 3) {
-      return rejectBadArgs('request', args);
+      rejectBadArgs('request', args);
     }
     const command = args[0];
     const vimID = args[1];
@@ -109,7 +107,7 @@ export function requestUnpack(args: any[]): Promise<DebugProtocol.Response> {
 
     if (typeof command !== 'string' || typeof vimID !== 'number' ||
         (typeof argDict !== 'object' && argDict !== undefined)) {
-      return rejectBadArgs('request', args);
+      rejectBadArgs('request', args);
     }
 
     return request(command, vimID, argDict);
