@@ -7,5 +7,5 @@ node_modules
 *.js
 build
 rplugin/*
-LOGFILE
+LOGFILE*
 Session.vim
