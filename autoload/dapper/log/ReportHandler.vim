@@ -48,7 +48,9 @@ endfunction
 function! dapper#log#ReportHandler#_echoMsg(msg, hl) abort dict
   call dapper#log#ReportHandler#CheckType(l:self)
   let l:verbosity = dapper#settings#EchoMessageVerbosity()
-  " redraw  " most recent echo will clobber those before
+  if dapper#settings#RedrawOnEcho()
+    redraw  " most recent echo will clobber those before
+  endif
   execute 'echohl '.a:hl
   if l:verbosity ==# 'kind'
     echomsg '(dapper.nvim) Received update of kind: '.a:msg['kind']

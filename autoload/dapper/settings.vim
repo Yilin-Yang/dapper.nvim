@@ -141,3 +141,20 @@ function! dapper#settings#EchoMessageVerbosity() abort
   endif
   return g:dapper_echo_message_verbosity
 endfunction
+
+" RETURNS:  (v:t_bool)  Whether a ReportHandler should invoke `:redraw` before
+"                       echoing a message. In practice, this lets 'later'
+"                       ReportHandler instances clobber the messages echoed by
+"                       'earlier' ReportHandler instances, which may be
+"                       helpful for reducing `hit-enter` prompts.
+function! dapper#settings#RedrawOnEcho() abort
+  if !exists('g:dapper_redraw_on_echo')
+    let g:dapper_redraw_on_echo = v:false
+  endif
+  call s:AssertType(
+      \ g:dapper_redraw_on_echo,
+      \ v:t_bool,
+      \ 'g:dapper_redraw_on_echo'
+      \ )
+  return g:dapper_redraw_on_echo
+endfunction
