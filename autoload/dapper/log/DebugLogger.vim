@@ -133,7 +133,8 @@ endfunction
 " BRIEF:  Perform last-minute cleanup, execute writebacks before closing vim.
 function! dapper#log#DebugLogger#__onExit() abort dict
   call dapper#log#DebugLogger#CheckType(l:self)
-  if l:self['writeback'] ==# 'onclose' || l:self['writeback'] ==# 'always'
+  let l:writeback = l:self['__writeback']
+  if l:writeback ==# 'onclose' || l:writeback ==# 'always'
     call l:self.__write()
   endif
 endfunction

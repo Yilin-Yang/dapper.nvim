@@ -21,12 +21,6 @@ function! dapper#log#ErrorHandler#CheckType(object) abort
   endif
 endfunction
 
-function! dapper#log#ErrorHandler#EchoMsg(msg) abort
-  echohl WarningMsg
-
-  echohl None
-endfunction
-
 function! dapper#log#ErrorHandler#receive(msg) abort dict
   call dapper#log#ErrorHandler#CheckType(l:self)
   call l:self._formatAndLog(a:msg, 'error')  " log to outfile
