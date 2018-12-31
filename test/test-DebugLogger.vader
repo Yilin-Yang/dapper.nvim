@@ -1,4 +1,5 @@
 Execute (DebugLogger: Setup):
+  call dapper#RemoveDebugLogger('ALL')
   let g:dapper_log_buffer_writeback = 'every2'
   let g:dapper_logfile = g:project_root.'/test/LOGFILE'
   call writefile([], g:dapper_logfile, 's')

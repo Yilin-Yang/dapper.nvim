@@ -9,6 +9,8 @@
 function! dapper#log#ReportHandler#new(logger) abort
   let l:new = {
       \ 'TYPE': {'ReportHandler': 1},
+      \ 'DESTRUCTORS': [],
+      \ 'destroy': function('dapper#log#ReportHandler#destroy'),
       \ '___logger___': a:logger,
       \ 'receive': function('dapper#log#ReportHandler#receive'),
       \ '_echoMsg': function('dapper#log#ReportHandler#_echoMsg'),
@@ -34,6 +36,15 @@ endfunction
 
 function! dapper#log#ReportHandler#__noImpl(func_name, ...) abort dict
   throw '(dapper#log#ReportHandler) Invoked pure virtual function: '.a:func_name
+endfunction
+
+function! dapper#log#ReportHandler#destroy() abort dict
+  call dapper#log#ReportHandler#CheckType(l:self)
+  let l:dtors = l:self['DESTRUCTORS']
+  let l:i = len(l:dtors) - 1 | while l:i >=# 0
+    let l:Dtor = l:dtors[l:i]
+    call l:Dtor()
+  let l:i -= 1 | endwhile
 endfunction
 
 " BRIEF:  Process an incoming message, potentially writing it to the log.

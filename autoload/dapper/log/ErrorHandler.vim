@@ -1,8 +1,12 @@
+let s:name_pattern = 'ErrorReport'
+
 function! dapper#log#ErrorHandler#new(logger, message_passer) abort
   let l:new = dapper#log#ReportHandler#new(a:logger)
   let l:new['TYPE']['ErrorHandler'] = 1
+  let l:new['DESTRUCTORS'] += [function('dapper#log#ErrorHandler#destroy', l:new)]
+  let l:new['__message_passer'] = a:message_passer
   let l:new['receive'] = function('dapper#log#ErrorHandler#receive')
-  call a:message_passer.subscribe('ErrorReport',
+  call a:message_passer.subscribe(s:name_pattern,
       \ function('dapper#log#ErrorHandler#receive', l:new))
   return l:new
 endfunction
@@ -19,6 +23,12 @@ function! dapper#log#ErrorHandler#CheckType(object) abort
   endtry
   throw l:err
   endif
+endfunction
+
+function! dapper#log#ErrorHandler#destroy() abort dict
+  call dapper#log#ErrorHandler#CheckType(l:self)
+  call l:self['__message_passer'].unsubscribe(
+      \ s:name_pattern, function('dapper#log#ErrorHandler#receive', l:self))
 endfunction
 
 function! dapper#log#ErrorHandler#receive(msg) abort dict
