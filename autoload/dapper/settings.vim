@@ -40,6 +40,37 @@ function! dapper#settings#FiletypesToConfigs() abort
   return g:dapper_filetypes_to_configs
 endfunction
 
+" RETURNS:  (v:t_string)  Keymapping used to 'dig down' to a deeper level of a
+"                         'RabbitHole' buffer, e.g. to go from a `ThreadBuffer`
+"                         down to the selected `StackTraceBuffer`.
+function! dapper#settings#DigDownMapping() abort
+  if !exists('g:dapper_dig_down_mapping')
+    let g:dapper_dig_down_mapping = '<cr>'
+  endif
+  call s:AssertType(
+      \ g:dapper_dig_down_mapping,
+      \ v:t_string,
+      \ 'g:dapper_dig_down_mapping'
+      \ )
+  return g:dapper_dig_down_mapping
+endfunction
+
+" RETURNS:  (v:t_string)  Keymapping used to 'climb up' to a higher level of a
+"                         'RabbitHole' buffer, e.g. to go from a
+"                         `StackTraceBuffer` up to the parent 'ThreadBuffer'.
+function! dapper#settings#ClimbUpMapping() abort
+  if !exists('g:dapper_climb_up_mapping')
+    let g:dapper_climb_up_mapping = '<Esc>'
+  endif
+  call s:AssertType(
+      \ g:dapper_climb_up_mapping,
+      \ v:t_string,
+      \ 'g:dapper_climb_up_mapping'
+      \ )
+  return g:dapper_climb_up_mapping
+endfunction
+
+
 " RETURNS:  (v:t_string)  The `bufname` of the debug log buffer. Used only
 "                         when the log buffer is not being written to a file.
 function! dapper#settings#LogBufferName() abort

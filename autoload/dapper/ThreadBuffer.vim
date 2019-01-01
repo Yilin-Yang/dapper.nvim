@@ -3,9 +3,12 @@
 " BRIEF:  Construct a ThreadBuffer.
 " PARAM:  bufname     (v:t_string)  The name to be displayed in the statusline.
 function! dapper#ThreadBuffer#new(bufname, message_passer, ...) abort
-  let l:new = dapper#DapperBuffer#new(a:message_passer, {'fname': a:bufname})
+  let l:new = call(
+      \ 'dapper#RabbitHole#new',
+      \ [a:message_passer, a:bufname] + a:000)
   let l:new['TYPE']['ThreadBuffer'] = 1
   let l:new['_ids_to_threads'] = dapper#ThreadsCache#new()
+  let l:new['_tids_to_stbuffers'] = {}  " tid to StackTraceBuffer
 
   let l:new['receive']     = function('dapper#ThreadBuffer#receive')
   let l:new['update']      = function('dapper#ThreadBuffer#update')
@@ -17,7 +20,14 @@ function! dapper#ThreadBuffer#new(bufname, message_passer, ...) abort
   let l:new['_recvResponse'] = function('dapper#ThreadBuffer#_recvResponse')
   let l:new['makeEntry'] = function('dapper#ThreadBuffer#makeEntry')
 
-  call l:new._subscribe('Thread', function('dapper#ThreadBuffer#receive', l:new))
+  let l:new['climbUp'] = function('dapper#ThreadBuffer#climbUp')
+  let l:new['digDown'] = function('dapper#ThreadBuffer#digDown')
+
+  let l:new['_getSelected'] = function('dapper#ThreadBuffer#_getSelected')
+
+  call l:new._subscribe('Thread',
+      \ function('dapper#ThreadBuffer#receive', l:new))
+
   return l:new
 endfunction
 
@@ -35,8 +45,8 @@ function! dapper#ThreadBuffer#CheckType(object) abort
   endif
 endfunction
 
-" BRIEF:  Process an incoming ThreadEvent.
-" PARAM:  msg   (DebugProtocol.ThreadEvent)
+" BRIEF:  Process an incoming ThreadEvent or ThreadsResponse.
+" PARAM:  msg   (DebugProtocol.ThreadEvent|DebugProtocol.ThreadsResponse)
 function! dapper#ThreadBuffer#receive(msg) abort dict
   call dapper#ThreadBuffer#CheckType(l:self)
   let l:typename = a:msg['vim_msg_typename']
@@ -74,8 +84,8 @@ endfunction
 " BRIEF:  Set mappings to 'drill-down' into a Thread, expand info, etc.
 function! dapper#ThreadBuffer#setMappings() abort dict
   call dapper#ThreadBuffer#CheckType(l:self)
-  " do nothing, for the time being
-  " TODO
+  execute 'nnoremap <buffer> '.dapper#settings#DigDownMapping().' '
+      \ . ':call b:dapper_buffer.digDown()<cr>'
 endfunction
 
 " BRIEF:  Add a new Thread to the buffer, or replace/update what's there.
@@ -142,4 +152,45 @@ function! dapper#ThreadBuffer#makeEntry(tid) abort dict
   let a:name   = l:thread['name']
   let a:status = l:thread['status']
   return [printf("thread\tid: %d\tname: %s\tstatus: %s", a:tid, a:name, a:status)]
+endfunction
+
+
+" BRIEF:  Do nothing!
+function! dapper#ThreadBuffer#climbUp() abort dict
+  call dapper#ThreadBuffer#CheckType(l:self)
+endfunction
+
+" BRIEF:  Examine the stack trace of the selected thread.
+function! dapper#ThreadBuffer#digDown() abort dict
+  call dapper#ThreadBuffer#CheckType(l:self)
+  try
+    let l:tid = l:self._getSelected()
+  catch /No thread ID found/
+    return
+  endtry
+  let l:tids_stbf = l:self['_tids_to_stbuffers']
+  if !has_key(l:tids_stbf, l:tid)
+    let l:st_buf = dapper#StackTraceBuffer#new(
+        \ l:self,
+        \ '[dapper.nvim] Stack Trace, Thread ID: '.l:tid)
+    let l:tids_stbf[l:tid] = l:st_buf
+  else
+    let l:st_buf = l:tids_stbf[l:tid]
+  endif
+  call l:st_buf.update()
+  call l:st_buf.open()
+endfunction
+
+" RETURNS:  (v:t_number)  The thread ID of the thread currently selected by
+"                         the cursor.
+function! dapper#ThreadBuffer#_getSelected() abort dict
+  call dapper#ThreadBuffer#CheckType(l:self)
+  let l:tid_line = search("^thread\tid: ", 'bncW')
+  if !l:tid_line
+    call l:self._log('error', 'Couldn''t find a selected thread ID',
+        \ 'curpos: '.string(getcurpos())."\nbuffer contents:\n".getline(1,'$'))
+    throw '(dapper#ThreadBuffer) No thread ID found'
+  endif
+  let l:tid = matchstr(getline(l:tid_line), '[0-9]*\(\tname\)\@=') + 0
+  return l:tid
 endfunction
