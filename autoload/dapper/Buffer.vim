@@ -48,7 +48,8 @@ function! dapper#Buffer#new(...) abort
 
   if !empty(l:bufparams['fname'])
     " create a buffer with the given name
-    let l:bufnr = bufnr(escape(l:bufparams['fname'], '*?,{}\'), 1)
+    " let l:bufnr = bufnr(escape(l:bufparams['fname'], '*?,{}\'), 1)
+    let l:bufnr = bufnr(l:bufparams['fname'], 1)
     unlet l:bufparams['fname']
   else
     unlet l:bufparams['fname']
