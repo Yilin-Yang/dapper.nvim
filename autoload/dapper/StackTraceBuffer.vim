@@ -16,7 +16,8 @@ function! dapper#StackTraceBuffer#new(parent, bufname, message_passer, ...) abor
   let l:new['getRange']    = function('dapper#StackTraceBuffer#getRange')
   let l:new['setMappings'] = function('dapper#StackTraceBuffer#setMappings')
 
-  " let l:new['makeEntry'] = function('dapper#StackTraceBuffer#makeEntry')
+  let l:new['climbUp'] = function('dapper#StackTraceBuffer#climbUp')
+  let l:new['digDown'] = function('dapper#StackTraceBuffer#digDown')
 
   call l:new._subscribe(
       \ 'StackTrace',
@@ -57,4 +58,13 @@ function! dapper#StackTraceBuffer#setMappings() abort dict
       \ . ':call b:dapper_buffer.climbUp()<cr>'
   execute 'nnoremap <buffer> '.dapper#settings#DigDownMapping().' '
       \ . ':call b:dapper_buffer.digDown()<cr>'
+endfunction
+
+function! dapper#StackTraceBuffer#climbUp() abort dict
+  call dapper#StackTraceBuffer#CheckType(l:self)
+  call l:self['_parent'].open()
+endfunction
+
+function! dapper#StackTraceBuffer#digDown() abort dict
+  call dapper#StackTraceBuffer#CheckType(l:self)
 endfunction

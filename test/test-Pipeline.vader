@@ -44,6 +44,11 @@ Execute (Pipeline: Request Threads):
 Expect:
   thread	id: 1	name: thread 1	status: (N/A)
   
+" Execute (Pipeline: Drill Down):
+"   call g:tb.open()
+"   normal! gg
+"   execute "normal \<cr>"
+" Expect:
 Execute (Pipeline: Cleanup):
   call g:tb.open()
   normal! ggVGd
