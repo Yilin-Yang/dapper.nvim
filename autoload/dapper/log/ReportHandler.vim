@@ -92,13 +92,13 @@ endfunction
 function! dapper#log#ReportHandler#_formatAndLog(msg, type) abort dict
   call dapper#log#ReportHandler#CheckType(l:self)
   let l:lines = [
-      \ 'BRIEF: '.a:msg['brief'],
-      \ 'LONG:  '.a:msg['long'],
-      \ 'ALERT: '.a:msg['alert'],
+      \ 'BRIEF: '.dapper#helpers#StrDump(a:msg['brief']),
+      \ 'LONG:  '.dapper#helpers#StrDump(a:msg['long']),
+      \ 'ALERT: '.dapper#helpers#StrDump(a:msg['alert']),
       \ ]
   if has_key(a:msg, 'other')
     let l:lines += [
-      \ 'OTHER: '.string(a:msg['other']),
+      \ 'OTHER: '.dapper#helpers#StrDump(a:msg['other']),
       \ ]
   endif
   call l:self._logReport(l:lines, a:type)
