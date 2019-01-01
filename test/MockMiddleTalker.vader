@@ -8,7 +8,12 @@ Execute (Declare Mock MiddleTalker):
     let g:last_req = [a:command, a:request_args, a:Callback]
   endfunction
 
+  function! MockNoOp(...) abort
+  endfunction
+
   let g:mock_mt = {
     \ 'subscribe': function('MockSub'),
+    \ 'unsubscribe': function('MockNoOp'),
     \ 'request': function('MockReq'),
+    \ 'receive': function('MockNoOp'),
   \ }
