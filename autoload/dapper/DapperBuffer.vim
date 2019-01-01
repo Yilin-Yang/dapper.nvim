@@ -8,6 +8,8 @@ function! dapper#DapperBuffer#new(message_passer, ...) abort
 
   let l:new['receive'] =
     \ function('dapper#DapperBuffer#__noImpl', ['receive'])
+  let l:new['update'] =
+    \ function('dapper#DapperBuffer#__noImpl', ['update'])
   let l:new['getRange'] =
     \ function('dapper#DapperBuffer#__noImpl', ['getRange'])
   let l:new['setMappings'] =
@@ -17,6 +19,12 @@ function! dapper#DapperBuffer#new(message_passer, ...) abort
     \ function('dapper#DapperBuffer#_request')
   let l:new['_subscribe'] =
     \ function('dapper#DapperBuffer#_subscribe')
+  let l:new['_log'] =
+    \ function('dapper#DapperBuffer#_log')
+
+  " monkey-patch the `open` method; invoke `setMappings` after opening
+  let l:new['open'] =
+    \ function('dapper#DapperBuffer#open')
 
   return l:new
 endfunction
@@ -56,6 +64,18 @@ function! dapper#DapperBuffer#_request(command, request_args, Callback) abort di
       \ a:command, a:request_args, a:Callback)
 endfunction
 
+" BRIEF:  Log a report.
+" PARAM:  kind  (v:t_string)
+" PARAM:  brief (v:t_string)
+" PARAM:  long  (v:t_string?)
+" PARAM:  alert (v:t_bool?)
+" PARAM:  other (any?)
+function! dapper#DapperBuffer#_log(kind, brief, ...) abort dict
+  call dapper#DapperBuffer#CheckType(l:self)
+  let l:msg = call('dapper#dap#Report', [0, '', a:kind, a:brief] + a:000)
+  call l:self['___message_passer___'].receive(l:msg)
+endfunction
+
 " BRIEF:  Accept an incoming message and update this buffer.
 function! dapper#DapperBuffer#receive(msg) abort dict
   throw '(dapper#DapperBuffer#receive) No implementation'
@@ -72,4 +92,11 @@ endfunction
 " BRIEF:  Set persistent buffer-local mappings for manipulating this buffer.
 function! dapper#DapperBuffer#setMappings() abort dict
   throw '(dapper#DapperBuffer#setMappings) No implementation'
+endfunction
+
+" BRIEF:  Open this buffer, and trigger setup/buffer-local mappings.
+function! dapper#DapperBuffer#open() abort dict
+  call dapper#DapperBuffer#CheckType(l:self)
+  call function('dapper#Buffer#open', l:self)
+  call l:self.setMappings()
 endfunction
