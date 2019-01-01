@@ -168,8 +168,10 @@ function! dapper#log#DebugLogger#log(text, ...) abort dict
   let l:prefix = s:types_to_prefixes[a:type]
   let l:term_pfx = s:types_to_term_prefixes[a:type]
   try
-    if has('*strftime') | let l:ts = strftime('%c')
-    else                | throw ''
+    if exists('*strftime')
+      let l:ts = strftime('%c')
+    else
+      throw ''
     endif
   catch
     let l:ts = localtime()
