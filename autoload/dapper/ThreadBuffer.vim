@@ -189,12 +189,15 @@ function! dapper#ThreadBuffer#digDown() abort dict
   if !has_key(l:tids_stbf, l:tid)
     let l:st_buf = dapper#StackTraceBuffer#new(
         \ l:self,
-        \ '[dapper.nvim] Stack Trace, Thread ID: '.l:tid)
+        \ '[dapper.nvim] Stack Trace, Thread ID: '.l:tid,
+        \ l:self['___message_passer___'])
     let l:tids_stbf[l:tid] = l:st_buf
-    let l:long_msg .= 'Constructed new StackTraceBuffer: '.string(l:st_buf)
+    let l:long_msg .= 'Constructed new StackTraceBuffer: '
+        \ . dapper#helpers#StrDump(l:st_buf)
   else
     let l:st_buf = l:tids_stbf[l:tid]
-    let l:long_msg .= 'Found existing StackTraceBuffer: '.string(l:st_buf)
+    let l:long_msg .= 'Found existing StackTraceBuffer: '
+        \ . dapper#helpers#StrDump(l:st_buf)
   endif
   call l:self._log(
       \ 'normal',
