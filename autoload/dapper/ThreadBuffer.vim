@@ -50,6 +50,8 @@ endfunction
 function! dapper#ThreadBuffer#receive(msg) abort dict
   call dapper#ThreadBuffer#CheckType(l:self)
   let l:typename = a:msg['vim_msg_typename']
+  let l:long_msg =
+      \ 'ThreadBuffer, bufnr:'.l:self.bufnr().', received message: '.l:typename
   if l:typename ==# 'ThreadEvent'
     " make ThreadsRequest
     call l:self._request('threads', {}, function('dapper#ThreadBuffer#receive', l:self))
@@ -58,6 +60,11 @@ function! dapper#ThreadBuffer#receive(msg) abort dict
   elseif l:typename ==# 'ThreadsResponse'
     call l:self._recvResponse(a:msg)
   endif
+  call l:self._log(
+      \ 'normal',
+      \ 'ThreadBuffer received '.l:typename,
+      \ l:long_msg
+      \ )
 endfunction
 
 " BRIEF:  Ask this ThreadBuffer to refresh its contents.
@@ -100,16 +107,25 @@ function! dapper#ThreadBuffer#_addThreadEntry(dap_thread, ...) abort dict
   let l:tid    = l:dp['id']
   let l:name   = l:dp['name']
   let l:status = l:dp['status']
+  let l:new_entry = l:self.makeEntry(l:tid)
   try
     " replace existing entry
     let [l:start, l:end] = l:self.getRange(l:tid)
       call l:self.replaceLines(
         \ l:start-1,
         \ l:end,
-        \ l:self.makeEntry(l:tid))
+        \ l:new_entry)
+    call l:self._log(
+        \ 'normal',
+        \ 'ThreadBuffer updated thread ID:'.l:tid,
+        \ l:new_entry)
   catch /EntryNotFound/
     let l:insert_after = (a:add_at_top) ? 0 : -1
-    call l:self.insertLines(l:insert_after, l:self.makeEntry(l:tid))
+    call l:self.insertLines(l:insert_after, l:new_entry)
+    call l:self._log(
+        \ 'normal',
+        \ 'ThreadBuffer added new thread ID:'.l:tid,
+        \ l:new_entry)
   endtry
 endfunction
 
@@ -163,6 +179,7 @@ endfunction
 " BRIEF:  Examine the stack trace of the selected thread.
 function! dapper#ThreadBuffer#digDown() abort dict
   call dapper#ThreadBuffer#CheckType(l:self)
+  let l:long_msg = ''
   try
     let l:tid = l:self._getSelected()
   catch /No thread ID found/
@@ -174,9 +191,16 @@ function! dapper#ThreadBuffer#digDown() abort dict
         \ l:self,
         \ '[dapper.nvim] Stack Trace, Thread ID: '.l:tid)
     let l:tids_stbf[l:tid] = l:st_buf
+    let l:long_msg .= 'Constructed new StackTraceBuffer: '.string(l:st_buf)
   else
     let l:st_buf = l:tids_stbf[l:tid]
+    let l:long_msg .= 'Found existing StackTraceBuffer: '.string(l:st_buf)
   endif
+  call l:self._log(
+      \ 'normal',
+      \ 'Digging down from ThreadBuffer to tid:'.l:tid,
+      \ l:long_msg
+      \ )
   call l:st_buf.update()
   call l:st_buf.open()
 endfunction
