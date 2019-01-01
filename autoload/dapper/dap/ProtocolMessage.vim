@@ -1,7 +1,7 @@
 " RETURNS:  A new ProtocolMessage object.
 " PARAM:  vim_id  (v:t_number?)   An ID corresponding to the VimL object
 "                                 associated with this message.
-" PARAM:  vim_msg_typename  (v:t_string)  The 'full name' of this message
+" PARAM:  vim_msg_typename  (v:t_string?) The 'full name' of this message
 "                                         type, e.g. 'ErrorResponse',
 "                                         'LoadedSourceEvent', etc.
 function! dapper#dap#ProtocolMessage#new(...)
