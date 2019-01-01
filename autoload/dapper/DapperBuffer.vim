@@ -23,6 +23,7 @@ function! dapper#DapperBuffer#new(message_passer, ...) abort
     \ function('dapper#DapperBuffer#_log')
 
   " monkey-patch the `open` method; invoke `setMappings` after opening
+  let l:new['Buffer#open'] = l:new['open']
   let l:new['open'] =
     \ function('dapper#DapperBuffer#open')
 
@@ -97,6 +98,6 @@ endfunction
 " BRIEF:  Open this buffer, and trigger setup/buffer-local mappings.
 function! dapper#DapperBuffer#open() abort dict
   call dapper#DapperBuffer#CheckType(l:self)
-  call function('dapper#Buffer#open', l:self)
+  call l:self['Buffer#open']()
   call l:self.setMappings()
 endfunction
