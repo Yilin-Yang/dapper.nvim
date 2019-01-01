@@ -53,7 +53,7 @@ function! dapper#AddDebugLogger(logger_type) abort
   let l:dmt = g:dapper_middletalker
   let l:i = 0 | while l:i <# len(l:types)
     let l:type = l:types[l:i]
-    if l:type ==# 'normal'
+    if l:type ==# 'status'
       let l:to_add = dapper#log#StatusHandler#new(l:ddl, l:dmt)
     elseif l:type ==# 'error'
       let l:to_add = dapper#log#ErrorHandler#new(l:ddl, l:dmt)
@@ -69,7 +69,7 @@ endfunction
 " DETAILS:  See `dapper#log`, and `dapper#log#DebugLogger#log()` in
 "           particular, for a list of valid logger_types.
 let s:logger_types_to_typenames = {
-    \ 'normal': 'StatusHandler',
+    \ 'status': 'StatusHandler',
     \ 'error': 'ErrorHandler',
     \ 'ALL': 0,
     \ }

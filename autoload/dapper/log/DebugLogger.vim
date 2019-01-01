@@ -147,16 +147,16 @@ endfunction
 "                             message's syntax highlighting.
 let s:types_to_prefixes = {
     \ 'error':  '[ERROR]',
-    \ 'normal': '[NORMAL]',
+    \ 'status': '[NORMAL]',
     \ }
 let s:types_to_term_prefixes = {
     \ 'error':  '[/E]',
-    \ 'normal': '[/N]',
+    \ 'status': '[/N]',
     \ }
 let s:body_indent = '  '
 function! dapper#log#DebugLogger#log(text, ...) abort dict
   call dapper#log#DebugLogger#CheckType(l:self)
-  let a:type = get(a:000, 0, 'normal')
+  let a:type = get(a:000, 0, 'status')
   if type(a:text) ==# v:t_list
     let l:to_insert = a:text
   elseif type(a:text) ==# v:t_string

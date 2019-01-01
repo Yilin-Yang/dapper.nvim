@@ -35,7 +35,7 @@ export interface DapperMessage {
 export interface Report extends DebugProtocol.ProtocolMessage {
   /**
    * The "kind" of report this message represents.
-   * Values: 'normal', 'error', etc.
+   * Values: 'status', 'error', etc.
    */
   kind: string;
 

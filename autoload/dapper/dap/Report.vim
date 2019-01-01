@@ -21,8 +21,8 @@ function! dapper#dap#Report#new(...)
   let l:new['alert'] = a:alert
   let l:new['other'] = a:other
 
-  if a:kind !=# '' && a:vim_msg_typename !=# ''
-    let l:new['vim_msg_typename'] = toupper(a:kind[0:0]).'Report'
+  if a:kind !=# '' && a:vim_msg_typename ==# ''
+    let l:new['vim_msg_typename'] = toupper(a:kind[0:0]).a:kind[1:].'Report'
   endif
 
   return l:new

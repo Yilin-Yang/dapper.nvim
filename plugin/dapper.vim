@@ -5,4 +5,4 @@ let g:dapper_nvim_autoloaded = 1
 let g:dapper_middletalker = dapper#MiddleTalker#get()
 let g:dapper_debug_logger = dapper#log#DebugLogger#get()
   let g:dapper_report_handlers = []
-  call dapper#AddDebugLogger(['normal', 'error'])
+  call dapper#AddDebugLogger(['status', 'error'])

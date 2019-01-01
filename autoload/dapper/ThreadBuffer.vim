@@ -61,7 +61,7 @@ function! dapper#ThreadBuffer#receive(msg) abort dict
     call l:self._recvResponse(a:msg)
   endif
   call l:self._log(
-      \ 'normal',
+      \ 'status',
       \ 'ThreadBuffer received '.l:typename,
       \ l:long_msg
       \ )
@@ -116,14 +116,14 @@ function! dapper#ThreadBuffer#_addThreadEntry(dap_thread, ...) abort dict
         \ l:end,
         \ l:new_entry)
     call l:self._log(
-        \ 'normal',
+        \ 'status',
         \ 'ThreadBuffer updated thread ID:'.l:tid,
         \ l:new_entry)
   catch /EntryNotFound/
     let l:insert_after = (a:add_at_top) ? 0 : -1
     call l:self.insertLines(l:insert_after, l:new_entry)
     call l:self._log(
-        \ 'normal',
+        \ 'status',
         \ 'ThreadBuffer added new thread ID:'.l:tid,
         \ l:new_entry)
   endtry
@@ -200,7 +200,7 @@ function! dapper#ThreadBuffer#digDown() abort dict
         \ . dapper#helpers#StrDump(l:st_buf)
   endif
   call l:self._log(
-      \ 'normal',
+      \ 'status',
       \ 'Digging down from ThreadBuffer to tid:'.l:tid,
       \ l:long_msg
       \ )

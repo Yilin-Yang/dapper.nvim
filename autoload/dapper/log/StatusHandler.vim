@@ -33,7 +33,7 @@ endfunction
 
 function! dapper#log#StatusHandler#receive(msg) abort dict
   call dapper#log#StatusHandler#CheckType(l:self)
-  call l:self._formatAndLog(a:msg, 'normal')  " log to outfile
+  call l:self._formatAndLog(a:msg, 'status')  " log to outfile
 
   " echo the message, if we should
   let l:to_echo = dapper#settings#EchoMessages()
