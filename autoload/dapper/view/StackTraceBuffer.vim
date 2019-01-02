@@ -1,27 +1,5 @@
 " BRIEF:  Show a thread's stack trace. 'Drill down' into stackframes.
 
-" BRIEF:  Global StackFrameFormat, sent to the debug adapter.
-let s:stack_frame_format = {
-    \ 'hex': v:false,
-    \ 'parameters': v:true,
-    \ 'parameterTypes': v:true,
-    \ 'parameterNames': v:true,
-    \ 'parameterValues': v:true,
-    \ 'line': v:true,
-    \ 'module': v:true,
-    \ 'includeAll': v:false,
-    \ }
-
-" BRIEF:  Initial `StackTraceArguments`.
-" DETAILS:  - `startFrame = 0`: start from frame with index 0
-"           - `levels = 0`: return all stack frames
-"           - `format`: use given formatting parameters
-let s:stack_trace_args = {
-    \ 'threadId': 0,
-    \ 'startFrame': 0,
-    \ 'levels': 0,
-    \ 'format': s:stack_frame_format,
-    \ }
 
 " BRIEF:  Construct a StackTraceBuffer.
 " PARAM:  parent      (dapper#view#DapperBuffer) The parent `ThreadBuffer`.

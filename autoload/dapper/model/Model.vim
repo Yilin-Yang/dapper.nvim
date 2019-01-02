@@ -1,4 +1,27 @@
 " BRIEF:  Encapsulates the state of the debugging process.
+"
+" BRIEF:  Global StackFrameFormat, sent to the debug adapter.
+let s:stack_frame_format = {
+    \ 'hex': v:false,
+    \ 'parameters': v:true,
+    \ 'parameterTypes': v:true,
+    \ 'parameterNames': v:true,
+    \ 'parameterValues': v:true,
+    \ 'line': v:true,
+    \ 'module': v:true,
+    \ 'includeAll': v:false,
+    \ }
+
+" BRIEF:  Initial `StackTraceArguments`.
+" DETAILS:  - `startFrame = 0`: start from frame with index 0
+"           - `levels = 0`: return all stack frames
+"           - `format`: use given formatting parameters
+let s:stack_trace_args = {
+    \ 'threadId': 0,
+    \ 'startFrame': 0,
+    \ 'levels': 0,
+    \ 'format': s:stack_frame_format,
+    \ }
 
 " BRIEF:  Construct a new Model.
 " PARAM:  message_passer  (dapper#MiddleTalker)
@@ -153,10 +176,8 @@ function! dapper#model#Model#_recvResponse(response) abort dict
     elseif has_key(l:stopped, l:tid)
       call l:stopped[l:tid].updateProps(l:thread)
     else
-      let l:new_thread = dapper#model#Thread#new(
-          \ {'id': l:tid, 'name': l:name},
-          \ l:self['_message_passer'] )
-      let l:running[l:tid] = l:new_thread
+      call l:self._makeThread(l:thread)
+      let l:new_thread = l:self.thread(l:tid)
       call l:self['_message_passer'].notifyReport(
           \ 'error',
           \ 'model#Model received unknown Thread:'.l:tid
@@ -173,9 +194,11 @@ function! dapper#model#Model#_makeThread(body) abort dict
   let l:thread = dapper#model#Thread#new(
       \ a:body,
       \ l:self['_message_passer'])
-  " populate Thread asynchronously from ThreadsRequest
+  " populate Thread asynchronously from StackTraceRequest
+  let l:args = deepcopy(s:stack_trace_args)
+  let l:args['threadId'] = l:thread.id()
   call l:self['_message_passer'].request(
-      \ 'threads', {}, function('dapper#model#Thread#receive', l:thread))
+      \ 'stackTrace', l:args, function('dapper#model#Thread#receive', l:thread))
   let l:self['_ids_to_running'][l:thread.id()] = l:thread
 
   call l:self['_message_passer'].notifyReport(
