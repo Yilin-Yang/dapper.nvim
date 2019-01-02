@@ -7,10 +7,7 @@
 "       - 'name'
 "       - 'reason'
 " PARAM:  message_passer  (dapper#MiddleTalker)
-" PARAM:  debug_logger    (dapper#log#DebugLogger?)
-function! dapper#model#Thread#new(props, message_passer, ...) abort
-  let a:debug_logger = get(a:000, 0, dapper#log#DebugLogger#dummy())
-
+function! dapper#model#Thread#new(props, message_passer) abort
   let l:tid = 0
   if has_key(a:props, 'id')
     let l:tid = a:props['id']
@@ -25,7 +22,6 @@ function! dapper#model#Thread#new(props, message_passer, ...) abort
       \ '_status': has_key(a:props, 'reason') ? a:props['reason'] : '(N/A)',
       \ '_callstack': [],
       \ '_message_passer': a:message_passer,
-      \ '_debug_logger': a:debug_logger,
       \ 'id': function('dapper#model#Thread#id'),
       \ 'name': function('dapper#model#Thread#name'),
       \ 'status': function('dapper#model#Thread#status'),
@@ -81,7 +77,7 @@ function! dapper#model#Thread#receive(msg) abort dict
   call dapper#model#Thread#CheckType(l:self)
   let l:self['_callstack'] = a:msg['body']['stackFrames']
   " call l:self.notify() " TODO
-  " call l:self['_debug_logger'].notifyReport(
+  " call l:self['_message_passer'].notifyReport(
   "     \ ''
   "     \ )
 endfunction

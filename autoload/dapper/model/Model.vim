@@ -2,8 +2,7 @@
 
 " BRIEF:  Construct a new Model.
 " PARAM:  message_passer  (dapper#MiddleTalker)
-" PARAM:  debug_logger    (dapper#DebugLogger?)
-function! dapper#model#Model#new(message_passer, ...) abort
+function! dapper#model#Model#new(message_passer) abort
   let a:debug_logger = get(a:000, 0, dapper#log#DebugLogger#dummy())
   " if !exists('g:dapper_model')
   "   try
@@ -17,7 +16,6 @@ function! dapper#model#Model#new(message_passer, ...) abort
       \ '_ids_to_running': {},
       \ '_ids_to_stopped': {},
       \ '_message_passer': a:message_passer,
-      \ '_debug_logger': a:debug_logger,
       \ 'thread': function('dapper#model#Model#thread'),
       \ 'threads': function('dapper#model#Model#threads'),
       \ 'receive': function('dapper#model#Model#receive'),
@@ -160,8 +158,7 @@ function! dapper#model#Model#_makeThread(body) abort dict
   call dapper#model#Model#CheckType(l:self)
   let l:thread = dapper#model#Thread#new(
       \ a:body,
-      \ l:self['_message_passer'],
-      \ l:self['_debug_logger'])
+      \ l:self['_message_passer'])
   " populate Thread asynchronously from ThreadsRequest
   call l:self['_message_passer'].request(
       \ 'threads', {}, function('dapper#model#Thread#receive', l:thread))

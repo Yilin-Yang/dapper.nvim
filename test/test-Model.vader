@@ -1,7 +1,7 @@
 Include: MockMiddleTalker.vader
 
 Execute (Model: Initialize):
-  let g:model = dapper#model#Model#new(g:mock_mt, g:dapper_debug_logger)
+  let g:model = dapper#model#Model#new(g:mock_mt)
 
 Execute (Model: ...updates with started Threads from a ThreadEvent):
   let g:started_1 = {

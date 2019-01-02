@@ -3,14 +3,11 @@
 " BRIEF:  Construct a DapperBuffer.
 " PARAM:  message_passer  (dapper#MiddleTalker)
 " PARAM:  bufparams       (v:t_dict?)   See `dapper#view#Buffer#new`.
-" PARAM:  debug_logger    (dapper#log#DebugLogger?)
 function! dapper#view#DapperBuffer#new(message_passer, ...) abort
   let a:bufparams = get(a:000, 0, {})
-  let a:debug_logger = get(a:000, 1, dapper#log#DebugLogger#dummy())
   let l:new = dapper#view#Buffer#new(a:bufparams)
   let l:new['TYPE']['DapperBuffer'] = 1
   let l:new['_message_passer'] = a:message_passer
-  let l:new['_debug_logger'] = a:debug_logger
   let l:new['_subs'] = []
 
   let l:new['show'] =
@@ -65,7 +62,7 @@ function! dapper#view#DapperBuffer#emit(obj) abort dict
       let l:i += 1
     catch
       " assume destroyed, unsubscribe this object
-      call l:self['_debug_logger'].notifyReport(
+      call l:self['_message_passer'].notifyReport(
           \ 'status',
           \ '(view#DapperBuffer) Push failed, unsubbing:'
             \ . dapper#helpers#StrDump(l:Cb),

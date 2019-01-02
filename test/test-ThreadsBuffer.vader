@@ -1,7 +1,7 @@
 Include: MockMiddleTalker.vader
 
 Execute (ThreadsBuffer: Construct, Initialize; Test Subscription):
-  let g:model = dapper#model#Model#new(g:mock_mt, g:dapper_debug_logger)
+  let g:model = dapper#model#Model#new(g:mock_mt)
   let g:tb = dapper#view#ThreadsBuffer#new(
       \ '[dapper] Threads', g:model, g:mock_mt)
 Then:

@@ -5,12 +5,11 @@
 " PARAM:  bufname (v:t_string)  The name to be displayed in the statusline.
 " PARAM:  model   (dapper#model#Model)
 " PARAM:  message_passer  (dapper#MiddleTalker?)
-" PARAM:  debug_logger  (dapper#log#DebugLogger?)
 function! dapper#view#ThreadsBuffer#new(
-    \ bufname, model, message_passer, ...) abort
+    \ bufname, model, message_passer) abort
   let l:new = call(
       \ 'dapper#view#RabbitHole#new',
-      \ [a:message_passer, a:bufname] + a:000)
+      \ [a:message_passer, a:bufname])
   let l:new['TYPE']['ThreadsBuffer'] = 1
   let l:new['_ids_to_threads'] = {}
   let l:new['_model'] = a:model  " reference to the global debug model
