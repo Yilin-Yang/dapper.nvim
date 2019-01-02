@@ -1,12 +1,13 @@
 Include: AwaitTimeout.vader
 
-Execute (Pipeline: Setup ThreadBuffer, Subscribe, Initialize Mock Debug Adapter):
+Execute (Pipeline: Setup Model, ThreadsBuffer; Subscribe; Initialize Mock Debug Adapter):
   " subscribe to all incoming messages
   function! StoreMessage(msg) abort
     if !exists('g:messages') | let g:messages = [] | endif
     let g:messages += [a:msg]
   endfunction
   call g:dapper_middletalker.subscribe('.*', function('StoreMessage'))
+  let g:model = dapper#model#Model#new(g:dapper_middletalker)
 
   function! ReceivedMessage(vim_msg_typename) abort
     if !exists('g:messages') | return v:false | endif
@@ -18,9 +19,10 @@ Execute (Pipeline: Setup ThreadBuffer, Subscribe, Initialize Mock Debug Adapter)
     return v:false
   endfunction
 
-  " setup ThreadBuffer, which should (itself) subscribe
+  " setup ThreadsBuffer, which should (itself) subscribe
   if exists('g:tb') | unlet g:tb | endif
-  let g:tb = dapper#view#ThreadBuffer#new('[dapper] Threads', g:dapper_middletalker)
+  let g:tb = dapper#view#ThreadsBuffer#new(
+      \ '[dapper] Threads', g:model, g:dapper_middletalker)
 
   " start mock debug adapter
   let g:start_args = dapper#config#DapperConfig#new(
@@ -38,8 +40,8 @@ Execute (Pipeline: Launch Debuggee):
   sleep 2  " mock debugger doesn't seem to send a LaunchResponse?
 
 Execute (Pipeline: Request Threads):
+  call g:model.update()
   call g:tb.open()
-  call g:tb.update()
   call AwaitTimeout({ -> ReceivedMessage('ThreadsResponse')}, 3000, v:true)
 Expect:
   thread	id: 1	name: thread 1	status: (N/A)

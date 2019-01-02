@@ -16,6 +16,7 @@ function! dapper#model#Model#new(message_passer) abort
       \ '_ids_to_running': {},
       \ '_ids_to_stopped': {},
       \ '_message_passer': a:message_passer,
+      \ 'update': function('dapper#model#Model#update'),
       \ 'thread': function('dapper#model#Model#thread'),
       \ 'threads': function('dapper#model#Model#threads'),
       \ 'receive': function('dapper#model#Model#receive'),
@@ -46,6 +47,13 @@ function! dapper#model#Model#CheckType(object) abort
   endtry
   throw l:err
   endif
+endfunction
+
+" BRIEF:  Prompt the Model to update its contents.
+function! dapper#model#Model#update() abort dict
+  call dapper#model#Model#CheckType(l:self)
+  call l:self['_message_passer'].request(
+      \ 'threads', {}, function('dapper#model#Model#receive', l:self))
 endfunction
 
 " RETURNS:  (dapper#model#Thread)   A thread with the requested ID.
@@ -137,6 +145,7 @@ function! dapper#model#Model#_recvResponse(response) abort dict
   let l:i = 0 | while l:i <# len(l:threads)
     let l:thread = l:threads[l:i]
     let l:tid = l:thread['id']
+    let l:name = l:thread['name']
     let l:running = l:self['_ids_to_running']
     let l:stopped = l:self['_ids_to_stopped']
     if has_key(l:running, l:tid)
@@ -144,10 +153,15 @@ function! dapper#model#Model#_recvResponse(response) abort dict
     elseif has_key(l:stopped, l:tid)
       call l:stopped[l:tid].updateProps(l:thread)
     else
+      let l:new_thread = dapper#model#Thread#new(
+          \ {'id': l:tid, 'name': l:name},
+          \ l:self['_message_passer'] )
+      let l:running[l:tid] = l:new_thread
       call l:self['_message_passer'].notifyReport(
           \ 'error',
-          \ 'model#Model received unknown Thread:'.l:tid,
-          \ dapper#helpers#StrDump(l:thread))
+          \ 'model#Model received unknown Thread:'.l:tid
+            \ . ', constructing from response.',
+          \ dapper#helpers#StrDump(l:new_thread))
     endif
   let l:i += 1 | endwhile
 endfunction
