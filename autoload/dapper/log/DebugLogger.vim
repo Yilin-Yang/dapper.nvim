@@ -22,7 +22,7 @@ function! dapper#log#DebugLogger#get(...) abort
   endif
 
   " create log buffer, set settings
-  let l:new = dapper#Buffer#new(l:bufset)
+  let l:new = dapper#view#Buffer#new(l:bufset)
   let l:new['TYPE']['DebugLogger'] = 1
   let l:new['__writeback'] = l:writeback
   let l:new['__settings'] = l:bufset

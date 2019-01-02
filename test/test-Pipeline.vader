@@ -20,7 +20,7 @@ Execute (Pipeline: Setup ThreadBuffer, Subscribe, Initialize Mock Debug Adapter)
 
   " setup ThreadBuffer, which should (itself) subscribe
   if exists('g:tb') | unlet g:tb | endif
-  let g:tb = dapper#ThreadBuffer#new('[dapper] Threads', g:dapper_middletalker)
+  let g:tb = dapper#view#ThreadBuffer#new('[dapper] Threads', g:dapper_middletalker)
 
   " start mock debug adapter
   let g:start_args = dapper#config#DapperConfig#new(

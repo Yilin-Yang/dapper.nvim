@@ -7,7 +7,7 @@ function! dapper#view#ThreadBuffer#new(bufname, message_passer, ...) abort
       \ 'dapper#view#RabbitHole#new',
       \ [a:message_passer, a:bufname] + a:000)
   let l:new['TYPE']['ThreadBuffer'] = 1
-  let l:new['_ids_to_threads'] = dapper#view#ThreadsCache#new()
+  let l:new['_ids_to_threads'] = dapper#model#ThreadsCache#new()
   let l:new['_tids_to_stbuffers'] = {}  " tid to StackTraceBuffer
 
   let l:new['receive']     = function('dapper#view#ThreadBuffer#receive')

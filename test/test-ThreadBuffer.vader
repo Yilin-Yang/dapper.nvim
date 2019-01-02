@@ -1,7 +1,7 @@
 Include: MockMiddleTalker.vader
 
 Execute (ThreadBuffer: Construct, Initialize; Test Subscription):
-  let g:tb = dapper#ThreadBuffer#new('[dapper] Threads', g:mock_mt)
+  let g:tb = dapper#view#ThreadBuffer#new('[dapper] Threads', g:mock_mt)
 Then:
   AssertEqual function(g:tb.receive), g:last_sub[1]
   AssertNotEqual -1, match(g:last_sub[0], 'Thread')

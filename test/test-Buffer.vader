@@ -1,5 +1,5 @@
 Execute (Buffer: Construct Default):
-  let g:buffer = dapper#Buffer#new()
+  let g:buffer = dapper#view#Buffer#new()
   call g:buffer.open()
 Then:
   AssertEqual 'hide',   &bufhidden
@@ -8,7 +8,7 @@ Then:
   AssertEqual 0,        &swapfile
 
 Execute (Buffer: Set Buffer Variable):
-  let g:buffer = dapper#Buffer#new()
+  let g:buffer = dapper#view#Buffer#new()
   call g:buffer.setbufvar('test_var', 1)
   call g:buffer.open()
 Then:
