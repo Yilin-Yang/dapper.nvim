@@ -1,9 +1,13 @@
 " BRIEF:  Interface for a 'level' in a hierarchy of buffers. Step up, step down.
 
-function! dapper#view#RabbitHole#new(bufname, ...) abort
+" PARAM:  message_passer  (dapper#MiddleTalker)
+" PARAM:  bufname         (v:t_string)
+" PARAM:  debug_logger    (dapper#log#DebugLogger?)
+function! dapper#view#RabbitHole#new(message_passer, bufname, ...) abort
+  let a:debug_logger = get(a:000, 0, dapper#log#DebugLogger#dummy())
   let l:new = call(
       \ 'dapper#view#DapperBuffer#new',
-      \ [{'fname': a:bufname}] + a:000)
+      \ [a:message_passer, {'fname': a:bufname}, a:debug_logger] + a:000[1:])
   let l:new['TYPE']['RabbitHole'] = 1
   let l:new['climbUp'] = function('dapper#view#RabbitHole#__noImpl', ['climbUp'])
   let l:new['digDown'] = function('dapper#view#RabbitHole#__noImpl', ['digDown'])

@@ -10,7 +10,7 @@ function! dapper#view#ThreadsBuffer#new(
     \ bufname, model, message_passer, ...) abort
   let l:new = call(
       \ 'dapper#view#RabbitHole#new',
-      \ [a:bufname] + a:000)
+      \ [a:message_passer, a:bufname] + a:000)
   let l:new['TYPE']['ThreadsBuffer'] = 1
   let l:new['_ids_to_threads'] = {}
   let l:new['_model'] = a:model  " reference to the global debug model
@@ -66,7 +66,7 @@ function! dapper#view#ThreadsBuffer#receive(msg) abort dict
   let l:model = l:self['_model']
 
   let l:body = a:msg['body']
-  let l:type = a:msg['type']
+  let l:type = a:msg['vim_msg_typename']
   if l:type ==# 'StoppedEvent'
     " update the full list
     let l:ids_to_threads = l:model.threads(v:true)  " all of them
@@ -160,9 +160,9 @@ endfunction
 " PARAM:  thread  (dapper#model#Thread) The thread object.
 function! dapper#view#ThreadsBuffer#makeEntry(thread) abort dict
   call dapper#view#ThreadsBuffer#CheckType(l:self)
-  let l:tid    = l:thread.id()
-  let l:name   = l:thread.name()
-  let l:status = l:thread.status()
+  let l:tid    = a:thread.id()
+  let l:name   = a:thread.name()
+  let l:status = a:thread.status()
   return [printf("thread\tid: %d\tname: %s\tstatus: %s", l:tid, l:name, l:status)]
 endfunction
 

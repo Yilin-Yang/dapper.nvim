@@ -1,12 +1,15 @@
 " BRIEF:  A Buffer, with additional methods for use in the dapper UI.
 
 " BRIEF:  Construct a DapperBuffer.
+" PARAM:  message_passer  (dapper#MiddleTalker)
 " PARAM:  bufparams       (v:t_dict?)   See `dapper#view#Buffer#new`.
 " PARAM:  debug_logger    (dapper#log#DebugLogger?)
-function! dapper#view#DapperBuffer#new(...) abort
-  let a:debug_logger = get(a:000, 0, dapper#log#DebugLogger#dummy())
-  let l:new = call('dapper#view#Buffer#new', a:000[1:])
+function! dapper#view#DapperBuffer#new(message_passer, ...) abort
+  let a:bufparams = get(a:000, 0, {})
+  let a:debug_logger = get(a:000, 1, dapper#log#DebugLogger#dummy())
+  let l:new = dapper#view#Buffer#new(a:bufparams)
   let l:new['TYPE']['DapperBuffer'] = 1
+  let l:new['_message_passer'] = a:message_passer
   let l:new['_debug_logger'] = a:debug_logger
   let l:new['_subs'] = []
 
@@ -110,8 +113,7 @@ endfunction
 " PARAM:  other (any?)
 function! dapper#view#DapperBuffer#_log(kind, brief, ...) abort dict
   call dapper#view#DapperBuffer#CheckType(l:self)
-  let l:msg = call('dapper#dap#Report#new', [0, '', a:kind, a:brief] + a:000)
-  call l:self['___message_passer___'].receive(l:msg)
+  call call(l:self['_message_passer'].notifyReport, [a:kind, a:brief] + a:000)
 endfunction
 
 " BRIEF:  Make this buffer display the given object.
