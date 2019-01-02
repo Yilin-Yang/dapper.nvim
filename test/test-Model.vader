@@ -75,3 +75,14 @@ Then:
   let g:thread_2 = g:model.thread(2)
   AssertEqual 'bar', g:thread_2.name()
   AssertEqual 'started', g:thread_2.status()
+
+Execute (Model: ...gracefully handles ThreadsRequest failure):
+  let g:response = {
+      \ 'vim_msg_typename': 'ThreadsResponse',
+      \ 'vim_id': 0,
+      \ 'success': 0,
+      \ 'command': 'threads',
+      \ 'message': 'all is foobar',
+      \ 'body': {},
+      \ }
+  call g:model.receive(g:response)  " shouldn't throw

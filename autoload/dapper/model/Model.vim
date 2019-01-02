@@ -111,6 +111,14 @@ endfunction
 " PARAM:  response  (DebugProtocol.ThreadsResponse)
 function! dapper#model#Model#_recvResponse(response) abort dict
   call dapper#model#Model#CheckType(l:self)
+  if !a:response['success']
+    call l:self['_debug_logger'].notifyReport(
+        \ 'error',
+        \ 'model#Model ThreadsRequest failed outright!',
+        \ dapper#helpers#StrDump(a:response),
+        \ v:true)
+    return
+  endif
   let l:threads = a:response['body']['threads']
   let l:i = 0 | while l:i <# len(l:threads)
     let l:thread = l:threads[l:i]
