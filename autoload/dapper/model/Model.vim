@@ -69,7 +69,7 @@ function! dapper#model#Model#receive(msg) abort dict
   let l:typename = a:msg['vim_msg_typename']
   if l:typename ==# 'ThreadEvent'
     call l:self._recvEvent(a:msg)
-  elseif l:typename ==# 'ThreadResponse'
+  elseif l:typename ==# 'ThreadsResponse'
     call l:self._recvResponse(a:msg)
   else
     call l:self['_debug_logger'].notifyReport(
@@ -155,17 +155,22 @@ function! dapper#model#Model#_archiveThread(body) abort dict
   call dapper#model#Model#CheckType(l:self)
   let l:tid = a:body['threadId']
   let l:brief = 'model#Model archived exited thread:'.l:tid
-  let l:kind = 'normal'
+  let l:kind = 'status'
   let l:long_msg = ''
   try
-    let l:thread = l:self.thread(l:tid)
+    let l:thread = l:self['_ids_to_running'][l:tid]
+    let l:thread.updateProps(a:body)
     unlet l:self['_ids_to_running'][l:tid]
     let l:self['_ids_to_stopped'][l:tid] = l:thread
     let l:long_msg = 'Thread archived.'
     " TODO: destroy older threads after this gets too large
   catch /ERROR(NotFound)/
     let l:brief = 'model#Model Unknown thread exited:'.l:tid
-    let l:kind = 'normal'
+    let l:kind = 'error'
     let l:long_msg = 'Model state unchanged.'
   endtry
+  call l:self['_debug_logger'].notifyReport(
+      \ l:kind,
+      \ l:brief,
+      \ l:long_msg )
 endfunction

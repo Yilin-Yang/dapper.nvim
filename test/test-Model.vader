@@ -73,5 +73,5 @@ Then:
   AssertEqual 'foo', g:thread_1.name()
   AssertEqual 'exited', g:thread_1.status()
   let g:thread_2 = g:model.thread(2)
-  AssertEqual 'bar', g:thread_1.name()
-  AssertEqual 'started', g:thread_1.status()
+  AssertEqual 'bar', g:thread_2.name()
+  AssertEqual 'started', g:thread_2.status()
