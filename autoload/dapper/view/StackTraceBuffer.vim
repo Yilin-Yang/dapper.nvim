@@ -118,9 +118,9 @@ endfunction
 
 function! dapper#view#StackTraceBuffer#setMappings() abort dict
   call dapper#view#StackTraceBuffer#CheckType(l:self)
-  execute 'nnoremap <buffer> '.dapper#view#settings#ClimbUpMapping().' '
+  execute 'nnoremap <buffer> '.dapper#settings#ClimbUpMapping().' '
       \ . ':call b:dapper_buffer.climbUp()<cr>'
-  execute 'nnoremap <buffer> '.dapper#view#settings#DigDownMapping().' '
+  execute 'nnoremap <buffer> '.dapper#settings#DigDownMapping().' '
       \ . ':call b:dapper_buffer.digDown()<cr>'
 endfunction
 

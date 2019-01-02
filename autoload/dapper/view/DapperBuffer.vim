@@ -73,7 +73,7 @@ endfunction
 " PARAM:  other (any?)
 function! dapper#view#DapperBuffer#_log(kind, brief, ...) abort dict
   call dapper#view#DapperBuffer#CheckType(l:self)
-  let l:msg = call('dapper#view#dap#Report#new', [0, '', a:kind, a:brief] + a:000)
+  let l:msg = call('dapper#dap#Report#new', [0, '', a:kind, a:brief] + a:000)
   call l:self['___message_passer___'].receive(l:msg)
 endfunction
 

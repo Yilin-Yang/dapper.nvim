@@ -91,7 +91,7 @@ endfunction
 " BRIEF:  Set mappings to 'drill-down' into a Thread, expand info, etc.
 function! dapper#view#ThreadBuffer#setMappings() abort dict
   call dapper#view#ThreadBuffer#CheckType(l:self)
-  execute 'nnoremap <buffer> '.dapper#view#settings#DigDownMapping().' '
+  execute 'nnoremap <buffer> '.dapper#settings#DigDownMapping().' '
       \ . ':call b:dapper_buffer.digDown()<cr>'
 endfunction
 
