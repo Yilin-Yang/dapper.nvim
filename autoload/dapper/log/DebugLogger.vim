@@ -1,7 +1,7 @@
 " BRIEF:  Global singleton debug logger.
 
 " BRIEF:  Get a reference to the debug logger singleton.
-function! dapper#log#DebugLogger#get() abort
+function! dapper#log#DebugLogger#get(...) abort
   if exists('g:dapper_debug_logger')
     try
       call dapper#log#DebugLogger#CheckType(g:dapper_debug_logger)
@@ -35,6 +35,7 @@ function! dapper#log#DebugLogger#get() abort
   let l:new['__write'] = function('dapper#log#DebugLogger#__write')
   let l:new['__onExit'] = function('dapper#log#DebugLogger#__onExit')
   let l:new['log'] = function('dapper#log#DebugLogger#log')
+  let l:new['notifyReport'] = function('dapper#log#DebugLogger#notifyReport')
 
   let g:dapper_debug_logger = l:new
 
@@ -50,6 +51,18 @@ function! dapper#log#DebugLogger#get() abort
   endif
 
   return g:dapper_debug_logger
+endfunction
+
+" RETURNS:  A 'dummy' logger, with the same interface as the actual debug
+"     logger, but which does nothing when its functions are invoked.
+function! dapper#log#DebugLogger#dummy() abort
+  return {
+      \ 'log': funcref('<SID>DoNothing'),
+      \ 'notifyReport': funcref('<SID>DoNothing'),
+      \ }
+endfunction
+
+function! s:DoNothing(...) abort dict
 endfunction
 
 " NOTE: Setting `buftype=nofile` in *all* cases is a hack.
@@ -188,4 +201,16 @@ function! dapper#log#DebugLogger#log(text, ...) abort dict
   if l:self.__shouldWrite()  " based on the current received count,
     call l:self.__write()
   endif
+endfunction
+
+" BRIEF:  Send a report, which might be logged by a handler.
+" PARAM:  kind  (v:t_string)
+" PARAM:  brief (v:t_string)
+" PARAM:  long  (v:t_string?)
+" PARAM:  alert (v:t_bool?)
+" PARAM:  other (any?)
+function! dapper#log#DebugLogger#notifyReport(kind, brief, ...) abort dict
+  call dapper#log#DebugLogger#CheckType(l:self)
+  let l:msg = call('dapper#dap#Report#new', [0, '', a:kind, a:brief] + a:000)
+  call dapper#receive(l:msg)
 endfunction
