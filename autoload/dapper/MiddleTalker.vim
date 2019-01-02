@@ -21,6 +21,7 @@ function! dapper#MiddleTalker#get() abort
     \ 'request': function('dapper#MiddleTalker#request'),
     \ 'subscribe': function('dapper#MiddleTalker#subscribe'),
     \ 'unsubscribe': function('dapper#MiddleTalker#unsubscribe'),
+    \ 'notifyReport': function('dapper#MiddleTalker#notifyReport')
   \ }
 
   return g:dapper_middletalker
@@ -138,4 +139,16 @@ function! dapper#MiddleTalker#unsubscribe(name_pattern, Callback) abort dict
     return v:true
   endif
   return v:false
+endfunction
+
+" BRIEF:  Send a report, which might be logged by a handler.
+" PARAM:  kind  (v:t_string)
+" PARAM:  brief (v:t_string)
+" PARAM:  long  (v:t_string?)
+" PARAM:  alert (v:t_bool?)
+" PARAM:  other (any?)
+function! dapper#MiddleTalker#notifyReport(kind, brief, ...) abort dict
+  call dapper#MiddleTalker#CheckType(l:self)
+  let l:msg = call('dapper#dap#Report#new', [0, '', a:kind, a:brief] + a:000)
+  call l:self.receive(l:msg)
 endfunction

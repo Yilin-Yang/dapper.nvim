@@ -88,7 +88,7 @@ function! dapper#model#Model#receive(msg) abort dict
   elseif l:typename ==# 'ThreadsResponse'
     call l:self._recvResponse(a:msg)
   else
-    call l:self['_debug_logger'].notifyReport(
+    call l:self['_message_passer'].notifyReport(
         \ 'status',
         \ 'model#Model Received '.l:typename.', for some reason(?)',
         \ dapper#helpers#StrDump(a:msg)
@@ -116,7 +116,7 @@ function! dapper#model#Model#_recvEvent(event) abort dict
     endtry
       let l:long_msg = 'Unrecognized reason: '.l:reason."\n".l:long_msg
   endif
-  call l:self['_debug_logger'].notifyReport(
+  call l:self['_message_passer'].notifyReport(
       \ 'status',
       \ 'model#Model received ThreadEvent',
       \ l:long_msg
@@ -128,7 +128,7 @@ endfunction
 function! dapper#model#Model#_recvResponse(response) abort dict
   call dapper#model#Model#CheckType(l:self)
   if !a:response['success']
-    call l:self['_debug_logger'].notifyReport(
+    call l:self['_message_passer'].notifyReport(
         \ 'error',
         \ 'model#Model ThreadsRequest failed outright!',
         \ dapper#helpers#StrDump(a:response),
@@ -146,7 +146,7 @@ function! dapper#model#Model#_recvResponse(response) abort dict
     elseif has_key(l:stopped, l:tid)
       call l:stopped[l:tid].updateProps(l:thread)
     else
-      call l:self['_debug_logger'].notifyReport(
+      call l:self['_message_passer'].notifyReport(
           \ 'error',
           \ 'model#Model received unknown Thread:'.l:tid,
           \ dapper#helpers#StrDump(l:thread))
@@ -167,7 +167,7 @@ function! dapper#model#Model#_makeThread(body) abort dict
       \ 'threads', {}, function('dapper#model#Thread#receive', l:thread))
   let l:self['_ids_to_running'][l:thread.id()] = l:thread
 
-  call l:self['_debug_logger'].notifyReport(
+  call l:self['_message_passer'].notifyReport(
       \ 'status',
       \ 'model#Model constructed new Thread object.',
       \ dapper#helpers#StrDump(l:thread))
@@ -193,7 +193,7 @@ function! dapper#model#Model#_archiveThread(body) abort dict
     let l:kind = 'error'
     let l:long_msg = 'Model state unchanged.'
   endtry
-  call l:self['_debug_logger'].notifyReport(
+  call l:self['_message_passer'].notifyReport(
       \ l:kind,
       \ l:brief,
       \ l:long_msg )
