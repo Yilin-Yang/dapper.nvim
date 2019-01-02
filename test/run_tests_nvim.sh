@@ -8,7 +8,8 @@
 # PARAM:    TEST_INTERNATIONAL  If set to '-i' or '--international', re-run
 #                               tests in non-English locales.
 BASE_CMD="nvim --headless -Nnu .test_vimrc -i NONE"
-TEST_CMD="-c 'Vader! test-*.vader'"
+VADER_CMD="-c 'Vader!"
+TEST_PAT=" test-*.vader'"
 for ARG in "$@"; do
     case $ARG in
         '-i' | '--international')
@@ -16,7 +17,11 @@ for ARG in "$@"; do
             ;;
         '-v' | '--visible')
             BASE_CMD="nvim -Nnu .test_vimrc -i NONE"
-            TEST_CMD="-c 'Vader test-*.vader'"
+            VADER_CMD="-c 'Vader"
+            ;;
+        '--debug-logger')
+            export DAPPER_TEST_DEBUG_LOGGING=1
+            TEST_PAT=" log/test-*.vader'"
             ;;
     esac
 done
@@ -24,12 +29,13 @@ export IS_DAPPER_DEBUG=1
 
 set -p
 export VADER_OUTPUT_FILE=/dev/stderr
-echo "${BASE_CMD} ${TEST_CMD}"
-eval "${BASE_CMD} ${TEST_CMD}"
+echo "${BASE_CMD} ${VADER_CMD} ${TEST_PAT}"
+eval "${BASE_CMD} ${VADER_CMD} ${TEST_PAT}"
 
 if [ $TEST_INTERNATIONAL ]; then
     # test non-English locale
-    eval "${BASE_CMD} -c 'language de_DE.utf8' ${TEST_CMD}"
-    eval "${BASE_CMD} -c 'language es_ES.utf8' ${TEST_CMD}"
+    eval "${BASE_CMD} -c 'language de_DE.utf8' ${VADER_CMD} ${TEST_PAT}"
+    eval "${BASE_CMD} -c 'language es_ES.utf8' ${VADER_CMD} ${TEST_PAT}"
 fi
 unset IS_DAPPER_DEBUG
+export DAPPER_TEST_DEBUG_LOGGING=0

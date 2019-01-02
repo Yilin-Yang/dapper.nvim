@@ -18,10 +18,11 @@ highlight clear
 " set cmdheight=5
 
 let g:project_root = split(getcwd(), '/test')[0]
-
-" FOR test-DebugLogger
-let g:dapper_log_buffer_writeback = 'every2'
 let g:dapper_logfile = g:project_root.'/test/LOGFILE'
+
+if $DAPPER_TEST_DEBUG_LOGGING
+  let g:dapper_log_buffer_writeback = 'every2'
+endif
 
 call dapper#AddDapperConfig(
   \ 'node',
