@@ -189,6 +189,7 @@ function! dapper#ThreadBuffer#digDown() abort dict
   if !has_key(l:tids_stbf, l:tid)
     let l:st_buf = dapper#StackTraceBuffer#new(
         \ l:self,
+        \ l:tid,
         \ '[dapper.nvim] Callstack, tid: '.l:tid,
         \ l:self['___message_passer___'])
     let l:tids_stbf[l:tid] = l:st_buf
