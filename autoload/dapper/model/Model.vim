@@ -19,6 +19,7 @@ function! dapper#model#Model#new(message_passer, ...) abort
       \ '_message_passer': a:message_passer,
       \ '_debug_logger': a:debug_logger,
       \ 'thread': function('dapper#model#Model#thread'),
+      \ 'threads': function('dapper#model#Model#threads'),
       \ 'receive': function('dapper#model#Model#receive'),
       \ '_recvEvent': function('dapper#model#Model#_recvEvent'),
       \ '_recvResponse': function('dapper#model#Model#_recvResponse'),
@@ -61,6 +62,21 @@ function! dapper#model#Model#thread(tid) abort dict
     throw 'ERROR(NotFound) (dapper#model#Model) No thread with ID: '.a:tid
   endif
   return l:running[a:tid]
+endfunction
+
+" RETURNS:  (v:t_dict)  Dictionary containing all requested threads.
+" PARAM:  include_exited  (v:t_bool?)   Whether to *also* provide stopped
+"     threads.
+function! dapper#model#Model#threads(...) abort dict
+  call dapper#model#Model#CheckType(l:self)
+  let a:include_exited = get(a:000, 0, v:false)
+  let l:to_return = copy(l:self['_ids_to_running'])  " shallow copy
+  if !a:include_exited | return l:to_return | endif
+  let l:exited = l:self['_ids_to_stopped']
+  for [l:tid, l:thread] in items(l:exited)
+    let l:to_return[l:tid] = l:thread
+  endfor
+  return l:to_return
 endfunction
 
 " BRIEF:  Handle incoming debug adapter protocol messages.
