@@ -1,36 +1,47 @@
 Include: MockMiddleTalker.vader
 
-Execute (ThreadBuffer: Construct, Initialize; Test Subscription):
-  let g:tb = dapper#view#ThreadBuffer#new('[dapper] Threads', g:mock_mt)
+Execute (ThreadsBuffer: Construct, Initialize; Test Subscription):
+  let g:model = dapper#model#Model#new(g:mock_mt, g:dapper_debug_logger)
+  let g:tb = dapper#view#ThreadsBuffer#new(
+      \ '[dapper] Threads', g:model, g:mock_mt)
 Then:
   AssertEqual function(g:tb.receive), g:last_sub[1]
+  " TODO check other subscriptions?
   AssertNotEqual -1, match(g:last_sub[0], 'Thread')
 
-Execute (ThreadBuffer: Receive ThreadEvent, started):
+Execute (ThreadsBuffer: Receive ThreadEvent, started):
   let g:msg = dapper#dap#Event#new(0, 'ThreadEvent')
   let g:msg['event'] = 'ThreadEvent'
   let g:msg['body'] = {'threadId': 123, 'reason': 'started'}
+  call g:model.receive(g:msg)
   call g:tb.receive(g:msg)
   call g:tb.open()
 Expect:
   thread	id: 123	name: unnamed	status: started
-  
-Then (Check for ThreadsRequest):
-  let g:req = g:last_req[0]
-  let g:Cb  = g:last_req[1]
-  AssertEqual 'threads', g:req
 
-Execute (ThreadBuffer: New Thread Started):
+Execute (ThreadsBuffer: New Thread Started):
   let g:msg = dapper#dap#Event#new(0, 'ThreadEvent')
   let g:msg['event'] = 'ThreadEvent'
   let g:msg['body'] = {'threadId': 789, 'reason': 'started'}
+  call g:model.receive(g:msg)
   call g:tb.receive(g:msg)
   call g:tb.open()
 Expect:
   thread	id: 789	name: unnamed	status: started
   thread	id: 123	name: unnamed	status: started
-  
-Execute (ThreadBuffer: Update With Response):
+
+Execute (ThreadsBuffer: Thread Exited):
+  let g:msg = dapper#dap#Event#new(0, 'ThreadEvent')
+  let g:msg['event'] = 'ThreadEvent'
+  let g:msg['body'] = {'threadId': 789, 'reason': 'exited'}
+  call g:model.receive(g:msg)
+  call g:tb.receive(g:msg)
+  call g:tb.open()
+Expect:
+  thread	id: 789	name: unnamed	status: exited
+  thread	id: 123	name: unnamed	status: started
+
+Execute (ThreadsBuffer: Update With ThreadsResponse):
   let g:msg = dapper#dap#Response#new(0, 'ThreadsResponse')
   let g:msg['command'] = 'threads'
   let g:msg['success'] = v:true
@@ -38,12 +49,13 @@ Execute (ThreadBuffer: Update With Response):
     \ {'id': 123, 'name': 'foo'},
     \ {'id': 789, 'name': 'bar'},
   \ ]}
+  call g:model.receive(g:msg)
   call g:tb.receive(g:msg)
   call g:tb.open()
 Expect:
-  thread	id: 789	name: bar	status: started
+  thread	id: 789	name: bar	status: exited
   thread	id: 123	name: foo	status: started
-  
-Execute (ThreadBuffer: Cleanup):
+
+Execute (ThreadsBuffer: Cleanup):
   call g:tb.open()
   normal! ggVGd

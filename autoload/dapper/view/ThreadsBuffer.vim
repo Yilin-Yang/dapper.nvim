@@ -30,11 +30,11 @@ function! dapper#view#ThreadsBuffer#new(
   let l:new['_getSelected'] = function('dapper#view#ThreadsBuffer#_getSelected')
 
   " should update *after* the model has been updated
-  call l:new._subscribe('StoppedEvent',
+  call a:message_passer.subscribe('StoppedEvent',
       \ function('dapper#view#ThreadsBuffer#receive', l:new))
-  call l:new._subscribe('ThreadEvent',
+  call a:message_passer.subscribe('ThreadEvent',
       \ function('dapper#view#ThreadsBuffer#receive', l:new))
-  call l:new._subscribe('ThreadsResponse',
+  call a:message_passer.subscribe('ThreadsResponse',
       \ function('dapper#view#ThreadsBuffer#receive', l:new))
 
   return l:new
@@ -62,7 +62,7 @@ endfunction
 " BRIEF:  Notify this ThreadsBuffer that it should update its listed threads.
 function! dapper#view#ThreadsBuffer#receive(msg) abort dict
   call dapper#view#ThreadsBuffer#CheckType(l:self)
-  if !a:msg['success'] | return | endif
+  if a:msg['type'] ==# 'response' && !a:msg['success'] | return | endif
   let l:model = l:self['_model']
 
   let l:body = a:msg['body']
