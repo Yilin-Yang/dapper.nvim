@@ -23,9 +23,9 @@ for ARG in "$@"; do
             export DAPPER_TEST_DEBUG_LOGGING=1
             TEST_PAT=" log/test-*.vader'"
             ;;
-        "--file=*")
-           TEST_PAT="${ARG#*=}"
-           ;;
+        "--file="*)
+            TEST_PAT="${ARG#*=}'"
+            ;;
     esac
 done
 export IS_DAPPER_DEBUG=1
