@@ -76,10 +76,11 @@ endfunction
 function! dapper#model#Thread#receive(msg) abort dict
   call dapper#model#Thread#CheckType(l:self)
   let l:self['_callstack'] = a:msg['body']['stackFrames']
-  " call l:self.notify() " TODO
-  " call l:self['_message_passer'].notifyReport(
-  "     \ ''
-  "     \ )
+  call l:self['_message_passer'].notifyReport(
+      \ 'status',
+      \ 'model#Thread:'.l:self.id().' updated w/ stack trace',
+      \ dapper#helpers#StrDump(a:msg)
+      \ )
 endfunction
 
 " BRIEF:  Update the properties of this Thread from the properties given.
