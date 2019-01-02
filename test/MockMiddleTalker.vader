@@ -16,4 +16,5 @@ Execute (Declare Mock MiddleTalker):
     \ 'unsubscribe': function('MockNoOp'),
     \ 'request': function('MockReq'),
     \ 'receive': function('MockNoOp'),
+    \ 'notifyReport': function('dapper#MiddleTalker#notifyReport', g:dapper_middletalker),
   \ }
