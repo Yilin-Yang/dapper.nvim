@@ -33,7 +33,7 @@ Then:
   AssertEqual 'started', g:thread_1.status()
 
 Execute (Model: ...should have sent a ThreadsRequest in response):
-  AssertEqual 'threads', g:last_req[0]
+  Assert MockGotRequest('threads')
 
 Execute (Model: ...throws when asked for nonexistent threads):
   AssertThrows call g:model.thread(3)
@@ -86,3 +86,6 @@ Execute (Model: ...gracefully handles ThreadsRequest failure):
       \ 'body': {},
       \ }
   call g:model.receive(g:response)  " shouldn't throw
+
+Execute (Model: Test Cleanup):
+  call MockCleanUp()

@@ -1,11 +1,16 @@
 Execute (Declare Mock MiddleTalker):
+  let g:subs = []
+  let g:reqs = []
+
   " mock middletalker
   function! MockSub(pattern, Callback) abort
     let g:last_sub = [a:pattern, a:Callback]
+    let g:subs += [g:last_sub]
   endfunction
 
   function! MockReq(command, request_args, Callback) abort
     let g:last_req = [a:command, a:request_args, a:Callback]
+    let g:reqs += [g:last_req]
   endfunction
 
   function! MockNoOp(...) abort
@@ -18,3 +23,22 @@ Execute (Declare Mock MiddleTalker):
     \ 'receive': function('MockNoOp'),
     \ 'notifyReport': function('dapper#MiddleTalker#notifyReport', g:dapper_middletalker),
   \ }
+
+  function! MockCleanUp() abort
+    let g:subs = []
+    let g:reqs = []
+  endfunction
+
+  function! MockGotRequest(command) abort
+    let l:i = 0 | while l:i <# len(g:reqs)
+      if g:reqs[l:i][0] ==# a:command | return v:true | endif
+    let l:i += 1 | endwhile
+    return v:false
+  endfunction
+
+  function! MockGotSubscription(pattern) abort
+    let l:i = 0 | while l:i <# len(g:subs)
+      if g:subs[l:i][0] ==# a:pattern | return v:true | endif
+    let l:i += 1 | endwhile
+    return v:false
+  endfunction
