@@ -10,6 +10,7 @@
 " PARAM:  Reject  (v:t_func?)
 function! dapper#model#StackFrame#new(frame_msg, message_passer, ...) abort
   let l:new = call('dapper#Promise#new', [a:Resolve] + a:000)
+  let l:new['TYPE']['StackFrame'] = 1
 
   let l:new['_message_passer'] = a:message_passer
   let l:new['_frame_msg'] = a:frame_msg

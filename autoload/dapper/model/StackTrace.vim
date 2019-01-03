@@ -34,6 +34,7 @@ let s:stack_trace_args = {
 " PARAM:  Reject  (v:t_func?)
 function! dapper#model#StackTrace#new(thread_id, message_passer, ...) abort
   let l:new = call('dapper#Promise#new', a:000)
+  let l:new['TYPE']['StackTrace'] = 1
   let l:new['_message_passer'] = a:message_passer
   let l:new['_thread_id'] = a:thread_id
   let l:new['_stack_trace'] = []
@@ -91,7 +92,7 @@ endfunction
 " DETAILS:  Throws an `ERROR(NotFound)` if the given StackFrame could not be
 "     found.
 function! dapper#model#StackTrace#frame(idx) abort dict
-  call dapper#model#StackFrame#CheckType(l:self)
+  call dapper#model#StackTrace#CheckType(l:self)
   if type(a:idx) !=# v:t_number
     throw 'ERROR(WrongType) (dapper#model#StackTrace) Index isn''t number':
         \ . dapper#helpers#StrDump(a:idx)
@@ -104,6 +105,6 @@ function! dapper#model#StackTrace#frame(idx) abort dict
 endfunction
 
 function! dapper#model#StackTrace#id() abort dict
-  call dapper#model#StackFrame#CheckType(l:self)
+  call dapper#model#StackTrace#CheckType(l:self)
   return l:self['_thread_id']
 endfunction
