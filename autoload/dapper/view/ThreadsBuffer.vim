@@ -89,7 +89,7 @@ function! dapper#view#ThreadsBuffer#receive(msg) abort dict
     call l:self._updateThreads(l:to_update)
   endif
 
-  let l:self['_ids_to_threads'] = l:self['_model'].thread
+  let l:self['_ids_to_threads'] = l:self['_model'].threads()
 endfunction
 
 " BRIEF:  Get the line range of a particular Thread entry.

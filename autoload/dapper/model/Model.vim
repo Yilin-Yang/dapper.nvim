@@ -1,5 +1,13 @@
 " BRIEF:  Encapsulates the state of the debugging process.
+" DETAILS:  Model is primarily responsible for managing the VimL frontend's
+"     knowledge of the debugger's state. It sends `ThreadsRequest`s in
+"     response to `ThreadEvent`s and `StoppedEvent`, and starts the 'request
+"     waterfall' described by the Debug Adapter Protocol specification overview.
 "
+"     **Only** objects in the `dapper#model` namespace should directly
+"     modify the model state. (`dapper#view` objects can modify the model
+"     state 'indirectly', by sending DebugProtocol.Request messages.)
+
 " BRIEF:  Global StackFrameFormat, sent to the debug adapter.
 let s:stack_frame_format = {
     \ 'hex': v:false,
@@ -18,10 +26,10 @@ let s:stack_frame_format = {
 "           - `format`: use given formatting parameters
 let s:stack_trace_args = {
     \ 'threadId': 0,
-    \ 'startFrame': 0,
-    \ 'levels': 0,
-    \ 'format': s:stack_frame_format,
     \ }
+    " \ 'startFrame': 0,
+    " \ 'levels': 0,
+    " \ 'format': s:stack_frame_format,
 
 " BRIEF:  Construct a new Model.
 " PARAM:  message_passer  (dapper#MiddleTalker)
@@ -47,9 +55,13 @@ function! dapper#model#Model#new(message_passer) abort
       \ '_recvResponse': function('dapper#model#Model#_recvResponse'),
       \ '_makeThread': function('dapper#model#Model#_makeThread'),
       \ '_archiveThread': function('dapper#model#Model#_archiveThread'),
+      \ '_reqThreads': function('dapper#model#Model#_reqThreads'),
       \ }
   call a:message_passer.subscribe(
       \ 'ThreadEvent',
+      \ function('dapper#model#Model#receive', l:new))
+  call a:message_passer.subscribe(
+      \ 'StoppedEvent',
       \ function('dapper#model#Model#receive', l:new))
   call a:message_passer.subscribe(
       \ 'ThreadsResponse',
@@ -113,7 +125,10 @@ function! dapper#model#Model#receive(msg) abort dict
   call dapper#model#Model#CheckType(l:self)
   let l:typename = a:msg['vim_msg_typename']
   if l:typename ==# 'ThreadEvent'
+    call l:self._reqThreads()
     call l:self._recvEvent(a:msg)
+  elseif l:typename ==# 'StoppedEvent'
+    call l:self._reqThreads()
   elseif l:typename ==# 'ThreadsResponse'
     call l:self._recvResponse(a:msg)
   else
@@ -231,4 +246,11 @@ function! dapper#model#Model#_archiveThread(body) abort dict
       \ l:kind,
       \ l:brief,
       \ l:long_msg )
+endfunction
+
+" BRIEF:  Request all active threads from the debug adapter.
+function! dapper#model#Model#_reqThreads() abort dict
+  call dapper#model#Model#CheckType(l:self)
+  call l:self['_message_passer'].request(
+      \ 'threads', {}, function('dapper#model#Model#receive', l:self))
 endfunction
