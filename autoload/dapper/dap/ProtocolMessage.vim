@@ -21,7 +21,7 @@ function! dapper#dap#ProtocolMessage#CheckType(object) abort
     let l:err = '(dapper#dap#ProtocolMessage) Object is not of type ProtocolMessage: '.string(a:object)
   catch
     redir => l:object
-    echo a:object
+    silent! echo a:object
     redir end
     let l:err = '(dapper#dap#ProtocolMessage) This object failed type check: '.l:object
   endtry

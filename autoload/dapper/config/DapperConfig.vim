@@ -15,7 +15,7 @@ function! dapper#config#DapperConfig#CheckType(object) abort
     let l:err = '(dapper#dap#DapperConfig) Object is not of type DapperConfig: '.string(a:object)
   catch
     redir => l:object
-    echo a:object
+    silent! echo a:object
     redir end
     let l:err = '(dapper#dap#DapperConfig) This object failed type check: '.l:object
   endtry

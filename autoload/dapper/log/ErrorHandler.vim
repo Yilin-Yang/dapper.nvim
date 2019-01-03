@@ -17,7 +17,7 @@ function! dapper#log#ErrorHandler#CheckType(object) abort
     let l:err = '(dapper#log#ErrorHandler) Object is not of type ErrorHandler: '.string(a:object)
   catch
     redir => l:object
-    echo a:object
+    silent! echo a:object
     redir end
     let l:err = '(dapper#log#ErrorHandler) This object failed type check: '.l:object
   endtry

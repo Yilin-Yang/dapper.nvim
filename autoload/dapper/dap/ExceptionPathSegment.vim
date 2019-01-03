@@ -13,7 +13,7 @@ function! dapper#dap#ExceptionPathSegment#CheckType(object) abort
     let l:err = '(dapper#dap#ExceptionPathSegment) Object is not of type ExceptionPathSegment: '.string(a:object)
   catch
     redir => l:object
-    echo a:object
+    silent! echo a:object
     redir end
     let l:err = '(dapper#dap#ExceptionPathSegment) This object failed type check: '.l:object
   endtry

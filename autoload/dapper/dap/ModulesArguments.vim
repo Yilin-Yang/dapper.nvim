@@ -13,7 +13,7 @@ function! dapper#dap#ModulesArguments#CheckType(object) abort
     let l:err = '(dapper#dap#ModulesArguments) Object is not of type ModulesArguments: '.string(a:object)
   catch
     redir => l:object
-    echo a:object
+    silent! echo a:object
     redir end
     let l:err = '(dapper#dap#ModulesArguments) This object failed type check: '.l:object
   endtry

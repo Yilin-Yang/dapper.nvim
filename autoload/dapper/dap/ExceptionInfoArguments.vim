@@ -12,7 +12,7 @@ function! dapper#dap#ExceptionInfoArguments#CheckType(object) abort
     let l:err = '(dapper#dap#ExceptionInfoArguments) Object is not of type ExceptionInfoArguments: '.string(a:object)
   catch
     redir => l:object
-    echo a:object
+    silent! echo a:object
     redir end
     let l:err = '(dapper#dap#ExceptionInfoArguments) This object failed type check: '.l:object
   endtry

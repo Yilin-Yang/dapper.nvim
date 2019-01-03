@@ -12,7 +12,7 @@ function! dapper#dap#ReverseContinueArguments#CheckType(object) abort
     let l:err = '(dapper#dap#ReverseContinueArguments) Object is not of type ReverseContinueArguments: '.string(a:object)
   catch
     redir => l:object
-    echo a:object
+    silent! echo a:object
     redir end
     let l:err = '(dapper#dap#ReverseContinueArguments) This object failed type check: '.l:object
   endtry

@@ -18,7 +18,7 @@ function! dapper#dap#StackFrameFormat#CheckType(object) abort
     let l:err = '(dapper#dap#StackFrameFormat) Object is not of type StackFrameFormat: '.string(a:object)
   catch
     redir => l:object
-    echo a:object
+    silent! echo a:object
     redir end
     let l:err = '(dapper#dap#StackFrameFormat) This object failed type check: '.l:object
   endtry

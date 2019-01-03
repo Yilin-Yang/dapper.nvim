@@ -15,7 +15,7 @@ function! dapper#dap#Response#CheckType(object) abort
     let l:err = '(dapper#dap#Response) Object is not of type Response: '.string(a:object)
   catch
     redir => l:object
-    echo a:object
+    silent! echo a:object
     redir end
     let l:err = '(dapper#dap#Response) This object failed type check: '.l:object
   endtry

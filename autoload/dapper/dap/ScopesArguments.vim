@@ -12,7 +12,7 @@ function! dapper#dap#ScopesArguments#CheckType(object) abort
     let l:err = '(dapper#dap#ScopesArguments) Object is not of type ScopesArguments: '.string(a:object)
   catch
     redir => l:object
-    echo a:object
+    silent! echo a:object
     redir end
     let l:err = '(dapper#dap#ScopesArguments) This object failed type check: '.l:object
   endtry

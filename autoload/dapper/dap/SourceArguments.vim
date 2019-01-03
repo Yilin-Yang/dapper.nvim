@@ -13,7 +13,7 @@ function! dapper#dap#SourceArguments#CheckType(object) abort
     let l:err = '(dapper#dap#SourceArguments) Object is not of type SourceArguments: '.string(a:object)
   catch
     redir => l:object
-    echo a:object
+    silent! echo a:object
     redir end
     let l:err = '(dapper#dap#SourceArguments) This object failed type check: '.l:object
   endtry

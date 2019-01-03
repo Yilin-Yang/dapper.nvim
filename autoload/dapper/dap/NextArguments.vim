@@ -12,7 +12,7 @@ function! dapper#dap#NextArguments#CheckType(object) abort
     let l:err = '(dapper#dap#NextArguments) Object is not of type NextArguments: '.string(a:object)
   catch
     redir => l:object
-    echo a:object
+    silent! echo a:object
     redir end
     let l:err = '(dapper#dap#NextArguments) This object failed type check: '.l:object
   endtry

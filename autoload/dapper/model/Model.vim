@@ -8,29 +8,6 @@
 "     modify the model state. (`dapper#view` objects can modify the model
 "     state 'indirectly', by sending DebugProtocol.Request messages.)
 
-" BRIEF:  Global StackFrameFormat, sent to the debug adapter.
-let s:stack_frame_format = {
-    \ 'hex': v:false,
-    \ 'parameters': v:true,
-    \ 'parameterTypes': v:true,
-    \ 'parameterNames': v:true,
-    \ 'parameterValues': v:true,
-    \ 'line': v:true,
-    \ 'module': v:true,
-    \ 'includeAll': v:false,
-    \ }
-
-" BRIEF:  Initial `StackTraceArguments`.
-" DETAILS:  - `startFrame = 0`: start from frame with index 0
-"           - `levels = 0`: return all stack frames
-"           - `format`: use given formatting parameters
-let s:stack_trace_args = {
-    \ 'threadId': 0,
-    \ }
-    " \ 'startFrame': 0,
-    " \ 'levels': 0,
-    " \ 'format': s:stack_frame_format,
-
 " BRIEF:  Construct a new Model.
 " PARAM:  message_passer  (dapper#MiddleTalker)
 function! dapper#model#Model#new(message_passer) abort
@@ -76,7 +53,7 @@ function! dapper#model#Model#CheckType(object) abort
     let l:err = '(dapper#model#Model) Object is not of type Model: '.string(a:object)
   catch
     redir => l:object
-    echo a:object
+    silent! echo a:object
     redir end
     let l:err = '(dapper#model#Model) This object failed type check: '.l:object
   endtry
@@ -206,20 +183,16 @@ endfunction
 " PARAM:  body  (DebugProtocol.ThreadEvent.body)
 function! dapper#model#Model#_makeThread(body) abort dict
   call dapper#model#Model#CheckType(l:self)
+
   let l:thread = dapper#model#Thread#new(
       \ a:body,
       \ l:self['_message_passer'])
-  " populate Thread asynchronously from StackTraceRequest
-  let l:args = deepcopy(s:stack_trace_args)
-  let l:args['threadId'] = l:thread.id()
-  call l:self['_message_passer'].request(
-      \ 'stackTrace', l:args, function('dapper#model#Thread#receive', l:thread))
   let l:self['_ids_to_running'][l:thread.id()] = l:thread
 
   call l:self['_message_passer'].notifyReport(
       \ 'status',
       \ 'model#Model constructed new Thread object.',
-      \ dapper#helpers#StrDump(l:thread))
+      \ dapper#helpers#StrDump(l:thread) )
 endfunction
 
 " BRIEF:  Process an exited Thread.

@@ -39,7 +39,7 @@ function! dapper#view#StackTraceBuffer#CheckType(object) abort
     let l:err = '(dapper#view#StackTraceBuffer) Object is not of type StackTraceBuffer: '.string(a:object)
   catch
     redir => l:object
-    echo a:object
+    silent! echo a:object
     redir end
     let l:err = '(dapper#view#StackTraceBuffer) This object failed type check: '.l:object
   endtry

@@ -7,7 +7,11 @@
 "       - 'name'
 "       - 'reason'
 " PARAM:  message_passer  (dapper#MiddleTalker)
-function! dapper#model#Thread#new(props, message_passer) abort
+" PARAM:  Resolve (v:t_func?)
+" PARAM:  Reject  (v:t_func?)
+function! dapper#model#Thread#new(props, message_passer, ...) abort
+  let l:new = call('dapper#Promise#new', a:000)
+
   let l:tid = 0
   if has_key(a:props, 'id')
     let l:tid = a:props['id']
@@ -15,20 +19,19 @@ function! dapper#model#Thread#new(props, message_passer) abort
     let l:tid = a:props['threadId']
   endif
 
-  let l:new = {
-      \ 'TYPE': {'Thread': 1},
-      \ '_tid': l:tid,
-      \ '_name': has_key(a:props, 'name') ? a:props['name'] : 'unnamed',
-      \ '_status': has_key(a:props, 'reason') ? a:props['reason'] : '(N/A)',
-      \ '_callstack': [],
-      \ '_message_passer': a:message_passer,
-      \ 'id': function('dapper#model#Thread#id'),
-      \ 'name': function('dapper#model#Thread#name'),
-      \ 'status': function('dapper#model#Thread#status'),
-      \ 'frame': function('dapper#model#Thread#frame'),
-      \ 'receive': function('dapper#model#Thread#receive'),
-      \ 'updateProps': function('dapper#model#Thread#updateProps'),
-      \ }
+  let l:new['TYPE'] = {'Thread': 1}
+  let l:new['_tid'] = l:tid
+  let l:new['_name'] = has_key(a:props, 'name') ? a:props['name'] : 'unnamed'
+  let l:new['_status'] = has_key(a:props, 'reason') ? a:props['reason'] : '(N/A)'
+  let l:new['_callstack'] = dapper#model#StackTrace#new(l:tid, a:message_passer)
+  let l:new['_message_passer'] = a:message_passer
+  let l:new['id'] = function('dapper#model#Thread#id')
+  let l:new['name'] = function('dapper#model#Thread#name')
+  let l:new['status'] = function('dapper#model#Thread#status')
+  let l:new['frame'] = function('dapper#model#Thread#frame')
+  let l:new['receive'] = function('dapper#model#Thread#receive')
+  let l:new['updateProps'] = function('dapper#model#Thread#updateProps')
+
   return l:new
 endfunction
 
@@ -38,7 +41,7 @@ function! dapper#model#Thread#CheckType(object) abort
     let l:err = '(dapper#model#Thread) Object is not of type Thread: '.string(a:object)
   catch
     redir => l:object
-    echo a:object
+    silent! echo a:object
     redir end
     let l:err = '(dapper#model#Thread) This object failed type check: '.l:object
   endtry

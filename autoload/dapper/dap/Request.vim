@@ -12,7 +12,7 @@ function! dapper#dap#Request#CheckType(object) abort
     let l:err = '(dapper#dap#Request) Object is not of type Request: '.string(a:object)
   catch
     redir => l:object
-    echo a:object
+    silent! echo a:object
     redir end
     let l:err = '(dapper#dap#Request) This object failed type check: '.l:object
   endtry

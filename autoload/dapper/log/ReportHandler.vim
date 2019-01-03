@@ -26,7 +26,7 @@ function! dapper#log#ReportHandler#CheckType(object) abort
     let l:err = '(dapper#log#ReportHandler) Object is not of type ReportHandler: '.string(a:object)
   catch
     redir => l:object
-    echo a:object
+    silent! echo a:object
     redir end
     let l:err = '(dapper#log#ReportHandler) This object failed type check: '.l:object
   endtry

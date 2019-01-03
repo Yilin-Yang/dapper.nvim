@@ -45,7 +45,7 @@ function! dapper#view#ThreadsBuffer#CheckType(object) abort
     let l:err = '(dapper#view#ThreadsBuffer) Object is not of type ThreadsBuffer: '.string(a:object)
   catch
     redir => l:object
-    echo a:object
+    silent! echo a:object
     redir end
     let l:err = '(dapper#view#ThreadsBuffer) This object failed type check: '.l:object
   endtry

@@ -21,7 +21,7 @@ function! dapper#dap#Module#CheckType(object) abort
     let l:err = '(dapper#dap#Module) Object is not of type Module: '.string(a:object)
   catch
     redir => l:object
-    echo a:object
+    silent! echo a:object
     redir end
     let l:err = '(dapper#dap#Module) This object failed type check: '.l:object
   endtry

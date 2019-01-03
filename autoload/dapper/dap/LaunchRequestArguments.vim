@@ -13,7 +13,7 @@ function! dapper#dap#LaunchRequestArguments#CheckType(object) abort
     let l:err = '(dapper#dap#LaunchRequestArguments) Object is not of type LaunchRequestArguments: '.string(a:object)
   catch
     redir => l:object
-    echo a:object
+    silent! echo a:object
     redir end
     let l:err = '(dapper#dap#LaunchRequestArguments) This object failed type check: '.l:object
   endtry

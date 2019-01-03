@@ -15,7 +15,7 @@ function! dapper#dap#CompletionsArguments#CheckType(object) abort
     let l:err = '(dapper#dap#CompletionsArguments) Object is not of type CompletionsArguments: '.string(a:object)
   catch
     redir => l:object
-    echo a:object
+    silent! echo a:object
     redir end
     let l:err = '(dapper#dap#CompletionsArguments) This object failed type check: '.l:object
   endtry

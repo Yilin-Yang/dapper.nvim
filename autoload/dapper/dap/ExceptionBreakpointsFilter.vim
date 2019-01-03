@@ -14,7 +14,7 @@ function! dapper#dap#ExceptionBreakpointsFilter#CheckType(object) abort
     let l:err = '(dapper#dap#ExceptionBreakpointsFilter) Object is not of type ExceptionBreakpointsFilter: '.string(a:object)
   catch
     redir => l:object
-    echo a:object
+    silent! echo a:object
     redir end
     let l:err = '(dapper#dap#ExceptionBreakpointsFilter) This object failed type check: '.l:object
   endtry

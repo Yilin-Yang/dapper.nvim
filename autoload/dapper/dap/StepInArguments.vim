@@ -13,7 +13,7 @@ function! dapper#dap#StepInArguments#CheckType(object) abort
     let l:err = '(dapper#dap#StepInArguments) Object is not of type StepInArguments: '.string(a:object)
   catch
     redir => l:object
-    echo a:object
+    silent! echo a:object
     redir end
     let l:err = '(dapper#dap#StepInArguments) This object failed type check: '.l:object
   endtry

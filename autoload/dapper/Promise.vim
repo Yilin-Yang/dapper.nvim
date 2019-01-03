@@ -6,20 +6,24 @@
 "   'fulfilling' or 'breaking' the Promise, generally by calling `fulfill` (on
 "   Promise 'fulfillment') or `break` (on Promise 'breaking') after the
 "   outcome of the Promise has been determined.
+"
+"   As of the time of writing, does not directly implement the automated
+"   exception handling of the actual JavaScript Promise type.
 
 " BRIEF:  Construct a Promise.
-" PARAM:  Resolve (v:t_func)  Function to be called on Promise fulfillment.
+" PARAM:  Resolve (v:t_func?)   Function to be called on Promise fulfillment.
 "     Shall have the following signature: `function(PromiseValue) => any`,
 "     where `PromiseValue` will be the result of the Promise.
-" PARAM:  Reject  (v:t_func)  Function to be called on Promise failure.
+" PARAM:  Reject  (v:t_func?)   Function to be called on Promise failure.
 "     Shall have the following signature: `function(ErrorObject) => any`,
 "     where `ErrorObject` is some object giving information about the failure.
-function! dapper#Promise#new(Resolve, ...) abort
+function! dapper#Promise#new(...) abort
+  let a:Resolve = get(a:000, 0, function('dapper#Promise#__noOp'))
   if type(a:Resolve) !=# v:t_func
     throw '(dapper#Promise) Given `Resolve()` callback isn''t a funcref:'
         \ . dapper#helpers#StrDump(a:Resolve)
   endif
-  let a:Reject = get(a:000, 0, function('dapper#Promise#__noOp'))
+  let a:Reject = get(a:000, 1, function('dapper#Promise#__noOp'))
   if type(a:Reject) !=# v:t_func
     throw '(dapper#Promise) Given `Reject()` callback isn''t a funcref:'
         \ . dapper#helpers#StrDump(a:Reject)
@@ -45,7 +49,7 @@ function! dapper#Promise#CheckType(object) abort
     let l:err = '(dapper#Promise) Object is not of type Promise: '.string(a:object)
   catch
     redir => l:object
-    echo a:object
+    silent! echo a:object
     redir end
     let l:err = '(dapper#Promise) This object failed type check: '.l:object
   endtry

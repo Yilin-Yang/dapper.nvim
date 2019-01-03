@@ -12,7 +12,7 @@ function! dapper#dap#Event#CheckType(object) abort
     let l:err = '(dapper#dap#Event) Object is not of type Event: '.string(a:object)
   catch
     redir => l:object
-    echo a:object
+    silent! echo a:object
     redir end
     let l:err = '(dapper#dap#Event) This object failed type check: '.l:object
   endtry

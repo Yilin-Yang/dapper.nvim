@@ -12,7 +12,7 @@ function! dapper#dap#TerminateThreadsArguments#CheckType(object) abort
     let l:err = '(dapper#dap#TerminateThreadsArguments) Object is not of type TerminateThreadsArguments: '.string(a:object)
   catch
     redir => l:object
-    echo a:object
+    silent! echo a:object
     redir end
     let l:err = '(dapper#dap#TerminateThreadsArguments) This object failed type check: '.l:object
   endtry

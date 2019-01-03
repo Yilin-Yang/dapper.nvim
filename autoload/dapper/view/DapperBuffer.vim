@@ -37,7 +37,7 @@ function! dapper#view#DapperBuffer#CheckType(object) abort
     let l:err = '(dapper#view#DapperBuffer) Object is not of type DapperBuffer: '.string(a:object)
   catch
     redir => l:object
-    echo a:object
+    silent! echo a:object
     redir end
     let l:err = '(dapper#view#DapperBuffer) This object failed type check: '.l:object
   endtry

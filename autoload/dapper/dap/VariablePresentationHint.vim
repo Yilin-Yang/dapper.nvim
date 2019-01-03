@@ -14,7 +14,7 @@ function! dapper#dap#VariablePresentationHint#CheckType(object) abort
     let l:err = '(dapper#dap#VariablePresentationHint) Object is not of type VariablePresentationHint: '.string(a:object)
   catch
     redir => l:object
-    echo a:object
+    silent! echo a:object
     redir end
     let l:err = '(dapper#dap#VariablePresentationHint) This object failed type check: '.l:object
   endtry

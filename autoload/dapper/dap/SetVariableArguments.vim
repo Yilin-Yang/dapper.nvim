@@ -15,7 +15,7 @@ function! dapper#dap#SetVariableArguments#CheckType(object) abort
     let l:err = '(dapper#dap#SetVariableArguments) Object is not of type SetVariableArguments: '.string(a:object)
   catch
     redir => l:object
-    echo a:object
+    silent! echo a:object
     redir end
     let l:err = '(dapper#dap#SetVariableArguments) This object failed type check: '.l:object
   endtry

@@ -14,7 +14,7 @@ function! dapper#dap#FunctionBreakpoint#CheckType(object) abort
     let l:err = '(dapper#dap#FunctionBreakpoint) Object is not of type FunctionBreakpoint: '.string(a:object)
   catch
     redir => l:object
-    echo a:object
+    silent! echo a:object
     redir end
     let l:err = '(dapper#dap#FunctionBreakpoint) This object failed type check: '.l:object
   endtry

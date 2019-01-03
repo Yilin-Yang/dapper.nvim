@@ -18,7 +18,7 @@ function! dapper#dap#Message#CheckType(object) abort
     let l:err = '(dapper#dap#Message) Object is not of type Message: '.string(a:object)
   catch
     redir => l:object
-    echo a:object
+    silent! echo a:object
     redir end
     let l:err = '(dapper#dap#Message) This object failed type check: '.l:object
   endtry

@@ -12,7 +12,7 @@ function! dapper#config#AttachArgs#CheckType(object) abort
     let l:err = '(dapper#config#AttachArgs) Object is not of type AttachArgs: '.string(a:object)
   catch
     redir => l:object
-    echo a:object
+    silent! echo a:object
     redir end
     let l:err = '(dapper#config#AttachArgs) This object failed type check: '.l:object
   endtry

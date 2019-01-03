@@ -13,7 +13,7 @@ function! dapper#dap#GotoArguments#CheckType(object) abort
     let l:err = '(dapper#dap#GotoArguments) Object is not of type GotoArguments: '.string(a:object)
   catch
     redir => l:object
-    echo a:object
+    silent! echo a:object
     redir end
     let l:err = '(dapper#dap#GotoArguments) This object failed type check: '.l:object
   endtry

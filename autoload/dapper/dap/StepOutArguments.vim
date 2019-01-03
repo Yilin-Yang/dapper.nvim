@@ -12,7 +12,7 @@ function! dapper#dap#StepOutArguments#CheckType(object) abort
     let l:err = '(dapper#dap#StepOutArguments) Object is not of type StepOutArguments: '.string(a:object)
   catch
     redir => l:object
-    echo a:object
+    silent! echo a:object
     redir end
     let l:err = '(dapper#dap#StepOutArguments) This object failed type check: '.l:object
   endtry

@@ -16,7 +16,7 @@ function! dapper#dap#SourceBreakpoint#CheckType(object) abort
     let l:err = '(dapper#dap#SourceBreakpoint) Object is not of type SourceBreakpoint: '.string(a:object)
   catch
     redir => l:object
-    echo a:object
+    silent! echo a:object
     redir end
     let l:err = '(dapper#dap#SourceBreakpoint) This object failed type check: '.l:object
   endtry

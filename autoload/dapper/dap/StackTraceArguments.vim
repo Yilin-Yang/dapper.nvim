@@ -15,7 +15,7 @@ function! dapper#dap#StackTraceArguments#CheckType(object) abort
     let l:err = '(dapper#dap#StackTraceArguments) Object is not of type StackTraceArguments: '.string(a:object)
   catch
     redir => l:object
-    echo a:object
+    silent! echo a:object
     redir end
     let l:err = '(dapper#dap#StackTraceArguments) This object failed type check: '.l:object
   endtry

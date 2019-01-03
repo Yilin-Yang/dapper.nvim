@@ -33,7 +33,7 @@ function! dapper#MiddleTalker#CheckType(object) abort
     let l:err = '(dapper#MiddleTalker) Object is not of type MiddleTalker: '.string(a:object)
   catch
     redir => l:object
-    echo a:object
+    silent! echo a:object
     redir end
     let l:err = '(dapper#MiddleTalker) This object failed type check: '.l:object
   endtry

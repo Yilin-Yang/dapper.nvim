@@ -17,7 +17,7 @@ function! dapper#config#InitialBreakpoints#CheckType(object) abort
     let l:err = '(dapper#dap#InitialBreakpoints) Object is not of type InitialBreakpoints: '.string(a:object)
   catch
     redir => l:object
-    echo a:object
+    silent! echo a:object
     redir end
     let l:err = '(dapper#dap#InitialBreakpoints) This object failed type check: '.l:object
   endtry

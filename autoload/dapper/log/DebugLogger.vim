@@ -109,7 +109,7 @@ function! dapper#log#DebugLogger#CheckType(object) abort
     let l:err = '(dapper#log#DebugLogger) Object is not of type DebugLogger: '.string(a:object)
   catch
     redir => l:object
-    echo a:object
+    silent! echo a:object
     redir end
     let l:err = '(dapper#log#DebugLogger) This object failed type check: '.l:object
   endtry

@@ -34,7 +34,7 @@ function! dapper#dap#Report#CheckType(object) abort
     let l:err = '(dapper#dap#Report) Object is not of type Report: '.string(a:object)
   catch
     redir => l:object
-    echo a:object
+    silent! echo a:object
     redir end
     let l:err = '(dapper#dap#Report) This object failed type check: '.l:object
   endtry

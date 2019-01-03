@@ -21,7 +21,7 @@ function! dapper#dap#InitializeRequestArguments#CheckType(object) abort
     let l:err = '(dapper#dap#InitializeRequestArguments) Object is not of type InitializeRequestArguments: '.string(a:object)
   catch
     redir => l:object
-    echo a:object
+    silent! echo a:object
     redir end
     let l:err = '(dapper#dap#InitializeRequestArguments) This object failed type check: '.l:object
   endtry

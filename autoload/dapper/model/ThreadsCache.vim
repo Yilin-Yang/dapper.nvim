@@ -23,7 +23,7 @@ function! dapper#model#ThreadsCache#CheckType(object) abort
     let l:err = '(dapper#model#ThreadsCache) Object is not of type ThreadsCache: '.string(a:object)
   catch
     redir => l:object
-    echo a:object
+    silent! echo a:object
     redir end
     let l:err = '(dapper#model#ThreadsCache) This object failed type check: '.l:object
   endtry

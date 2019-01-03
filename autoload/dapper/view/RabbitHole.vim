@@ -21,7 +21,7 @@ function! dapper#view#RabbitHole#CheckType(object) abort
     let l:err = '(dapper#view#RabbitHole) Object is not of type RabbitHole: '.string(a:object)
   catch
     redir => l:object
-    echo a:object
+    silent! echo a:object
     redir end
     let l:err = '(dapper#view#RabbitHole) This object failed type check: '.l:object
   endtry

@@ -21,7 +21,7 @@ function! dapper#config#StartArgs#CheckType(object) abort
     let l:err = '(dapper#dap#StartArgs) Object is not of type StartArgs: '.string(a:object)
   catch
     redir => l:object
-    echo a:object
+    silent! echo a:object
     redir end
     let l:err = '(dapper#dap#StartArgs) This object failed type check: '.l:object
   endtry

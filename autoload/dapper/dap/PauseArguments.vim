@@ -12,7 +12,7 @@ function! dapper#dap#PauseArguments#CheckType(object) abort
     let l:err = '(dapper#dap#PauseArguments) Object is not of type PauseArguments: '.string(a:object)
   catch
     redir => l:object
-    echo a:object
+    silent! echo a:object
     redir end
     let l:err = '(dapper#dap#PauseArguments) This object failed type check: '.l:object
   endtry

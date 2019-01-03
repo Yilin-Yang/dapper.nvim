@@ -12,7 +12,7 @@ function! dapper#dap#AttachRequestArguments#CheckType(object) abort
     let l:err = '(dapper#dap#AttachRequestArguments) Object is not of type AttachRequestArguments: '.string(a:object)
   catch
     redir => l:object
-    echo a:object
+    silent! echo a:object
     redir end
     let l:err = '(dapper#dap#AttachRequestArguments) This object failed type check: '.l:object
   endtry

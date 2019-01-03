@@ -19,7 +19,7 @@ function! dapper#dap#Variable#CheckType(object) abort
     let l:err = '(dapper#dap#Variable) Object is not of type Variable: '.string(a:object)
   catch
     redir => l:object
-    echo a:object
+    silent! echo a:object
     redir end
     let l:err = '(dapper#dap#Variable) This object failed type check: '.l:object
   endtry

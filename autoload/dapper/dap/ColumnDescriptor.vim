@@ -16,7 +16,7 @@ function! dapper#dap#ColumnDescriptor#CheckType(object) abort
     let l:err = '(dapper#dap#ColumnDescriptor) Object is not of type ColumnDescriptor: '.string(a:object)
   catch
     redir => l:object
-    echo a:object
+    silent! echo a:object
     redir end
     let l:err = '(dapper#dap#ColumnDescriptor) This object failed type check: '.l:object
   endtry
