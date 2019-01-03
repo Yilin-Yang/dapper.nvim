@@ -9,7 +9,7 @@
 " PARAM:  Resolve (v:t_func?)
 " PARAM:  Reject  (v:t_func?)
 function! dapper#model#StackFrame#new(frame_msg, message_passer, ...) abort
-  let l:new = call('dapper#Promise#new', [a:Resolve] + a:000)
+  let l:new = call('dapper#Promise#new', a:000)
   let l:new['TYPE']['StackFrame'] = 1
 
   let l:new['_message_passer'] = a:message_passer
@@ -23,7 +23,7 @@ function! dapper#model#StackFrame#new(frame_msg, message_passer, ...) abort
   call a:message_passer.request(
       \ 'scopes',
       \ {'frameId': a:frame_msg['id']},
-      \ function('dapper#model#StackTrace#receive', l:new))
+      \ function('dapper#model#StackFrame#receive', l:new))
 
   return l:new
 endfunction

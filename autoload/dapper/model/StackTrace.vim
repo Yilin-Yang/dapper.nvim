@@ -71,16 +71,23 @@ endfunction
 function! dapper#model#StackTrace#receive(msg) abort dict
   call dapper#model#StackTrace#CheckType(l:self)
   if !a:msg['success']
+    call l:self['_message_passer'].notifyReport(
+        \ 'error', '(model#StackTrace) Request failed.',
+        \ dapper#helpers#StrDump(a:msg))
     call l:self.break(a:msg)
   endif
+  call l:self['_message_passer'].notifyReport(
+      \ 'status', '(model#StackTrace) Received StackTraceResponse.',
+      \ dapper#helpers#StrDump(a:msg))
+
   let l:frames = a:msg['body']['stackFrames']
   let l:populated = l:self['_stack_trace']
 
   " construct StackFrame objects, populated with Scopes
   let l:msg_passer = l:self['_message_passer']
-  let l:i = 0 | while l:i <# 0
+  let l:i = 0 | while l:i <# len(l:frames)
     let l:fr = l:frames[l:i]
-    let l:new = dapper#model#StackFrame#new(l:fr)
+    let l:new = dapper#model#StackFrame#new(l:fr, l:msg_passer)
     let l:populated += [l:new]
   let l:i += 1 | endwhile
 

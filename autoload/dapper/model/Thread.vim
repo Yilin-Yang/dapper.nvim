@@ -28,7 +28,7 @@ function! dapper#model#Thread#new(props, message_passer, ...) abort
   let l:new['id'] = function('dapper#model#Thread#id')
   let l:new['name'] = function('dapper#model#Thread#name')
   let l:new['status'] = function('dapper#model#Thread#status')
-  let l:new['frame'] = function('dapper#model#Thread#frame')
+  let l:new['stackTrace'] = function('dapper#model#Thread#stackTrace')
   let l:new['receive'] = function('dapper#model#Thread#receive')
   let l:new['updateProps'] = function('dapper#model#Thread#updateProps')
 
@@ -64,15 +64,15 @@ function! dapper#model#Thread#status() abort dict
   return l:self['_status']
 endfunction
 
-" RETURNS:  (dapper#model#StackFrame)   The requested stack frame, if it could
-"     be found. Throws an `ERROR(NotFound)` otherwise.
-function! dapper#model#Thread#frame(idx) abort dict
+" RETURNS:  (dapper#model#StackTrace)   The thread's StackTrace. Will throw an
+"   `ERROR(NotFound)` if it has not yet been received.
+function! dapper#model#Thread#stackTrace() abort dict
   call dapper#model#Thread#CheckType(l:self)
   let l:callstack = l:self['_callstack']
-  if a:idx <# 0 || a:idx ># len(l:callstack)
-    throw 'ERROR(NotFound) (dapper#model#Thread) No StackFrame with idx: '.a:idx
+  if l:callstack ==# {}
+    throw 'ERROR(NotFound) (dapper#model#Thread) No StackTrace found'
   endif
-  return l:callstack[a:idx]
+  return l:callstack
 endfunction
 
 " BRIEF:  Process an incoming StackTraceResponse.
