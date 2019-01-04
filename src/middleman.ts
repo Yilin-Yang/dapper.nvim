@@ -5,7 +5,7 @@ import {DebugClient} from 'vscode-debugadapter-testsupport';
 import {DebugProtocol} from 'vscode-debugprotocol';
 
 import {FrontTalker} from './fronttalker';
-import {DapperEvent, DapperReport, DapperResponse, isDAPEvent, NULL_VIM_ID, typenameOf} from './messages';
+import {DapperEvent, DapperResponse, isDAPEvent, NULL_VIM_ID, typenameOf} from './messages';
 
 import deepEqual = require('deep-equal');
 import {clearTimeout} from 'timers';
@@ -99,7 +99,7 @@ export class Middleman {
           await this.terminate();
         }
       } catch (e) {
-        this.report(
+        this.ft.report(
             'error', 'Failed to terminate running debug adapter!', e.toString(),
             true);
       }
@@ -132,7 +132,7 @@ export class Middleman {
       this.dc.emit = this.teeEmit.bind(this);
       return response;
     } catch (e) {
-      this.report(
+      this.ft.report(
           'error', 'Failed to start debug adapter!', e.toString(), true);
       return {} as DebugProtocol.InitializeResponse;
     }
@@ -183,7 +183,7 @@ export class Middleman {
       }
       return exBpsResp;
     } catch (e) {
-      this.report(
+      this.ft.report(
           'error', 'Failed to configure debug adapter!', e.toString(), true);
       return {} as DebugProtocol.Response;
     }
@@ -217,7 +217,7 @@ export class Middleman {
         },
         () => {
           const msg = 'Terminate request timed out. Forcing disconnect.';
-          this.report('status', msg, '');
+          this.ft.report('status', msg, '');
           return this.disconnect();
         });
   }
@@ -235,32 +235,17 @@ export class Middleman {
       this.dc = Middleman.EMPTY_DC;
       return response;
     } catch (e) {
-      this.report('error', 'Disconnect failed!', e.toString(), true);
+      this.ft.report('error', 'Disconnect failed!', e.toString(), true);
       return {} as DebugProtocol.DisconnectResponse;
     }
   }
 
   /**
-   * Send a report (either a status update, or an error message) to the
-   * frontend.
+   * Wrapper around the `report()` function provided by the FrontTalker.
    */
-  async report(
-      kind: string, brief: string, long: string, alert = false,
-      other?: any): Promise<void> {
-    const msg: DapperReport = {
-      seq: 0,
-      vim_id: 0,
-      vim_msg_typename: '',
-      type: 'report',
-      kind,
-      brief,
-      long,
-      alert,
-      other
-    };
-    msg.vim_msg_typename = typenameOf(msg);
-    console.log('(Middleman) Sending report: ' + JSON.stringify(msg));
-    return this.ft.send(msg);
+  report(kind: string, brief: string, long: string, alert = false, other?: any):
+      Promise<void> {
+    return this.ft.report(kind, brief, long, alert, other);
   }
 
   /**
@@ -285,7 +270,7 @@ export class Middleman {
       this.ft.send(resp);  // actually send response to frontend
       return resp;  // mostly for test cases; neovim ignores async return values
     } catch (e) {
-      this.report(
+      this.ft.report(
           'error', command + ' request failed!',
           'vimID: ' + vimID + 'args: ' + JSON.stringify(args) + ', ' +
               e.toString());

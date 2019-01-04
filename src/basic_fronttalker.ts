@@ -37,6 +37,11 @@ export class BasicFrontTalker implements FrontTalker {
     throw Error('send() not implemented in basic superclass');
   }
 
+  report(kind: string, brief: string, long: string, alert = false, other?: any):
+      Promise<void> {
+    throw Error('report() not implemented in basic superclass');
+  }
+
   on(reqType: string|RegExp, callback: ReqCallback): FrontTalker {
     if (typeof reqType === 'string') {
       return this.onStr(reqType, callback);

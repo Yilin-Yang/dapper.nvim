@@ -13,6 +13,13 @@ export interface FrontTalker {
   send(msg: DapperAnyMsg): void;
 
   /**
+   * Send a status update or error message to the VimL frontend.
+   */
+  report(
+      kind: string, brief: string, long: string, alert?: boolean,
+      other?: any): Promise<void>;
+
+  /**
    * Subscribe to incoming requests from the VimL frontend.
    *
    * @param {reqType}   String compared against the `command` property of the
