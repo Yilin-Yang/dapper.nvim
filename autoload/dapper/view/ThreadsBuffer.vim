@@ -3,7 +3,7 @@
 
 " BRIEF:  Construct a ThreadsBuffer.
 " PARAM:  model   (dapper#model#Model)
-" PARAM:  message_passer  (dapper#MiddleTalker?)
+" PARAM:  message_passer  (dapper#MiddleTalker)
 function! dapper#view#ThreadsBuffer#new(model, message_passer) abort
   let l:new =
       \ dapper#view#DapperBuffer#new(a:message_passer,
