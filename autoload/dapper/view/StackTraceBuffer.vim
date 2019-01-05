@@ -12,6 +12,7 @@ function! dapper#view#StackTraceBuffer#new(message_passer, ...) abort
   let l:new['TYPE']['StackTraceBuffer'] = 1
 
   let l:new['_thread'] = a:thread
+  let l:new['thread'] = function('dapper#view#StackTraceBuffer#thread')
 
   let l:new['show']        = function('dapper#view#StackTraceBuffer#show')
   let l:new['getRange']    = function('dapper#view#StackTraceBuffer#getRange')
@@ -38,6 +39,12 @@ function! dapper#view#StackTraceBuffer#CheckType(object) abort
   endtry
   throw l:err
   endif
+endfunction
+
+" RETURNS:  (dapper#model#Thread) The thread whose callstack this buffer shows.
+function! dapper#view#StackTraceBuffer#thread() abort dict
+  call dapper#view#StackTraceBuffer#CheckType(l:self)
+  return l:self['_thread']
 endfunction
 
 " BRIEF:  Display the stack trace of the given thread.

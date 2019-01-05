@@ -1,0 +1,96 @@
+Include: MockMiddleTalker.vader
+
+" Test 'hand-off' between DapperBuffer types, using ThreadsBuffer and
+" StackTraceBuffer as test types.
+Execute (DapperBuffer: Set Up (if this fails, further tests will fail):
+  let g:model = dapper#model#Model#new(g:mock_mt)
+  let g:tb = dapper#view#ThreadsBuffer#new(g:model, g:mock_mt)
+  let g:msg = dapper#dap#Event#new(0, 'ThreadEvent')
+  let g:msg['event'] = 'ThreadEvent'
+  let g:msg['body'] = {'threadId': 123, 'reason': 'started'}
+  call g:model.receive(g:msg)
+  call g:tb.receive(g:msg)
+  let g:msg['body'] = {'threadId': 789, 'reason': 'started'}
+  call g:model.receive(g:msg)
+  call g:tb.receive(g:msg)
+  call g:tb.open()
+Expect:
+  thread	id: 789	name: unnamed	status: started
+  thread	id: 123	name: unnamed	status: started
+  
+Do (DapperBuffer: Test Creation of New Buffer):
+  :call g:tb.open()\<cr>
+  gg\<cr>
+Then:
+  Assert exists('b:dapper_buffer'), 'Could not find buffer-local StackTraceBuffer'
+  Assert has_key(b:dapper_buffer['TYPE'], 'StackTraceBuffer')
+  AssertEqual 789, b:dapper_buffer.thread().id()
+  let g:child = b:dapper_buffer
+  let g:child_bufnr = b:dapper_buffer.bufnr()
+
+Do (DapperBuffer: Return to Parent):
+  :call g:child.open()\<cr>
+  \<esc>
+Then:
+  Assert exists('b:dapper_buffer'), 'Could not find buffer-local ThreadsBuffer'
+  Assert has_key(b:dapper_buffer['TYPE'], 'ThreadsBuffer')
+
+Do (DapperBuffer: Test Open Different in Existing Child):
+  :call g:tb.open()\<cr>
+  j\<cr>
+Then:
+  Assert exists('b:dapper_buffer'), 'Could not find buffer-local StackTraceBuffer'
+  Assert has_key(b:dapper_buffer['TYPE'], 'StackTraceBuffer')
+  AssertEqual 123, b:dapper_buffer.thread().id()
+  AssertEqual g:child_bufnr, b:dapper_buffer.bufnr()
+  execute "normal \<esc>"
+
+Execute (DapperBuffer: Test Move to Existing Window):
+  call g:tb.open()
+  let g:tb_winnr = winnr()
+  " if vsplit opens left, then g:child will assume winnr 1
+  botright vsplit
+  call g:child.open()
+  let g:ch_winnr = winnr()
+  wincmd p
+  execute "normal gg\<cr>"
+Then:
+  Assert has_key(b:dapper_buffer['TYPE'], 'StackTraceBuffer')
+  AssertNotEqual g:tb_winnr, winnr()
+  execute "normal \<esc>"
+  Assert has_key(b:dapper_buffer['TYPE'], 'ThreadsBuffer')
+  AssertEqual g:tb_winnr, winnr()
+  execute g:child.switch()
+  close
+
+Execute (DapperBuffer: Test Move to Existing Window in Different Tab):
+  tabnew
+  call g:child.open()
+  let g:tabnr = tabpagenr()
+  tabprevious
+  call g:tb.open()
+  execute "normal gg\<cr>"
+Then:
+  Assert has_key(b:dapper_buffer['TYPE'], 'StackTraceBuffer')
+  AssertEqual 789, b:dapper_buffer.thread().id()
+  AssertEqual g:tabnr, tabpagenr()
+
+Execute (DapperBuffer: Test Existing Child, Not Open in Any):
+  tabnext
+  tabclose
+  while len(tabpagebuflist()) ># 1
+    quit
+  endwhile
+  let g:tabnr = tabpagenr()
+  call g:tb.open()
+  execute "normal gg\<cr>"
+Then:
+  Assert has_key(b:dapper_buffer['TYPE'], 'StackTraceBuffer')
+  AssertEqual 789, b:dapper_buffer.thread().id()
+  AssertEqual g:tabnr, tabpagenr()
+
+Execute (ThreadsBuffer: Cleanup):
+  call g:tb.open()
+  call MockCleanUp()
+  normal! ggVGd
+  unlet g:tb

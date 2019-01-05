@@ -251,3 +251,14 @@ Execute (Buffer: Switch, Is Open in Different (Specific) Tab (which is given), a
 Then:
   AssertEqual g:tabnr, tabpagenr()
   AssertEqual g:buffer.bufnr(), bufnr('%')
+
+Execute (Buffer: Cleanup):
+  let g:tabnr = tabpagenr('$')
+  while g:tabnr ># 2
+    execute 'tabnext ' . g:tabnr
+    if bufname('%') ==# ''
+      tabclose
+    endif
+    let g:tabnr -= 1
+  endwhile
+  call g:buffer.destroy()

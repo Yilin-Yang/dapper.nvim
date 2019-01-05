@@ -77,3 +77,4 @@ Execute (ThreadsBuffer: Cleanup):
   call g:tb.open()
   call MockCleanUp()
   normal! ggVGd
+  unlet g:tb

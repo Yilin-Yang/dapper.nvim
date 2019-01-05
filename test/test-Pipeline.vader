@@ -52,3 +52,4 @@ Expect:
 Execute (Pipeline: Cleanup):
   call g:tb.open()
   normal! ggVGd
+  unlet g:tb
