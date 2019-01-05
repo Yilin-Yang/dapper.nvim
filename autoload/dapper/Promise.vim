@@ -35,6 +35,7 @@ function! dapper#Promise#new(...) abort
       \ '_state': 'pending',
       \ '_promise_val': 0,
       \ '_error_obj': 0,
+      \ 'unfulfill': function('dapper#Promise#unfulfill'),
       \ 'fulfill': function('dapper#Promise#fulfill'),
       \ 'break': function('dapper#Promise#break'),
       \ 'subscribe': function('dapper#Promise#subscribe'),
@@ -63,6 +64,12 @@ function! dapper#Promise#__noImpl(funcname, ...) abort dict
 endfunction
 
 function! dapper#Promise#__noOp(...) abort
+endfunction
+
+" BRIEF:  Mark this Promise as pending, if e.g. a newer value is forthcoming.
+function! dapper#Promise#unfulfill() abort dict
+  call dapper#Promise#CheckType(l:self)
+  let l:self['_state'] = 'pending'
 endfunction
 
 " BRIEF:  Call back all subscribers with *this* fulfilled Promise.

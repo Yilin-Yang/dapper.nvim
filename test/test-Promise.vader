@@ -29,6 +29,14 @@ Then:
   AssertEqual 0,  g:rejected
   call Reset()
 
+Execute (Promise: Unfulfillment):
+  call g:promise.unfulfill()
+  call g:promise.subscribe(function('Resolve'), function('Reject'))
+Then:
+  AssertEqual 0, g:resolved
+  AssertEqual 0,  g:rejected
+  call Reset()
+
 Execute (Promise: Test Subscription, Then Fulfillment):
   function! AnotherResolve(val) abort
     let g:another_resolved = a:val
