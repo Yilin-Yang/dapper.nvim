@@ -4,23 +4,22 @@
 " BRIEF:  Construct a StackTraceBuffer.
 function! dapper#view#StackTraceBuffer#new(message_passer) abort
   let l:new =
-      \ dapper#view#DapperBuffer#new(a:message_passer, {'fname': '[dapper.nvim] Stack Trace, '})
+      \ dapper#view#DapperBuffer#new(
+          \ a:message_passer, {'fname': '[dapper.nvim] Stack Trace, '})
   let l:new['TYPE']['StackTraceBuffer'] = 1
 
   let l:st_args = deepcopy(s:stack_trace_args)
   let l:new['_st_args'] = l:st_args
 
-  let l:new['receive']     = function('dapper#view#StackTraceBuffer#receive')
-  let l:new['update']      = function('dapper#view#StackTraceBuffer#update')
+  let l:new['show']        = function('dapper#view#ThreadsBuffer#show')
   let l:new['getRange']    = function('dapper#view#StackTraceBuffer#getRange')
   let l:new['setMappings'] = function('dapper#view#StackTraceBuffer#setMappings')
 
   let l:new['climbUp'] = function('dapper#view#StackTraceBuffer#climbUp')
   let l:new['digDown'] = function('dapper#view#StackTraceBuffer#digDown')
 
-  call l:new._subscribe(
-      \ 'StackTrace',
-      \ function('dapper#view#StackTraceBuffer#receive', l:new))
+  let l:new['_showCallstack'] =
+      \ function('dapper#view#StackTraceBuffer#_showCallstack')
 
   return l:new
 endfunction
@@ -39,47 +38,17 @@ function! dapper#view#StackTraceBuffer#CheckType(object) abort
   endif
 endfunction
 
-" BRIEF:  Process an incoming StackTraceResponse.
-function! dapper#view#StackTraceBuffer#receive(msg) abort dict
-  call dapper#view#StackTraceBuffer#CheckType(l:self)
-  if !a:msg['success']
-    call l:self._log(
-        \ 'error',
-        \ 'StackTraceRequest failed!',
-        \ has_key(a:msg, 'message') ? a:msg['message'] : '',
-        \ has_key(a:msg, 'body')    ? a:msg['body']    : '' )
-  endif
-  try
-    let l:resp = a:msg['body']  " StackTraceResponse
-    let l:frames = l:resp['stackFrames']
-    let l:i  = 0 | while l:i <# len(l:frames)
-      let l:stack_frame = l:frames[l:i]
-
-    let l:i += 1 | endwhile
-  catch
-    call l:self._log(
-        \ 'error',
-        \ 'Failed to process StackTraceResponse!',
-        \ v:exception,
-        \ v:throwpoint
-        \ )
-  endtry
-  " TODO
-  " clear buffer contents
-  " destroy scopes children
-  " format and display stackframes
-  " create scopes children, also send async requests for all of them(?)
-endfunction
-
-" BRIEF:  Send a `StackTraceRequest`.
+" BRIEF:  Display the stack trace of the given thread.
 " DETAILS:  The buffer (and its `ScopeBuffer` children) will update when the
 "     `StackTraceResponse` arrives from the debug adapter.
-function! dapper#view#StackTraceBuffer#update() abort dict
+" PARAM:  thread  (dapper#model#Thread)
+function! dapper#view#StackTraceBuffer#show(thread) abort dict
   call dapper#view#StackTraceBuffer#CheckType(l:self)
-  let l:args = l:self['_st_args']
-  call l:self._request(
-      \ 'stackTrace', l:args,
-      \ function('dapper#view#StackTraceBuffer#receive', l:self))
+  call dapper#model#Thread#CheckType(a:thread)
+  let l:stack_trace = a:thread.stackTrace()
+  " TODO display stack trace
+  " call l:stack_trace.subscribe(
+  "     \ function('dapper#view#StackTraceBuffer#_showCallstack', l:self))
 endfunction
 
 function! dapper#view#StackTraceBuffer#getRange() abort dict
@@ -92,6 +61,10 @@ function! dapper#view#StackTraceBuffer#setMappings() abort dict
       \ . ':call b:dapper_buffer.climbUp()<cr>'
   execute 'nnoremap <buffer> '.dapper#settings#DigDownMapping().' '
       \ . ':call b:dapper_buffer.digDown()<cr>'
+endfunction
+
+" BRIEF:  Show the contents of the stack trace in this buffer.
+function! dapper#view#StackTraceBuffer#_showCallstack(stack_trace) abort dict
 endfunction
 
 function! dapper#view#StackTraceBuffer#climbUp() abort dict
