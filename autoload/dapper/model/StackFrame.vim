@@ -77,7 +77,23 @@ function! dapper#model#StackFrame#scope(scope_name) abort dict
 endfunction
 
 " RETURNS:  (DebugProtocol.StackFrame)  Basic information about this StackFrame.
+" DETAILS:  All properties will be populated: optional properties will be set
+"     to the following 'default values':
+"     - source:     {}  " empty dict
+"     - endLine:    line
+"     - endColumn:  column
+"     - moduleId:   ''
+"     - presentationHint: 'normal'
 function! dapper#model#StackFrame#about() abort dict
   call dapper#model#StackFrame#CheckType(l:self)
-  return l:self['_frame_msg']
+  let l:info = l:self['_frame_msg']
+  if !has_key(l:info, 'source')  | l:info['source']  = {}             | endif
+  if !has_key(l:info, 'endLine') | l:info['endLine'] = l:info['line'] | endif
+  if !has_key(l:info, 'endColumn')
+    l:info['endColumn'] = l:info['endColumn']
+  endif
+  if !has_key(l:info, 'moduleId')
+    l:info['moduleId'] = ''
+  endif
+  return l:info
 endfunction
