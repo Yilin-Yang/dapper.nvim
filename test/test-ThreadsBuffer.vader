@@ -2,8 +2,7 @@ Include: MockMiddleTalker.vader
 
 Execute (ThreadsBuffer: Construct, Initialize; Test Subscription):
   let g:model = dapper#model#Model#new(g:mock_mt)
-  let g:tb = dapper#view#ThreadsBuffer#new(
-      \ '[dapper] Threads', g:model, g:mock_mt)
+  let g:tb = dapper#view#ThreadsBuffer#new(g:model, g:mock_mt)
 Then:
   AssertEqual function(g:tb.receive), g:last_sub[1]
   " TODO check other subscriptions?

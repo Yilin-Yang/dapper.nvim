@@ -11,6 +11,8 @@ let s:buffer_fname_mangle = localtime()
 "               - 'buftype'   (v:t_string)
 "               - 'fname'     (v:t_string)  Name of the newly created buffer.
 "                             If empty (''), do not create a new buffer.
+"               - 'mangle'    (v:t_bool)  If v:true, append a number to the
+"                             given buffer name to make it unique.
 "               - 'swapfile'  (v:t_bool)
 "
 "             All of these are optional and will have default values if not
@@ -18,13 +20,14 @@ let s:buffer_fname_mangle = localtime()
 "             value that could be assigned to those settings explicitly, e.g.
 "             with `let &bufhidden = [...]`.
 "
-let s:bufparams_default = {
-  \ 'bufhidden':  'hide',
-  \ 'buflisted':  v:false,
-  \ 'buftype':    'nofile',
-  \ 'swapfile':   v:false,
-\ }
-let s:bufprops = ['bufhidden', 'buflisted', 'buftype', 'fname', 'swapfile']
+let s:bufsettings = {
+    \ 'bufhidden':  'hide',
+    \ 'buflisted':  v:false,
+    \ 'buftype':    'nofile',
+    \ 'swapfile':   v:false,
+    \ }
+let s:bufparams_default = extend(deepcopy(s:bufsettings), {'mangle': v:true})
+let s:bufprops = ['bufhidden', 'buflisted', 'buftype', 'fname', 'swapfile', 'mangle']
 function! dapper#view#Buffer#new(...) abort
   let s:buffer_fname_mangle += 1 " guarantee unique buffer name
   let s:bufparams_default['fname'] = 'dapper#view#Buffer::'.s:buffer_fname_mangle
@@ -49,7 +52,9 @@ function! dapper#view#Buffer#new(...) abort
   if !empty(l:bufparams['fname'])
     " create a buffer with the given name
     " let l:bufnr = bufnr(escape(l:bufparams['fname'], '*?,{}\'), 1)
-    let l:bufnr = bufnr(l:bufparams['fname'], 1)
+    let l:bufname = l:bufparams['fname']
+    if l:bufparams['mangle'] | let l:bufname .= s:buffer_fname_mangle | endif
+    let l:bufnr = bufnr(l:bufname, 1)
     unlet l:bufparams['fname']
   else
     unlet l:bufparams['fname']
@@ -61,7 +66,7 @@ function! dapper#view#Buffer#new(...) abort
 
   for [l:prop, l:val] in items(l:bufparams)
     " silently discard unrecognized options
-    if !has_key(s:bufparams_default, l:prop) | continue | endif
+    if !has_key(s:bufsettings, l:prop) | continue | endif
     if type(l:val) ==# v:t_bool | let l:val = l:val + 0 | endif
     call setbufvar(l:bufnr, '&'.l:prop, l:val)
   endfor

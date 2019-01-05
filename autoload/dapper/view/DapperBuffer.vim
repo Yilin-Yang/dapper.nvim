@@ -33,6 +33,8 @@ function! dapper#view#DapperBuffer#new(message_passer, ...) abort
       \ function('dapper#view#DapperBuffer#climbUp')
   let l:new['digDown'] =
       \ function('dapper#view#DapperBuffer#__noImpl', ['digDown'])
+  let l:new['_digDownAndPush'] =
+      \ function('dapper#view#DapperBuffer#_digDownAndPush')
 
   let l:new['setParent'] =
       \ function('dapper#view#DapperBuffer#setParent')

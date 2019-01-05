@@ -2,13 +2,12 @@
 " DETAILS:  Emits the `Thread` that the user wants to dig into.
 
 " BRIEF:  Construct a ThreadsBuffer.
-" PARAM:  bufname (v:t_string)  The name to be displayed in the statusline.
 " PARAM:  model   (dapper#model#Model)
 " PARAM:  message_passer  (dapper#MiddleTalker?)
-function! dapper#view#ThreadsBuffer#new(
-    \ bufname, model, message_passer) abort
+function! dapper#view#ThreadsBuffer#new(model, message_passer) abort
   let l:new =
-      \ dapper#view#DapperBuffer#new(a:message_passer, {'fname':a:bufname})
+      \ dapper#view#DapperBuffer#new(a:message_passer,
+      \ {'fname': '[dapper.nvim] Threads', 'mangle': v:false})
   let l:new['TYPE']['ThreadsBuffer'] = 1
   let l:new['_ids_to_threads'] = {}
   let l:new['_model'] = a:model  " reference to the global debug model
@@ -24,6 +23,7 @@ function! dapper#view#ThreadsBuffer#new(
 
   let l:new['climbUp'] = function('dapper#view#ThreadsBuffer#climbUp')
   let l:new['digDown'] = function('dapper#view#ThreadsBuffer#digDown')
+  let l:new['_makeChild'] = function('dapper#view#ThreadsBuffer#_makeChild')
 
   let l:new['_getSelected'] = function('dapper#view#ThreadsBuffer#_getSelected')
 
@@ -179,28 +179,20 @@ function! dapper#view#ThreadsBuffer#digDown() abort dict
   catch /No thread ID found/
     return
   endtry
-  let l:tids_stbf = l:self['_tids_to_stbuffers']
-  if !has_key(l:tids_stbf, l:tid)
-    let l:st_buf = dapper#view#StackTraceBuffer#new(
-        \ l:self,
-        \ l:tid,
-        \ '[dapper.nvim] Callstack, tid: '.l:tid,
-        \ l:self['___message_passer___'])
-    let l:tids_stbf[l:tid] = l:st_buf
-    let l:long_msg .= 'Constructed new StackTraceBuffer: '
-        \ . dapper#view#helpers#StrDump(l:st_buf)
-  else
-    let l:st_buf = l:tids_stbf[l:tid]
-    let l:long_msg .= 'Found existing StackTraceBuffer: '
-        \ . dapper#view#helpers#StrDump(l:st_buf)
-  endif
   call l:self._log(
       \ 'status',
       \ 'Digging down from ThreadsBuffer to tid:'.l:tid,
       \ l:long_msg
       \ )
-  call l:st_buf.update()
-  call l:st_buf.open()
+  call l:self._digDownAndPush(l:self['_model'].thread(l:tid))
+endfunction
+
+" BRIEF:  Make a 'StackTraceBuffer' and mark it as this `ThreadsBuffer`'s child.
+function! dapper#view#ThreadsBuffer#_makeChild() abort dict
+  call dapper#view#ThreadsBuffer#CheckType(l:self)
+  let l:child = dapper#view#StackTraceBuffer#new(l:self['_message_passer'])
+  call l:child.setParent(l:self)
+  return l:child
 endfunction
 
 " RETURNS:  (v:t_number)  The thread ID of the thread currently selected by

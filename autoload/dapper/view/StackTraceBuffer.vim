@@ -2,20 +2,12 @@
 
 
 " BRIEF:  Construct a StackTraceBuffer.
-" PARAM:  parent      (dapper#view#DapperBuffer) The parent `ThreadBuffer`.
-" PARAM:  thread_id   (v:t_number)  The thread ID this stacktrace represents.
-" PARAM:  bufname     (v:t_string)  The name to be displayed in the statusline.
-function! dapper#view#StackTraceBuffer#new(
-    \ parent, thread_id, bufname, message_passer, ...) abort
-  call dapper#view#DapperBuffer#CheckType(a:parent)
-  let l:new = call(
-      \ 'dapper#view#RabbitHole#new',
-      \ [a:message_passer, a:bufname] + a:000)
+function! dapper#view#StackTraceBuffer#new(message_passer) abort
+  let l:new =
+      \ dapper#view#DapperBuffer#new(a:message_passer, {'fname': '[dapper.nvim] Stack Trace, '})
   let l:new['TYPE']['StackTraceBuffer'] = 1
-  let l:new['_parent'] = a:parent
 
   let l:st_args = deepcopy(s:stack_trace_args)
-    let l:st_args['threadId']: a:thread_id
   let l:new['_st_args'] = l:st_args
 
   let l:new['receive']     = function('dapper#view#StackTraceBuffer#receive')
