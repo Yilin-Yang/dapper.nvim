@@ -87,13 +87,20 @@ endfunction
 function! dapper#model#StackFrame#about() abort dict
   call dapper#model#StackFrame#CheckType(l:self)
   let l:info = l:self['_frame_msg']
-  if !has_key(l:info, 'source')  | l:info['source']  = {}             | endif
-  if !has_key(l:info, 'endLine') | l:info['endLine'] = l:info['line'] | endif
+  if !has_key(l:info, 'source')
+    let l:info['source']  = {}
+  endif
+  if !has_key(l:info, 'endLine')
+    let l:info['endLine'] = l:info['line']
+  endif
   if !has_key(l:info, 'endColumn')
-    l:info['endColumn'] = l:info['endColumn']
+    let l:info['endColumn'] = l:info['column']
   endif
   if !has_key(l:info, 'moduleId')
-    l:info['moduleId'] = ''
+    let l:info['moduleId'] = ''
+  endif
+  if !has_key(l:info, 'presentationHint')
+    let l:info['presentationHint'] = 'normal'
   endif
   return l:info
 endfunction

@@ -95,7 +95,7 @@ endfunction
 "     is assumed that this is already populated.*
 function! dapper#view#StackTraceBuffer#_showCallstack(stack_trace) abort dict
   call dapper#view#StackTraceBuffer#CheckType(l:self)
-  let l:frames = stack_trace.frames()
+  let l:frames = a:stack_trace.frames()
   let l:lines = []
   " TODO dynamically-adjustable format string
   let l:format_str = '(%d) [%.2s]  (l:%d, c:%d)  %s'
@@ -115,6 +115,7 @@ function! dapper#view#StackTraceBuffer#_showCallstack(stack_trace) abort dict
         \ printf(
             \ l:format_str,
             \ l:i, l:prefix, l:info['line'], l:info['column'], l:info['name']))
+    let l:i += 1
   endfor
 
   call l:self.replaceLines(0, -1, l:lines)

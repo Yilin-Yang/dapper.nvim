@@ -55,24 +55,6 @@ Expect:
   thread	id: 789	name: bar	status: exited
   thread	id: 123	name: foo	status: started
   
-Execute (ThreadsBuffer: Dig Down into StackTraceBuffer):
-  normal! gg
-  execute "normal \<cr>"
-Expect:
-  (0) [NO]  (l:8, c:0)  The
-  (1) [NO]  (l:8, c:0)  word
-  (2) [NO]  (l:8, c:0)  `exception`
-  (3) [NO]  (l:8, c:0)  causes
-  (4) [NO]  (l:8, c:0)  the
-  (5) [NO]  (l:8, c:0)  mock
-  (6) [NO]  (l:8, c:0)  debugger
-  (7) [NO]  (l:8, c:0)  to
-  (8) [NO]  (l:8, c:0)  stop,
-  (9) [NO]  (l:8, c:0)  due
-  (10) [NO]  (l:8, c:0)  to
-  (11) [NO]  (l:8, c:0)  an
-  (12) [NO]  (l:8, c:0)  "exception".
-
 Execute (ThreadsBuffer: Cleanup):
   call g:tb.open()
   call MockCleanUp()
