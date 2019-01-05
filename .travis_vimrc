@@ -10,13 +10,6 @@ set autoread
 set hidden
 set number
 
-" try to silence 'Warning: terminal cannot highlight' warnings,
-" which prevent test cases from closing until a human user hits enter
-" highlight clear
-" set noshowcmd
-" set shortmess+=aoOtTWAIcF
-" set cmdheight=5
-
 let g:project_root = split(getcwd(), '/test')[0]
 let g:dapper_logfile = g:project_root.'/test/LOGFILE'
 let g:dapper_echo_messages = 'never'
