@@ -236,7 +236,7 @@ endfunction
 " PARAM:  strict_indexing   (v:t_bool?)   Throw error on 'line out-of-range.'
 function! dapper#view#Buffer#getLines(lnum, ...) abort dict
   call dapper#view#Buffer#CheckType(l:self)
-  let a:strict_indexing = get(a:000, 0, v:false)
+  let a:strict_indexing = get(a:000, 1, v:false)
   let a:rnum = get(a:000, 0, a:lnum)
   return nvim_buf_get_lines(l:self['__bufnr'], a:lnum, a:rnum, a:strict_indexing)
 endfunction
