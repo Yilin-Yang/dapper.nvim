@@ -28,6 +28,8 @@ function! dapper#view#DapperBuffer#new(message_passer, ...) abort
       \ function('dapper#view#DapperBuffer#__noImpl', ['getRange'])
   let l:new['setMappings'] =
       \ function('dapper#view#DapperBuffer#__noImpl', ['setMappings'])
+  let l:new['configureBuffer'] =
+      \ function('dapper#view#DapperBuffer#configureBuffer')
 
   let l:new['climbUp'] =
       \ function('dapper#view#DapperBuffer#climbUp')
@@ -165,6 +167,15 @@ function! dapper#view#DapperBuffer#setMappings() abort dict
   throw '(dapper#view#DapperBuffer#setMappings) No implementation'
 endfunction
 
+" BRIEF:  Set buffer-local settings for a DapperBuffer.
+function! dapper#view#DapperBuffer#configureBuffer() abort dict
+  call dapper#view#DapperBuffer#CheckType(l:self)
+  setlocal nolist
+  setlocal tabstop=8
+  setlocal conceallevel=0
+  set syntax=dapper
+endfunction
+
 " BRIEF:  'Step up' to this buffer's parent.
 " PARAM:  fail_silently (v:t_bool?) Whether to throw an exception if no parent
 "     has been set.
@@ -220,6 +231,7 @@ function! dapper#view#DapperBuffer#open() abort dict
   call dapper#view#DapperBuffer#CheckType(l:self)
   call l:self['Buffer#open']()
   call l:self.setMappings()
+  call l:self.configureBuffer()
 endfunction
 
 " BRIEF:  Set the parent DapperBuffer of this DapperBuffer.

@@ -16,7 +16,7 @@ syn region dapperStackTrace matchgroup=dapperTags
     \ concealends
 
 syn match dapperSTIndex /^([0-9]\{-})/ contained
-syn match dapperSTPresentationHint / \[0-90-9\]/ nextgroup=dapperSTLineAndCol contained
+syn match dapperSTPresentationHint /\[0-90-9\]/ nextgroup=dapperSTLineAndCol contained
 syn region dapperSTLineAndCol start=/(l:/ end=/)/
     \ contains=dapperSTLineNoColNo nextgroup=dapperSTFrameName contained
   syn match dapperSTLineNoColNo /[0-9]/ contained

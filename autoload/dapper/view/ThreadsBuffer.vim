@@ -35,6 +35,8 @@ function! dapper#view#ThreadsBuffer#new(model, message_passer) abort
   call a:message_passer.subscribe('ThreadsResponse',
       \ function('dapper#view#ThreadsBuffer#receive', l:new))
 
+  call l:new.replaceLines(0, -1, ['<threads>', '</threads>'])
+
   return l:new
 endfunction
 
@@ -135,7 +137,7 @@ function! dapper#view#ThreadsBuffer#_addThreadEntry(thread, ...) abort dict
         \ 'ThreadsBuffer updated thread ID:'.l:tid,
         \ l:new_entry)
   catch /EntryNotFound/
-    let l:insert_after = (a:add_at_top) ? 0 : -1
+    let l:insert_after = (a:add_at_top) ? 1 : -2
     call l:self.insertLines(l:insert_after, l:new_entry)
     call l:self._log(
         \ 'status',
@@ -161,7 +163,7 @@ function! dapper#view#ThreadsBuffer#makeEntry(thread) abort dict
   let l:tid    = a:thread.id()
   let l:name   = a:thread.name()
   let l:status = a:thread.status()
-  return [printf("thread\tid: %d\tname: %s\tstatus: %s", l:tid, l:name, l:status)]
+  return [printf("thread\tid: %d\tname: %s\t\tstatus: %s", l:tid, l:name, l:status)]
 endfunction
 
 
@@ -199,6 +201,10 @@ endfunction
 "                         the cursor.
 function! dapper#view#ThreadsBuffer#_getSelected() abort dict
   call dapper#view#ThreadsBuffer#CheckType(l:self)
+  let l:cur_line = line('.')
+  if     l:cur_line ==# 1         | normal! j
+  elseif l:cur_line ==# line('$') | normal! k
+  endif
   let l:tid_line = search("^thread\tid: ", 'bncW')
   if !l:tid_line
     call l:self._log('error', 'Couldn''t find a selected thread ID',

@@ -15,9 +15,11 @@ Execute (DapperBuffer: Set Up (if this fails, further tests will fail):
   call g:tb.receive(g:msg)
   call g:tb.open()
 Expect:
-  thread	id: 789	name: unnamed	status: started
-  thread	id: 123	name: unnamed	status: started
-  
+  <threads>
+  thread	id: 789	name: unnamed		status: started
+  thread	id: 123	name: unnamed		status: started
+  </threads>
+
 Do (DapperBuffer: Test Creation of New Buffer):
   :call g:tb.open()\<cr>
   gg\<cr>

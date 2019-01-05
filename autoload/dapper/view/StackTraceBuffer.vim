@@ -98,7 +98,7 @@ function! dapper#view#StackTraceBuffer#_showCallstack(stack_trace) abort dict
   let l:frames = a:stack_trace.frames()
   let l:lines = []
   " TODO dynamically-adjustable format string
-  let l:format_str = '(%d) [%.2s]  (l:%d, c:%d)  %s'
+  let l:format_str = "(%d)\t[%.2s]\t(l:%d, c:%d)\t%s"
 
   let l:i = 0
   for l:frame in l:frames
@@ -118,7 +118,9 @@ function! dapper#view#StackTraceBuffer#_showCallstack(stack_trace) abort dict
     let l:i += 1
   endfor
 
-  call l:self.replaceLines(0, -1, l:lines)
+  call l:self.insertLines(0, ['<stacktrace>'])
+  call l:self.replaceLines(1, -1, l:lines)
+  call l:self.insertLines(-1, ['</stacktrace>'])
 endfunction
 
 " BRIEF:  Open the given stack frame.

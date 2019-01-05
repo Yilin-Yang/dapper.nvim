@@ -16,8 +16,10 @@ Execute (ThreadsBuffer: Receive ThreadEvent, started):
   call g:tb.receive(g:msg)
   call g:tb.open()
 Expect:
-  thread	id: 123	name: unnamed	status: started
-  
+  <threads>
+  thread	id: 123	name: unnamed		status: started
+  </threads>
+
 Execute (ThreadsBuffer: New Thread Started):
   let g:msg = dapper#dap#Event#new(0, 'ThreadEvent')
   let g:msg['event'] = 'ThreadEvent'
@@ -26,9 +28,11 @@ Execute (ThreadsBuffer: New Thread Started):
   call g:tb.receive(g:msg)
   call g:tb.open()
 Expect:
-  thread	id: 789	name: unnamed	status: started
-  thread	id: 123	name: unnamed	status: started
-  
+  <threads>
+  thread	id: 789	name: unnamed		status: started
+  thread	id: 123	name: unnamed		status: started
+  </threads>
+
 Execute (ThreadsBuffer: Thread Exited):
   let g:msg = dapper#dap#Event#new(0, 'ThreadEvent')
   let g:msg['event'] = 'ThreadEvent'
@@ -37,9 +41,11 @@ Execute (ThreadsBuffer: Thread Exited):
   call g:tb.receive(g:msg)
   call g:tb.open()
 Expect:
-  thread	id: 789	name: unnamed	status: exited
-  thread	id: 123	name: unnamed	status: started
-  
+  <threads>
+  thread	id: 789	name: unnamed		status: exited
+  thread	id: 123	name: unnamed		status: started
+  </threads>
+
 Execute (ThreadsBuffer: Update With ThreadsResponse):
   let g:msg = dapper#dap#Response#new(0, 'ThreadsResponse')
   let g:msg['command'] = 'threads'
@@ -52,9 +58,11 @@ Execute (ThreadsBuffer: Update With ThreadsResponse):
   call g:tb.receive(g:msg)
   call g:tb.open()
 Expect:
-  thread	id: 789	name: bar	status: exited
-  thread	id: 123	name: foo	status: started
-  
+  <threads>
+  thread	id: 789	name: bar		status: exited
+  thread	id: 123	name: foo		status: started
+  </threads>
+
 Execute (ThreadsBuffer: Cleanup):
   call g:tb.open()
   call MockCleanUp()
