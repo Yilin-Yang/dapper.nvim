@@ -163,7 +163,7 @@ function! dapper#view#ThreadsBuffer#makeEntry(thread) abort dict
   let l:tid    = a:thread.id()
   let l:name   = a:thread.name()
   let l:status = a:thread.status()
-  return [printf("thread\tid: %d\tname: %s\t\tstatus: %s", l:tid, l:name, l:status)]
+  return [printf("thread id: %d\tname: %s\t\tstatus: %s", l:tid, l:name, l:status)]
 endfunction
 
 
@@ -205,7 +205,7 @@ function! dapper#view#ThreadsBuffer#_getSelected() abort dict
   if     l:cur_line ==# 1         | normal! j
   elseif l:cur_line ==# line('$') | normal! k
   endif
-  let l:tid_line = search("^thread\tid: ", 'bncW')
+  let l:tid_line = search("^thread id: ", 'bncW')
   if !l:tid_line
     call l:self._log('error', 'Couldn''t find a selected thread ID',
         \ 'curpos: '.string(getcurpos())."\nbuffer contents:\n".getline(1,'$'))

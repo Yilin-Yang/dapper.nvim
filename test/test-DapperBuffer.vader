@@ -16,8 +16,8 @@ Execute (DapperBuffer: Set Up (if this fails, further tests will fail):
   call g:tb.open()
 Expect:
   <threads>
-  thread	id: 789	name: unnamed		status: started
-  thread	id: 123	name: unnamed		status: started
+  thread id: 789	name: unnamed		status: started
+  thread id: 123	name: unnamed		status: started
   </threads>
 
 Do (DapperBuffer: Test Creation of New Buffer):

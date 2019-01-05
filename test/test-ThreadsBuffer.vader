@@ -17,7 +17,7 @@ Execute (ThreadsBuffer: Receive ThreadEvent, started):
   call g:tb.open()
 Expect:
   <threads>
-  thread	id: 123	name: unnamed		status: started
+  thread id: 123	name: unnamed		status: started
   </threads>
 
 Execute (ThreadsBuffer: New Thread Started):
@@ -29,8 +29,8 @@ Execute (ThreadsBuffer: New Thread Started):
   call g:tb.open()
 Expect:
   <threads>
-  thread	id: 789	name: unnamed		status: started
-  thread	id: 123	name: unnamed		status: started
+  thread id: 789	name: unnamed		status: started
+  thread id: 123	name: unnamed		status: started
   </threads>
 
 Execute (ThreadsBuffer: Thread Exited):
@@ -42,8 +42,8 @@ Execute (ThreadsBuffer: Thread Exited):
   call g:tb.open()
 Expect:
   <threads>
-  thread	id: 789	name: unnamed		status: exited
-  thread	id: 123	name: unnamed		status: started
+  thread id: 789	name: unnamed		status: exited
+  thread id: 123	name: unnamed		status: started
   </threads>
 
 Execute (ThreadsBuffer: Update With ThreadsResponse):
@@ -59,8 +59,8 @@ Execute (ThreadsBuffer: Update With ThreadsResponse):
   call g:tb.open()
 Expect:
   <threads>
-  thread	id: 789	name: bar		status: exited
-  thread	id: 123	name: foo		status: started
+  thread id: 789	name: bar		status: exited
+  thread id: 123	name: foo		status: started
   </threads>
 
 Execute (ThreadsBuffer: Cleanup):

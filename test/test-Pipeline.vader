@@ -43,7 +43,7 @@ Execute (Pipeline: Request Threads):
   call AwaitTimeout({ -> ReceivedMessage('ThreadsResponse')}, 3000, v:true)
 Expect:
   <threads>
-  thread	id: 1	name: thread 1		status: (N/A)
+  thread id: 1	name: thread 1		status: (N/A)
   </threads>
 
 Execute (Pipeline: Create A Free, Unattached StackTraceBuffer):
