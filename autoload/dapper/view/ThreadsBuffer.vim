@@ -7,9 +7,8 @@
 " PARAM:  message_passer  (dapper#MiddleTalker?)
 function! dapper#view#ThreadsBuffer#new(
     \ bufname, model, message_passer) abort
-  let l:new = call(
-      \ 'dapper#view#RabbitHole#new',
-      \ [a:message_passer, a:bufname])
+  let l:new =
+      \ dapper#view#DapperBuffer#new(a:message_passer, {'fname':a:bufname})
   let l:new['TYPE']['ThreadsBuffer'] = 1
   let l:new['_ids_to_threads'] = {}
   let l:new['_model'] = a:model  " reference to the global debug model
