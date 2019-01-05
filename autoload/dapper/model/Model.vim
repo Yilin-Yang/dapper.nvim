@@ -205,7 +205,7 @@ function! dapper#model#Model#_archiveThread(body) abort dict
   let l:long_msg = ''
   try
     let l:thread = l:self['_ids_to_running'][l:tid]
-    call l:thread.updateProps(a:body)
+    call l:thread.update(a:body, v:false)
     unlet l:self['_ids_to_running'][l:tid]
     let l:self['_ids_to_stopped'][l:tid] = l:thread
     let l:long_msg = 'Thread archived.'

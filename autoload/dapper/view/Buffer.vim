@@ -1,7 +1,7 @@
 " BRIEF:  Object-oriented wrapper around a simple vim buffer.
 
 " BRIEF:  Used for creating unique 'filenames' for newly spawned buffers.
-let s:buffer_fname_mangle = localtime()
+let s:buffer_fname_mangle = 0
 
 " BRIEF:  Make a new Buffer object.
 " PARAM:  bufparams   (v:t_dict)    Dictionary populated with buffer

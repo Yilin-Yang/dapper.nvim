@@ -32,7 +32,7 @@ function! dapper#model#Thread#new(props, message_passer, ...) abort
   let l:new['name'] = function('dapper#model#Thread#name')
   let l:new['status'] = function('dapper#model#Thread#status')
   let l:new['stackTrace'] = function('dapper#model#Thread#stackTrace')
-  let l:new['updateProps'] = function('dapper#model#Thread#updateProps')
+  let l:new['update'] = function('dapper#model#Thread#update')
 
   return l:new
 endfunction
@@ -101,6 +101,6 @@ function! dapper#model#Thread#update(props, ...) abort dict
   endif
   if a:update_stack_trace
     let l:self['_callstack'] =
-        \ dapper#model#StackTrace#new(l:tid, a:message_passer)
+        \ dapper#model#StackTrace#new(l:self['_id'], l:self['_message_passer'])
   endif
 endfunction

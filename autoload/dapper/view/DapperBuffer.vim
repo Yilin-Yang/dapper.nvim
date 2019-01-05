@@ -52,6 +52,9 @@ function! dapper#view#DapperBuffer#new(message_passer, ...) abort
   let l:new['_getOpenInTab']
       \ = function('dapper#view#DapperBuffer#_getOpenInTab')
 
+  " set 'self' as a buffer-local variable
+  call setbufvar(l:new.bufnr(), 'dapper_buffer', l:new)
+
   " monkey-patch the `open` method; invoke `setMappings` after opening
   let l:new['Buffer#open'] = l:new['open']
   let l:new['open'] =
@@ -225,7 +228,7 @@ endfunction
 "     in the current window (if it wasn't already open in the same tabpage.)
 function! dapper#view#DapperBuffer#setParent(new_parent) abort dict
   call dapper#view#DapperBuffer#CheckType(l:self)
-  call dapper#view#DapperBuffer#CheckType(new_parent)
+  call dapper#view#DapperBuffer#CheckType(a:new_parent)
   let l:self['_parent'] = a:new_parent
 endfunction
 

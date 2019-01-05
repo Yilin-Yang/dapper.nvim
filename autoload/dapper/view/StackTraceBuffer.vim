@@ -11,11 +11,9 @@ function! dapper#view#StackTraceBuffer#new(message_passer, ...) abort
           \ a:message_passer, {'fname': '[dapper.nvim] Stack Trace, '})
   let l:new['TYPE']['StackTraceBuffer'] = 1
 
-  let l:st_args = deepcopy(s:stack_trace_args)
-  let l:new['_st_args'] = l:st_args
   let l:new['_thread'] = a:thread
 
-  let l:new['show']        = function('dapper#view#ThreadsBuffer#show')
+  let l:new['show']        = function('dapper#view#StackTraceBuffer#show')
   let l:new['getRange']    = function('dapper#view#StackTraceBuffer#getRange')
   let l:new['setMappings'] = function('dapper#view#StackTraceBuffer#setMappings')
 
