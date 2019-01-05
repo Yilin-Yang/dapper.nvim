@@ -40,6 +40,7 @@ function! dapper#model#StackTrace#new(thread_id, message_passer, ...) abort
   let l:new['_stack_trace'] = []
   let l:new['receive'] = function('dapper#model#StackTrace#receive')
   let l:new['frame'] = function('dapper#model#StackTrace#frame')
+  let l:new['frames'] = function('dapper#model#StackTrace#frames')
   let l:new['id'] = function('dapper#model#StackTrace#id')
 
   let l:args = deepcopy(s:stack_trace_args)
@@ -109,6 +110,12 @@ function! dapper#model#StackTrace#frame(idx) abort dict
         \ . a:idx
   endif
   return l:self['_stack_trace'][a:idx]
+endfunction
+
+" RETURNS:  (v:t_list)  A list of all `dapper#model#StackFrame`s in this object.
+function! dapper#model#StackTrace#frames() abort dict
+  call dapper#model#StackTrace#CheckType(l:self)
+  return l:self['_stack_trace']
 endfunction
 
 function! dapper#model#StackTrace#id() abort dict

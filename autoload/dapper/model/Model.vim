@@ -164,9 +164,9 @@ function! dapper#model#Model#_recvResponse(response) abort dict
     let l:running = l:self['_ids_to_running']
     let l:stopped = l:self['_ids_to_stopped']
     if has_key(l:running, l:tid)
-      call l:running[l:tid].updateProps(l:thread)
+      call l:running[l:tid].update(l:thread)
     elseif has_key(l:stopped, l:tid)
-      call l:stopped[l:tid].updateProps(l:thread)
+      call l:stopped[l:tid].update(l:thread)
     else
       call l:self._makeThread(l:thread)
       let l:new_thread = l:self.thread(l:tid)

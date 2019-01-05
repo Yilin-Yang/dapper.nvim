@@ -1,4 +1,5 @@
 " BRIEF:  Stores information about a running (or stopped) thread.
+" DETAILS:  Will automatically request its own stack trace on construction.
 
 " BRIEF:  Construct a new Thread object.
 " PARAM:  props   (v:t_dict)  The body of a `ThreadEvent`. Can accept the
@@ -10,7 +11,9 @@
 " PARAM:  Resolve (v:t_func?)
 " PARAM:  Reject  (v:t_func?)
 function! dapper#model#Thread#new(props, message_passer, ...) abort
-  let l:new = call('dapper#Promise#new', a:000)
+  " let l:new = call('dapper#Promise#new', a:000)
+  " TODO Thread isn't really a promise?
+  let l:new = {}
 
   let l:tid = 0
   if has_key(a:props, 'id')
@@ -29,7 +32,6 @@ function! dapper#model#Thread#new(props, message_passer, ...) abort
   let l:new['name'] = function('dapper#model#Thread#name')
   let l:new['status'] = function('dapper#model#Thread#status')
   let l:new['stackTrace'] = function('dapper#model#Thread#stackTrace')
-  let l:new['receive'] = function('dapper#model#Thread#receive')
   let l:new['updateProps'] = function('dapper#model#Thread#updateProps')
 
   return l:new
@@ -75,25 +77,17 @@ function! dapper#model#Thread#stackTrace() abort dict
   return l:callstack
 endfunction
 
-" BRIEF:  Process an incoming StackTraceResponse.
-function! dapper#model#Thread#receive(msg) abort dict
-  call dapper#model#Thread#CheckType(l:self)
-  let l:self['_callstack'] = a:msg['body']['stackFrames']
-  call l:self['_message_passer'].notifyReport(
-      \ 'status',
-      \ 'model#Thread:'.l:self.id().' updated w/ stack trace',
-      \ dapper#helpers#StrDump(a:msg)
-      \ )
-endfunction
-
 " BRIEF:  Update the properties of this Thread from the properties given.
 " PARAM:  props   (v:t_dict)  The body of a `ThreadEvent`. Can accept the
 "     following properties:
 "       - 'id' or 'threadId'
 "       - 'name'
 "       - 'reason'
-function! dapper#model#Thread#updateProps(props) abort dict
+" PARAM:  update_stack_trace  (v:t_bool?)   Whether to update the Thread's
+"     stack trace, as well.
+function! dapper#model#Thread#update(props, ...) abort dict
   call dapper#model#Thread#CheckType(l:self)
+  let a:update_stack_trace = get(a:000, 0, v:true)
   if has_key(a:props, 'id')
     let l:self['_id'] = a:props['id']
   elseif has_key(a:props, 'threadId')
@@ -104,5 +98,9 @@ function! dapper#model#Thread#updateProps(props) abort dict
   endif
   if has_key(a:props, 'reason')
     let l:self['_status'] = a:props['reason']
+  endif
+  if a:update_stack_trace
+    let l:self['_callstack'] =
+        \ dapper#model#StackTrace#new(l:tid, a:message_passer)
   endif
 endfunction
