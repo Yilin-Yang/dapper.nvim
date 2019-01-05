@@ -74,6 +74,7 @@ function! dapper#view#Buffer#new(...) abort
     \ 'setbufvar': function('dapper#view#Buffer#setbufvar'),
     \ 'bufnr': function('dapper#view#Buffer#bufnr'),
     \ 'open': function('dapper#view#Buffer#open'),
+    \ 'switch': function('dapper#view#Buffer#switch'),
     \ 'setBuffer': function('dapper#view#Buffer#setBuffer'),
     \ 'split': function('dapper#view#Buffer#openSplit', [v:false]),
     \ 'vsplit': function('dapper#view#Buffer#openSplit', [v:true]),
@@ -81,6 +82,7 @@ function! dapper#view#Buffer#new(...) abort
     \ 'replaceLines': function('dapper#view#Buffer#replaceLines'),
     \ 'insertLines': function('dapper#view#Buffer#insertLines'),
     \ 'deleteLines': function('dapper#view#Buffer#deleteLines'),
+    \ 'isOpenInTab': function('dapper#view#Buffer#isOpenInTab'),
   \ }
 
   return l:new
@@ -136,6 +138,40 @@ function! dapper#view#Buffer#open(...) abort dict
   call dapper#view#Buffer#CheckType(l:self)
   if !a:0 | execute 'buffer '.        l:self['__bufnr']
   else    | execute 'buffer '.a:1.' '.l:self['__bufnr']
+  endif
+endfunction
+
+" BRIEF:  Move the cursor to (one of) this buffer's window(s) in the given tab.
+" DETAILS:  Throws an `ERROR(NotFound)` if this buffer isn't open in the tab(s)
+"     specified. Prefers to switch to a buffer in the current tabpage, if
+"     possible. Does nothing if the current tabpage is 'acceptable' and the
+"     current window has this buffer open.
+" PARAM:  open_in_any (v:t_bool?) `v:true` when it's okay to switch to an
+"     instance of this buffer in a different tabpage.
+" PARAM:  tabnr     (v:t_number?) The tab page in which to search.
+function! dapper#view#Buffer#switch(...) abort dict
+  call dapper#view#Buffer#CheckType(l:self)
+  let a:open_in_any = get(a:000, 0, v:true)
+  let a:tabnr = get(a:000, 1, tabpagenr())
+  let l:bufnr = l:self.bufnr()
+  if a:tabnr ==# tabpagenr() || a:open_in_any
+    " check if already open and active
+    if winnr() ==# bufwinnr(l:bufnr) | return | endif
+  endif
+  let l:range = [a:tabnr]
+  if a:open_in_any
+    call extend(l:range,
+        \ range(1, a:tabnr - 1) + range(a:tabnr + 1, tabpagenr('$')))
+  endif
+  for l:tab in l:range
+    if !l:self.isOpenInTab(l:tab) | continue | endif
+    execute 'tabnext '.l:tab
+    let l:winnr = bufwinnr(l:bufnr)
+    execute l:winnr.'wincmd w'
+    break
+  endfor
+  if bufnr('%') !=# l:bufnr || (!a:open_in_any && tabpagenr() !=# a:tabnr)
+    throw 'ERROR(NotFound) (dapper#view#Buffer) Didn''t switch to buffer!'
   endif
 endfunction
 
@@ -245,4 +281,17 @@ function! dapper#view#Buffer#deleteLines(after, through, ...) abort dict
     \ a:through,
     \ a:strict_indexing,
     \ [])
+endfunction
+
+" RETURNS:  (v:t_bool)  Whether this Buffer is open in the given tab.
+" PARAM:  tabnr   (v:t_number?) The tabpage in which to search. Defaults to
+"     the current tabpage.
+function! dapper#view#Buffer#isOpenInTab(...) abort dict
+  let a:tabnr = get(a:000, 0, tabpagenr())
+  let l:this_buf = l:self.bufnr()
+  let l:bufs_in_tab = tabpagebuflist(a:tabnr)
+  for l:buf in l:bufs_in_tab
+    if l:buf ==# l:this_buf | return v:true | endif
+  endfor
+  return v:false
 endfunction
