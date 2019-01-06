@@ -70,6 +70,19 @@ function! dapper#settings#ClimbUpMapping() abort
   return g:dapper_climb_up_mapping
 endfunction
 
+" RETURNS:  (v:t_string)  Keymapping used to toggle breakpoints on a line.
+function! dapper#settings#ToggleBreakpointMapping() abort
+  if !exists('g:dapper_toggle_breakpoint_mapping')
+    let g:dapper_toggle_breakpoint_mapping = '<leader>b'
+  endif
+  call s:AssertType(
+      \ g:dapper_toggle_breakpoint_mapping,
+      \ v:t_string,
+      \ 'g:dapper_toggle_breakpoint_mapping'
+      \ )
+  return g:dapper_toggle_breakpoint_mapping
+endfunction
+
 
 " RETURNS:  (v:t_string)  The `bufname` of the debug log buffer. Used only
 "                         when the log buffer is not being written to a file.
