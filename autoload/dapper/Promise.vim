@@ -72,7 +72,7 @@ function! dapper#Promise#unfulfill() abort dict
   let l:self['_state'] = 'pending'
 endfunction
 
-" BRIEF:  Call back all subscribers with *this* fulfilled Promise.
+" BRIEF:  Call back all subscribers with the fulfilled Promise value.
 function! dapper#Promise#fulfill(PromiseValue) abort dict
   call dapper#Promise#CheckType(l:self)
   let l:self['_promise_val'] = a:PromiseValue
