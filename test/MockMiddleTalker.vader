@@ -1,6 +1,7 @@
 Execute (Declare Mock MiddleTalker):
   let g:subs = []
   let g:reqs = []
+  let g:msgs = []
 
   " mock middletalker
   function! MockSub(pattern, Callback) abort
@@ -11,6 +12,11 @@ Execute (Declare Mock MiddleTalker):
   function! MockReq(command, request_args, Callback) abort
     let g:last_req = [a:command, a:request_args, a:Callback]
     let g:reqs += [g:last_req]
+  endfunction
+
+  function! MockRec(msg) abort
+    let g:last_rec = a:msg
+    let g:msgs += [a:msg]
   endfunction
 
   function! MockNoOp(...) abort
@@ -27,6 +33,7 @@ Execute (Declare Mock MiddleTalker):
   function! MockCleanUp() abort
     let g:subs = []
     let g:reqs = []
+    let g:msgs = []
   endfunction
 
   function! MockGotRequest(command) abort
@@ -39,6 +46,13 @@ Execute (Declare Mock MiddleTalker):
   function! MockGotSubscription(pattern) abort
     let l:i = 0 | while l:i <# len(g:subs)
       if g:subs[l:i][0] ==# a:pattern | return v:true | endif
+    let l:i += 1 | endwhile
+    return v:false
+  endfunction
+
+  function! MockReceived(pattern) abort
+    let l:i = 0 | while l:i <# len(g:msgs)
+      if g:msgs[l:i]['vim_msg_typename'] ==# a:pattern | return v:true | endif
     let l:i += 1 | endwhile
     return v:false
   endfunction

@@ -10,7 +10,7 @@ function! dapper#dap#Response#new(...)
 endfunction
 
 function! dapper#dap#Response#CheckType(object) abort
-  if type(a:object) !=# v:t_dict || !has_key(a:object, 'TYPE') || !has_key(a:object['TYPE'], 'Response')
+  if type(a:object) !=# v:t_dict || !has_key(a:object, 'type') || a:object['type'] !=# 'response'
   try
     let l:err = '(dapper#dap#Response) Object is not of type Response: '.string(a:object)
   catch

@@ -1,3 +1,4 @@
+" BRIEF:  Logs error messages, showing some of them as messages.
 let s:name_pattern = 'ErrorReport'
 
 function! dapper#log#ErrorHandler#new(logger, message_passer) abort
