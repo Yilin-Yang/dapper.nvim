@@ -1,6 +1,8 @@
 " BRIEF:  Show active threads in the debuggee; 'dig down' into callstacks.
 " DETAILS:  Emits the `Thread` that the user wants to dig into.
 
+let s:thread_id_search_pat = '^thread id: '
+
 " BRIEF:  Construct a ThreadsBuffer.
 " PARAM:  model   (dapper#model#Model)
 " PARAM:  message_passer  (dapper#MiddleTalker)
@@ -98,7 +100,7 @@ function! dapper#view#ThreadsBuffer#getRange(thread_id) abort dict
   call dapper#view#ThreadsBuffer#CheckType(l:self)
   " TODO optimize this? (...it's surprisingly fast...)
   let l:entire_buffer = nvim_buf_get_lines(l:self['__bufnr'], 0, -1, v:false)
-  let l:idx = match(l:entire_buffer, "thread\tid: ".a:thread_id)
+  let l:idx = match(l:entire_buffer, s:thread_id_search_pat.a:thread_id)
   if l:idx ==# -1
     throw '(dapper#view#ThreadsBuffer) EntryNotFound, thread_id:'.a:thread_id
   endif
@@ -205,7 +207,7 @@ function! dapper#view#ThreadsBuffer#_getSelected() abort dict
   if     l:cur_line ==# 1         | normal! j
   elseif l:cur_line ==# line('$') | normal! k
   endif
-  let l:tid_line = search("^thread id: ", 'bncW')
+  let l:tid_line = search(s:thread_id_search_pat, 'bncW')
   if !l:tid_line
     call l:self._log('error', 'Couldn''t find a selected thread ID',
         \ 'curpos: '.string(getcurpos())."\nbuffer contents:\n".getline(1,'$'))
