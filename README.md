@@ -30,6 +30,13 @@ Alternatively, you might just install Node.js through apt.
 sudo apt install nodejs
 ```
 
+#### yarn
+While it should be possible to install dapper.nvim's Node dependencies using
+npm, we strongly recommend using yarn instead. In our experience, yarn is much
+more reliable.
+
+Find installation instructions for yarn [here.](https://yarnpkg.com/lang/en/docs/install/)
+
 #### neovim Node.js Client
 
 Install [neovim's node client](https://github.com/neovim/node-client) by running
@@ -46,7 +53,7 @@ We recommend installing dapper.nvim using [vim-plug.](https://github.com/junegun
 " .vimrc
 call plug#begin('~/.vim/bundle')
 " ...
-Plug 'Yilin-Yang/dapper.nvim', { 'do': 'yarn install --production', }
+Plug 'Yilin-Yang/dapper.nvim', { 'do': 'yarn install', }
 " ...
 call plug#end()
 ```
@@ -69,8 +76,7 @@ And then,
 ```bash
 cd ~/.vim/bundle # or wherever you've installed the plugin
 cd dapper.nvim
-npm install --production
-npm run compile
+yarn install
 ```
 
 Contribution
@@ -90,7 +96,7 @@ yarn install
 ```bash
 # from project root,
 cd test
-./run_tests_nvim [-v | --visible] [-i | --international]
+./run_tests_nvim [-v | --visible] [-i | --international] [--file=<TESTFILE.vader>]
 ```
 
 dapper.nvim uses [vader.vim](https://github.com/junegunn/vader.vim) as its
