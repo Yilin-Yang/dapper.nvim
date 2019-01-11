@@ -7,8 +7,8 @@ function! dapper#model#SourceBreakpoints#new(message_passer) abort
   let l:new['TYPE']['SourceBreakpoints'] = 1
   let l:new['__message_passer'] = a:message_passer
 
-  " line numbers to `DebugProtocol.SourceBreakpoint`s
-  let l:new['__line_nos_to_bps'] = {}
+  " list of `DebugProtocol.SourceBreakpoint`s
+  let l:new['__bps'] = []
 
   let l:new['setBreakpoint'] =
       \ function('dapper#model#SourceBreakpoints#setBreakpoint')
@@ -64,39 +64,104 @@ function! dapper#model#SourceBreakpoints#setBreakpoint(props) abort dict
     throw "ERROR(WrongType) (dapper#model#SourceBreakpoints) Didn't give line: "
         \ . dapper#helpers#StrDump(a:props)
   endif
-  let l:args = dapper#dap#SourceBreakpoint#new()
+  let l:new = dapper#dap#SourceBreakpoint#new()
   for [l:prop, l:val] in items(a:props)
-    if !has_key(l:args, l:prop) | continue | endif
-    let l:args[l:prop] = l:val
+    if !has_key(l:new, l:prop) | continue | endif
+    let l:new[l:prop] = l:val
   endfor
 
-  let l:lines_to_bps = l:self['__line_nos_to_bps']
-  let l:lines_to_bps[l:args['line']] = l:args
-  let l:bps = values(l:lines_to_bps)
+  let l:curr_bps = l:self['__bps']
+  call add(l:curr_bps, l:new)  " add this breakpoint to our list
 
   call l:self['__message_passer'].request(
       \ 'setBreakpoints',
-      \ l:lines_to_bps,
+      \ l:curr_bps,
       \ function('dapper#model#SourceBreakpoints#receive', l:self)
       \ )
   call l:self.unfulfill()
 endfunction
 
 " BRIEF:  Remove a breakpoint from the source file.
+" RETURNS:  (v:t_list)  List of `DebugProtocol.SourceBreakpoint & Breakpoint`;
+"     all breakpoints that matched the given line number.
 " PARAM:  line  (v:t_number)  The line number of the breakpoint to be removed.
 function! dapper#model#SourceBreakpoints#removeBreakpoint(line) abort dict
   call dapper#model#SourceBreakpoints#CheckType(l:self)
+  if type(a:line) !=# v:t_number
+    throw 'ERROR(WrongType) (dapper#model#SourceBreakpoints) Given line number '
+        \ . 'isn''t a number: ' . dapper#helpers#StrDump(a:line)
+  endif
+  let l:removed = []
+  let l:bps = l:self['__bps']
+  let l:i = 0 | while l:i <# len(l:bps)
+    let l:bp = l:bps[l:i]
+    if a:line ==# l:bp['line']
+      call add(l:removed, l:bp)
+      unlet l:bps[l:i]
+    else
+      let l:i += 1
+    endif
+  endwhile
+
+  " send new, 'pruned' list of breakpoints in a request
+  call l:self['__message_passer'].request(
+      \ 'setBreakpoints',
+      \ l:bps,
+      \ function('dapper#model#SourceBreakpoints#receive', l:self)
+      \ )
+  call l:self.unfulfill()
+
+  return l:removed
 endfunction
 
+" BRIEF:  Clear all breakpoints from the source file.
 function! dapper#model#SourceBreakpoints#clearBreakpoints() abort dict
   call dapper#model#SourceBreakpoints#CheckType(l:self)
+  let l:self['__bps'] = []
+  call l:self['__message_passer'].request(
+      \ 'setBreakpoints',
+      \ l:self['__bps'],
+      \ function('dapper#model#SourceBreakpoints#receive', l:self)
+      \ )
+  call l:self.unfulfill()
 endfunction
 
 " BRIEF:  Update from a `SetBreakpointsResponse` message.
 " DETAILS:  Announcing that a given breakpoint failed to set is handled by
 "     `BreakpointsHandler`.
+let s:bp_props = ['id', 'source', 'line', 'column', 'endLine', 'endColumn']
 function! dapper#model#SourceBreakpoints#receive(msg) abort dict
   call dapper#model#SourceBreakpoints#CheckType(l:self)
-  " TODO update from the incoming message, use extends()
+
+  let l:resp = a:msg['body']['breakpoints']
+  let l:bps = l:self['__bps']
+  if len(l:resp) !=# len(l:bps)
+    throw 'ERROR(Failure) (dapper#model#SourceBreakpoints) '
+        \ . 'Mismatched array sizes, sent breakpoints vs. breakpoints received:'
+        \ . dapper#helpers#StrDump(l:bps) . ', '
+        \ . dapper#helpers#StrDump(a:msg)
+  endif
+
+  " update our current breakpoints from the response message
+  let l:idx_to_wipeout = []
+  let l:i = 0 | while l:i <# len(l:resp)
+    let l:curr = l:bps[l:i]
+    let l:real = l:resp[l:i]
+    if !l:real['verified']  " breakpoint not set
+      call add(l:idx_to_wipeout, l:i)
+      continue
+    endif
+    for l:prop in s:bp_props  " breakpoint set successfully
+      if !has_key(l:real, l:prop) | continue | endif
+      let l:curr[l:prop] = l:real[l:prop]
+    endfor
+  let l:i += 1 | endwhile
+
+  " delete breakpoints that weren't set successfully
+  call reverse(l:idx_to_wipeout)  " delete items 'back-to-front'
+  for l:i in l:idx_to_wipeout
+    unlet l:bps[l:i]
+  endfor
+
   call l:self.fulfill(l:self)
 endfunction
