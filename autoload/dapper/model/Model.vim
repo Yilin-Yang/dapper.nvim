@@ -12,21 +12,17 @@
 " PARAM:  message_passer  (dapper#MiddleTalker)
 function! dapper#model#Model#new(message_passer) abort
   let a:debug_logger = get(a:000, 0, dapper#log#DebugLogger#dummy())
-  " if !exists('g:dapper_model')
-  "   try
-  "     call dapper#model#Model#CheckType(g:dapper_model)
-  "     return g:dapper_model
-  "   catch
-  "   endtry
-  " endif
+
   let l:new = {
       \ 'TYPE': {'Model': 1},
       \ '_ids_to_running': {},
       \ '_ids_to_stopped': {},
+      \ '_capabilities': {},
       \ '_message_passer': a:message_passer,
       \ 'update': function('dapper#model#Model#update'),
       \ 'thread': function('dapper#model#Model#thread'),
       \ 'threads': function('dapper#model#Model#threads'),
+      \ 'capabilities': function('dapper#model#Model#capabilities'),
       \ 'receive': function('dapper#model#Model#receive'),
       \ '_recvEvent': function('dapper#model#Model#_recvEvent'),
       \ '_recvResponse': function('dapper#model#Model#_recvResponse'),
@@ -34,6 +30,9 @@ function! dapper#model#Model#new(message_passer) abort
       \ '_archiveThread': function('dapper#model#Model#_archiveThread'),
       \ '_reqThreads': function('dapper#model#Model#_reqThreads'),
       \ }
+  call a:message_passer.subscribe(
+      \ 'InitializeResponse',
+      \ function('dapper#model#Model#receive', l:new))
   call a:message_passer.subscribe(
       \ 'ThreadEvent',
       \ function('dapper#model#Model#receive', l:new))
@@ -97,6 +96,12 @@ function! dapper#model#Model#threads(...) abort dict
   return l:to_return
 endfunction
 
+" RETURNS:  (DebugProtocol.Capabilities)  Capabilities of the active adapter.
+function! dapper#model#Model#capabilities() abort dict
+  call dapper#model#Model#CheckType(l:self)
+  return deepcopy(l:self['_capabilities'])
+endfunction
+
 " BRIEF:  Handle incoming debug adapter protocol messages.
 function! dapper#model#Model#receive(msg) abort dict
   call dapper#model#Model#CheckType(l:self)
@@ -108,6 +113,8 @@ function! dapper#model#Model#receive(msg) abort dict
     call l:self._reqThreads()
   elseif l:typename ==# 'ThreadsResponse'
     call l:self._recvResponse(a:msg)
+  elseif l:typename ==# 'InitializeResponse'
+    let l:self['_capabilities'] = has_key(a:msg, 'body') ? a:msg['body'] : {}
   else
     call l:self['_message_passer'].notifyReport(
         \ 'status',
