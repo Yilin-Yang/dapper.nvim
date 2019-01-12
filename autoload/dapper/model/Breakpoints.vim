@@ -155,7 +155,7 @@ function! dapper#model#Breakpoints#removeBreakpoint(key) abort dict
   call l:self['__message_passer'].request(
       \ l:self._command(),
       \ l:args,
-      \ function('dapper#model#SourceBreakpoints#receive', l:self)
+      \ function('dapper#model#Breakpoints#receive', l:self)
       \ )
   call l:self.unfulfill()
 
@@ -170,7 +170,7 @@ function! dapper#model#Breakpoints#clearBreakpoints() abort dict
   call l:self['__message_passer'].request(
       \ l:self._command(),
       \ l:args,
-      \ function('dapper#model#SourceBreakpoints#receive', l:self)
+      \ function('dapper#model#Breakpoints#receive', l:self)
       \ )
   call l:self.unfulfill()
 endfunction

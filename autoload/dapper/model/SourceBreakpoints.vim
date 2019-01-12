@@ -63,7 +63,7 @@ endfunction
 " RETURNS:  (v:t_list)  List of `DebugProtocol.SourceBreakpoint & Breakpoint`;
 "     all breakpoints that matched the given line number.
 " PARAM:  line  (v:t_number)  The line number of the breakpoint to be removed.
-function! dapper#model#Breakpoints#removeBreakpoint(line) abort dict
+function! dapper#model#SourceBreakpoints#removeBreakpoint(line) abort dict
   call dapper#model#SourceBreakpoints#CheckType(l:self)
   throw 'ERROR(Failure) (dapper#model#SourceBreakpoints) Called function that '
       \ . 'only exists for documentation: removeBreakpoint'
