@@ -25,6 +25,9 @@ function! dapper#model#SourceBreakpoints#new(message_passer, source) abort
   let l:new['receive'] =
       \ function('dapper#model#SourceBreakpoints#receive')
 
+  let l:new['_argsFromSelf'] =
+      \ function('dapper#model#SourceBreakpoints#_argsFromSelf')
+
   call a:message_passer.subscribe('SetBreakpointsResponse',
       \ function('dapper#model#SourceBreakpoints#receive', l:new))
   return l:new
@@ -51,6 +54,8 @@ function! dapper#model#SourceBreakpoints#breakpoints() abort dict
 endfunction
 
 " BRIEF:  Set a breakpoint on a line of a source file.
+" DETAILS:  Can also be used to edit an existing breakpoint, by specifying
+"     that breakpoint's line number.
 " PARAM:  props   (v:t_dict)  Dictionary that may contain the following
 "     properties:
 "     - line (v:t_number) *Required*. The line number on which to set the
@@ -76,23 +81,27 @@ function! dapper#model#SourceBreakpoints#setBreakpoint(props) abort dict
         \ . dapper#helpers#StrDump(a:props)
   endif
 
-  let l:new = dapper#dap#SourceBreakpoint#new()
-  for [l:prop, l:val] in items(a:props)
-    if !has_key(l:new, l:prop) | continue | endif
-    let l:new[l:prop] = l:val
-  endfor
-
+  " search for existing breakpoints with this line number
   let l:curr_bps = l:self['__bps']
-  call add(l:curr_bps, l:new)  " add this breakpoint to our list
-
-  let l:args = dapper#dap#SetBreakpointsArguments#new()
-  let l:args['source'] = l:self['__source']
-  let l:args['breakpoints'] = l:curr_bps
-  for l:bp in l:curr_bps  " also populate deprecated lines
-    call add(l:args['lines'], l:bp['line'])
+  let l:existing = {}
+  for l:bp in l:curr_bps
+    if l:bp['line'] ==# a:props['line']
+      let l:existing = l:bp
+      break
+    endif
   endfor
-  " TODO handle sourceModified?
 
+  if empty(l:existing)  " is a new breakpoint
+    let l:new = dapper#dap#SourceBreakpoint#new()
+    for [l:prop, l:val] in items(a:props)
+      if !has_key(l:new, l:prop) | continue | endif
+      let l:new[l:prop] = l:val
+    endfor
+
+    call add(l:curr_bps, l:new)  " add this breakpoint to our list
+  endif
+
+  let l:args = l:self._argsFromSelf()
   call l:self['__message_passer'].request(
       \ 'setBreakpoints',
       \ l:args,
@@ -124,10 +133,14 @@ function! dapper#model#SourceBreakpoints#removeBreakpoint(line) abort dict
     endif
   endwhile
 
+  " return empty list if no matching breakpoints were found
+  if empty(l:removed) | return l:removed | endif
+
   " send new, 'pruned' list of breakpoints in a request
+  let l:args = l:self._argsFromSelf()
   call l:self['__message_passer'].request(
       \ 'setBreakpoints',
-      \ l:bps,
+      \ l:args,
       \ function('dapper#model#SourceBreakpoints#receive', l:self)
       \ )
   call l:self.unfulfill()
@@ -139,9 +152,10 @@ endfunction
 function! dapper#model#SourceBreakpoints#clearBreakpoints() abort dict
   call dapper#model#SourceBreakpoints#CheckType(l:self)
   let l:self['__bps'] = []
+  let l:args = l:self._argsFromSelf()
   call l:self['__message_passer'].request(
       \ 'setBreakpoints',
-      \ l:self['__bps'],
+      \ l:args,
       \ function('dapper#model#SourceBreakpoints#receive', l:self)
       \ )
   call l:self.unfulfill()
@@ -185,4 +199,23 @@ function! dapper#model#SourceBreakpoints#receive(msg) abort dict
   endfor
 
   call l:self.fulfill(l:self)
+endfunction
+
+" RETURNS:  (DebugProtocol.SetBreakpointsArguments) Arguments for a
+"     `SetBreakpointsRequest`, with the list of breakpoints taken from *this*
+"     object's list of source breakpoints, and whose `source` is this object's
+"     `Source`.
+function! dapper#model#SourceBreakpoints#_argsFromSelf() abort dict
+  call dapper#model#SourceBreakpoints#CheckType(l:self)
+  let l:curr_bps = l:self['__bps']
+
+  let l:args = dapper#dap#SetBreakpointsArguments#new()
+  let l:args['source'] = l:self['__source']
+  let l:args['breakpoints'] = l:curr_bps
+  for l:bp in l:curr_bps  " also populate deprecated lines
+    call add(l:args['lines'], l:bp['line'])
+  endfor
+  " TODO handle sourceModified?
+
+  return l:args
 endfunction
