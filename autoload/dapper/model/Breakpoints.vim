@@ -10,12 +10,14 @@
 function! dapper#model#Breakpoints#new(...) abort
   let l:new = call('dapper#Promise#new', a:000)
   let l:new['TYPE']['Breakpoints'] = 1
+  let l:new['breakpoints'] =
+      \ function('dapper#model#Breakpoints#__noImpl', ['breakpoints'])
   let l:new['setBreakpoint'] =
-      \ function('dapper#model#Breakpoints#__noImpl', ['setBreakpoint']),
+      \ function('dapper#model#Breakpoints#__noImpl', ['setBreakpoint'])
   let l:new['removeBreakpoint'] =
-      \ function('dapper#model#Breakpoints#__noImpl', ['removeBreakpoint']),
+      \ function('dapper#model#Breakpoints#__noImpl', ['removeBreakpoint'])
   let l:new['clearBreakpoints'] =
-      \ function('dapper#model#Breakpoints#__noImpl', ['clearBreakpoints']),
+      \ function('dapper#model#Breakpoints#__noImpl', ['clearBreakpoints'])
   return l:new
 endfunction
 
@@ -36,6 +38,12 @@ endfunction
 function! dapper#model#Breakpoints#__noImpl(funcname, ...) abort dict
   call dapper#model#Breakpoints#CheckType(l:self)
   throw 'ERROR(NotFound) No implementation for virtual func: '.a:funcname
+endfunction
+
+" BRIEF:  Get the breakpoints held by this object.
+" RETURNS:  (v:t_list) List of `DebugProtocol.(*)Breakpoint`
+function! dapper#model#Breakpoints#breakpoints() abort dict
+  throw 'ERROR(NotFound) No implementation for virtual func: breakpoints'
 endfunction
 
 " BRIEF:  Set a new breakpoint (by sending a request to the debug adapter.)
