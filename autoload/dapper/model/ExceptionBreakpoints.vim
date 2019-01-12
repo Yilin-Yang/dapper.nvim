@@ -66,6 +66,16 @@ function! dapper#model#ExceptionBreakpoints#setBreakpoint(props) abort dict
     throw 'ERROR(BadValue) (dapper#model#ExceptionBreakpoints) '
         \ . 'Malformed ExceptionOptions: '.dapper#helpers#StrDump(a:opts)
   endif
+  let l:supported_filters = l:self['_filters']
+  if !has_key(l:supported_filters, a:filter) || !l:supported_filters[a:filter]
+    call l:self['__message_passer'].notifyReport(
+        \ 'error',
+        \ 'Unsupported exception filter: '.a:filter,
+        \ a:props,
+        \ v:true
+        \ )
+    return
+  endif
   let l:br_mode = a:opts['breakMode']
   if index(s:break_modes, l:br_mode) ==# -1
     throw 'ERROR(BadValue) (dapper#model#ExceptionBreakpoints) '
