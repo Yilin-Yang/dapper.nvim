@@ -1,7 +1,7 @@
 Include: AwaitTimeout.vader
 Include: SubscriptionHelpers.vader
 
-Execute (SourceBreakpoints: Initialize Mock Debug Adapter):
+Execute (SourceBreakpoints: Initialize Mock Debug Adapter, Perform Setup):
   " subscribe to all incoming messages
   call g:dapper_middletalker.subscribe('.*', function('StoreMessage'))
   let g:model = dapper#model#Model#new(g:dapper_middletalker)
@@ -10,6 +10,12 @@ Execute (SourceBreakpoints: Initialize Mock Debug Adapter):
   if exists('g:sb') | unlet g:sb | endif
   let g:sb = dapper#model#SourceBreakpoints#new(
       \ g:dapper_middletalker, {'path': g:project_root.'/test/TEST_README.md'})
+
+  " RETURNS:  (v:t_bool)  `v:true` when the given `dapper#model#SourceBreakpoints`
+  "     has been fulfilled, e.g. after having received a `SetBreakpointsResponse`.
+  function! IsFulfilled(source_bps) abort
+    return a:source_bps.status() == 'fulfilled'
+  endfunction
 
   " start mock debug adapter
   let g:start_args = dapper#config#DapperConfig#new(
@@ -28,7 +34,7 @@ Execute (SourceBreakpoints: Launch Debuggee):
 Execute (SourceBreakpoints: Set Breakpoints):
   " line 2 is empty, so breakpoint should actually be set on line 3
   call g:sb.setBreakpoint({'line': 2, 'condition': '(foo == bar)'})
-  call AwaitTimeout({ -> ReceivedMessage('SetBreakpointsResponse')}, 3000, v:true)
+  call AwaitTimeout({ -> IsFulfilled(g:sb)}, 3000, v:true)
 Then:
   let g:bps = g:sb.breakpoints()
   AssertEqual 1, len(g:bps)
