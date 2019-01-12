@@ -12,7 +12,7 @@ function! dapper#model#Breakpoints#new(message_passer, ...) abort
   let l:new['TYPE']['Breakpoints'] = 1
   let l:new['__message_passer'] = a:message_passer
 
-  let l:new['__bps'] = []
+  let l:new['_bps'] = []
 
   let l:new['breakpoints'] =
       \ function('dapper#model#Breakpoints#breakpoints')
@@ -71,7 +71,7 @@ endfunction
 " RETURNS:  (v:t_list) List of `DebugProtocol.(*)Breakpoint`
 function! dapper#model#Breakpoints#breakpoints() abort dict
   call dapper#model#Breakpoints#CheckType(l:self)
-  return deepcopy(l:self['__bps'])
+  return deepcopy(l:self['_bps'])
 endfunction
 
 " BRIEF:  Set a new breakpoint (by sending a request to the debug adapter.)
@@ -93,7 +93,7 @@ function! dapper#model#Breakpoints#setBreakpoint(props) abort dict
   endif
 
   " search for existing, matching breakpoints
-  let l:curr_bps = l:self['__bps']
+  let l:curr_bps = l:self['_bps']
   let l:target = {}
   for l:bp in l:curr_bps
     if l:bp[l:match_prop] ==# a:props[l:match_prop]
@@ -136,7 +136,7 @@ function! dapper#model#Breakpoints#removeBreakpoint(key) abort dict
   " search for matching breakpoints
   let l:match_prop = l:self._matchOn()
   let l:removed = []
-  let l:bps = l:self['__bps']
+  let l:bps = l:self['_bps']
   let l:i = 0 | while l:i <# len(l:bps)
     let l:bp = l:bps[l:i]
     if a:key ==# l:bp[l:match_prop]
@@ -165,7 +165,7 @@ endfunction
 " BRIEF:  Clear all breakpoints of this type.
 function! dapper#model#Breakpoints#clearBreakpoints() abort dict
   call dapper#model#Breakpoints#CheckType(l:self)
-  let l:self['__bps'] = []
+  let l:self['_bps'] = []
   let l:args = l:self._argsFromSelf()
   call l:self['__message_passer'].request(
       \ l:self._command(),
@@ -186,7 +186,7 @@ function! dapper#model#Breakpoints#receive(msg) abort dict
       \ 'status', 'Received '.a:msg['vim_msg_typename'].'.', a:msg)
 
   let l:resp = a:msg['body']['breakpoints']
-  let l:bps = l:self['__bps']
+  let l:bps = l:self['_bps']
   if len(l:resp) !=# len(l:bps)
     throw 'ERROR(Failure) (dapper#model#Breakpoints) '
         \ . 'Mismatched array sizes, sent breakpoints vs. breakpoints received:'

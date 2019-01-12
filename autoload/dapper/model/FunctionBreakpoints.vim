@@ -5,8 +5,6 @@ function! dapper#model#FunctionBreakpoints#new(message_passer) abort
   let l:new['TYPE']['SourceBreakpoints'] = 1
   let l:new['__message_passer'] = a:message_passer
 
-  let l:new['__bps'] = []
-
   let l:new['_matchOn']     = { -> 'name'}
   let l:new['_matchOnType'] = { -> v:t_string}
   let l:new['_command']     = { -> 'setFunctionBreakpoints'}
@@ -37,7 +35,7 @@ endfunction
 " RETURNS:  (v:t_list)  List of `DebugProtocol.FunctionBreakpoint`.
 function! dapper#model#FunctionBreakpoints#breakpoints() abort dict
   call dapper#model#FunctionBreakpoints#CheckType(l:self)
-  return deepcopy(l:self['__bps'])
+  return deepcopy(l:self['_bps'])
 endfunction
 
 " BRIEF:  Set a breakpoint on a particular function.
@@ -66,7 +64,7 @@ function! dapper#model#FunctionBreakpoints#_argsFromSelf() abort dict
   call dapper#model#FunctionBreakpoints#CheckType(l:self)
 
   let l:args = dapper#dap#SetFunctionBreakpointsArguments#new()
-  let l:args['breakpoints'] = l:self['__bps']
+  let l:args['breakpoints'] = l:self['_bps']
 
   return l:args
 endfunction

@@ -1,6 +1,6 @@
 " BRIEF:  Represent those breakpoints set within a particular Source.
 
-" BRIEF:  Construct a new SourceBreakpoints object
+" BRIEF:  Construct a new SourceBreakpoints object.
 " PARAM:  message_passer  (dapper#MiddleTalker)
 " PARAM:  source  (DebugProtocol.Source)  The Source to which these
 "     breakpoints belong.
@@ -75,7 +75,7 @@ endfunction
 "     `Source`.
 function! dapper#model#SourceBreakpoints#_argsFromSelf() abort dict
   call dapper#model#SourceBreakpoints#CheckType(l:self)
-  let l:curr_bps = l:self['__bps']
+  let l:curr_bps = l:self['_bps']
 
   let l:args = dapper#dap#SetBreakpointsArguments#new()
   let l:args['source'] = l:self['__source']
