@@ -3,7 +3,6 @@ function! dapper#dap#SetBreakpointsArguments#new() abort
     \ 'TYPE': {'SetBreakpointsArguments': 1},
     \ 'source': {},
     \ 'breakpoints': [],
-    \ 'lines': [],
     \ 'sourceModified': v:false,
   \ }
   return l:new
