@@ -44,7 +44,6 @@ Execute (Pipeline: Set Breakpoints):
       \ g:dapper_middletalker, {'path': g:project_root.'/test/TEST_README.md'})
   " line 2 is empty, so breakpoint should actually be set on line 3
   call g:sb.setBreakpoint({'line': 2, 'condition': '(foo == bar)'})
-  " call g:sb.setBreakpoint({'line': 2})
   call AwaitTimeout({ -> ReceivedMessage('SetBreakpointsResponse')}, 3000, v:true)
 Then:
   let g:bps = g:sb.breakpoints()

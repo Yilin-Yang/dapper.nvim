@@ -75,6 +75,7 @@ function! dapper#model#SourceBreakpoints#setBreakpoint(props) abort dict
     throw "ERROR(WrongType) (dapper#model#SourceBreakpoints) Didn't give line: "
         \ . dapper#helpers#StrDump(a:props)
   endif
+
   let l:new = dapper#dap#SourceBreakpoint#new()
   for [l:prop, l:val] in items(a:props)
     if !has_key(l:new, l:prop) | continue | endif
@@ -87,6 +88,9 @@ function! dapper#model#SourceBreakpoints#setBreakpoint(props) abort dict
   let l:args = dapper#dap#SetBreakpointsArguments#new()
   let l:args['source'] = l:self['__source']
   let l:args['breakpoints'] = l:curr_bps
+  for l:bp in l:curr_bps  " also populate deprecated lines
+    call add(l:args['lines'], l:bp['line'])
+  endfor
   " TODO handle sourceModified?
 
   call l:self['__message_passer'].request(
@@ -94,6 +98,7 @@ function! dapper#model#SourceBreakpoints#setBreakpoint(props) abort dict
       \ l:args,
       \ function('dapper#model#SourceBreakpoints#receive', l:self)
       \ )
+
   call l:self.unfulfill()
 endfunction
 
