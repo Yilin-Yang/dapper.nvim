@@ -1,4 +1,6 @@
-Execute (Declare Await Timeout Helper Function):
+" NOTE: It's recommended that this file be used in conjunction with
+"     `SubscriptionHelpers.vader`.
+Execute (AwaitTimeout: Declare Helper Functions):
 
   " RETURNS:  (v:t_float)   Seconds since the time marked by a:reltime,
   "                         which is a time point returned by `reltime()`.

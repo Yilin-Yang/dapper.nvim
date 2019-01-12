@@ -1,0 +1,37 @@
+Include: AwaitTimeout.vader
+Include: SubscriptionHelpers.vader
+
+Execute (SourceBreakpoints: Initialize Mock Debug Adapter):
+  " subscribe to all incoming messages
+  call g:dapper_middletalker.subscribe('.*', function('StoreMessage'))
+  let g:model = dapper#model#Model#new(g:dapper_middletalker)
+
+  " construct SourceBreakpoints, which should (itself) subscribe
+  if exists('g:sb') | unlet g:sb | endif
+  let g:sb = dapper#model#SourceBreakpoints#new(
+      \ g:dapper_middletalker, {'path': g:project_root.'/test/TEST_README.md'})
+
+  " start mock debug adapter
+  let g:start_args = dapper#config#DapperConfig#new(
+      \ v:true,
+      \ g:dapper_filetypes_to_configs['mock'],
+      \ {})
+  call DapperStart(g:start_args)
+  call AwaitTimeout({ -> ReceivedMessage('InitializedEvent')}, 3000, v:true)
+
+Execute (SourceBreakpoints: Launch Debuggee):
+  let g:launch_args = dapper#dap#LaunchRequestArguments#new()
+  let g:launch_args['program'] = g:project_root.'/test/TEST_README.md'
+  call DapperRequest('launch', 0, g:launch_args)
+  call AwaitTimeout({ -> ReceivedMessage('LaunchResponse')}, 4000, v:true)
+
+Execute (SourceBreakpoints: Set Breakpoints):
+  " line 2 is empty, so breakpoint should actually be set on line 3
+  call g:sb.setBreakpoint({'line': 2, 'condition': '(foo == bar)'})
+  call AwaitTimeout({ -> ReceivedMessage('SetBreakpointsResponse')}, 3000, v:true)
+Then:
+  let g:bps = g:sb.breakpoints()
+  AssertEqual 1, len(g:bps)
+  let g:bp = g:bps[0]
+  AssertEqual 3, g:bp['line']
+  AssertEqual '(foo == bar)', g:bp['condition']

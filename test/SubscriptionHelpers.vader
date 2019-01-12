@@ -1,0 +1,17 @@
+" BRIEF:  Helpers for checking whether certain messages have been received.
+" DETAILS:  Helpful when used alongside `AwaitTimeout.vader`.
+Execute (SubscriptionHelpers: Declare Functions):
+  function! StoreMessage(msg) abort
+    if !exists('g:messages') | let g:messages = [] | endif
+    let g:messages += [a:msg]
+  endfunction
+
+  function! ReceivedMessage(vim_msg_typename) abort
+    if !exists('g:messages') | return v:false | endif
+    let l:i = 0 | while l:i <# len(g:messages)
+      if g:messages[l:i]['vim_msg_typename'] ==# a:vim_msg_typename
+        return v:true
+      endif
+    let l:i += 1 | endwhile
+    return v:false
+  endfunction
