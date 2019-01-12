@@ -37,6 +37,22 @@ Execute (Pipeline: Launch Debuggee):
   call DapperRequest('launch', 0, g:launch_args)
   call AwaitTimeout({ -> ReceivedMessage('LaunchResponse')}, 4000, v:true)
 
+Execute (Pipeline: Set Breakpoints):
+  " construct SourceBreakpoints, which should (itself) subscribe
+  if exists('g:sb') | unlet g:sb | endif
+  let g:sb = dapper#model#SourceBreakpoints#new(
+      \ g:dapper_middletalker, {'path': g:project_root.'/test/TEST_README.md'})
+  " line 2 is empty, so breakpoint should actually be set on line 3
+  call g:sb.setBreakpoint({'line': 2, 'condition': '(foo == bar)'})
+  " call g:sb.setBreakpoint({'line': 2})
+  call AwaitTimeout({ -> ReceivedMessage('SetBreakpointsResponse')}, 3000, v:true)
+Then:
+  let g:bps = g:sb.breakpoints()
+  AssertEqual 1, len(g:bps)
+  let g:bp = g:bps[0]
+  AssertEqual 3, g:bp['line']
+  AssertEqual '(foo == bar)', g:bp['condition']
+
 Execute (Pipeline: Request Threads):
   call g:model.update()
   call g:tb.open()
