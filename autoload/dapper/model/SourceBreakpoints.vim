@@ -168,6 +168,9 @@ let s:bp_props = ['id', 'source', 'line', 'column', 'endLine', 'endColumn']
 function! dapper#model#SourceBreakpoints#receive(msg) abort dict
   call dapper#model#SourceBreakpoints#CheckType(l:self)
 
+  call l:self['__message_passer'].notifyReport(
+      \ 'status', 'Received SetBreakpointsResponse.', a:msg)
+
   let l:resp = a:msg['body']['breakpoints']
   let l:bps = l:self['__bps']
   if len(l:resp) !=# len(l:bps)
@@ -184,6 +187,7 @@ function! dapper#model#SourceBreakpoints#receive(msg) abort dict
     let l:real = l:resp[l:i]
     if !l:real['verified']  " breakpoint not set
       call add(l:idx_to_wipeout, l:i)
+      let l:i += 1
       continue
     endif
     for l:prop in s:bp_props  " breakpoint set successfully

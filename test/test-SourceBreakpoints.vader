@@ -79,6 +79,14 @@ Then:
   AssertEqual 1, len(g:bps)
   AssertEqual 4, g:bps[0]['line']
 
+Execute (SourceBreakpoints: Set Bad Breakpoint):
+  call g:sb.setBreakpoint({'line': 999})
+  call AwaitTimeout({ -> IsFulfilled(g:sb)}, 3000, v:true)
+Then:
+  let g:bps = g:sb.breakpoints()
+  AssertEqual 1, len(g:bps)
+  AssertEqual 4, g:bps[0]['line']
+
 Execute (SourceBreakpoints: Clear All Breakpoints):
   call g:sb.clearBreakpoints()
   call AwaitTimeout({ -> IsFulfilled(g:sb)}, 3000, v:true)
