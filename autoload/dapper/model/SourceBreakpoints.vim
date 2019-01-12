@@ -2,14 +2,19 @@
 
 " BRIEF:  Construct a new SourceBreakpoints object
 " PARAM:  message_passer  (dapper#MiddleTalker)
-function! dapper#model#SourceBreakpoints#new(message_passer) abort
+" PARAM:  source  (DebugProtocol.Source)  The Source to which these
+"     breakpoints belong.
+function! dapper#model#SourceBreakpoints#new(message_passer, source) abort
   let l:new = dapper#model#Breakpoints#new()
   let l:new['TYPE']['SourceBreakpoints'] = 1
   let l:new['__message_passer'] = a:message_passer
+  let l:new['__source'] = deepcopy(a:source)
 
   " list of `DebugProtocol.SourceBreakpoint`s
   let l:new['__bps'] = []
 
+  let l:new['breakpoints'] =
+      \ function('dapper#model#SourceBreakpoints#breakpoints')
   let l:new['setBreakpoint'] =
       \ function('dapper#model#SourceBreakpoints#setBreakpoint')
   let l:new['removeBreakpoint'] =
@@ -39,6 +44,12 @@ function! dapper#model#SourceBreakpoints#CheckType(object) abort
   endif
 endfunction
 
+" RETURNS:  (v:t_list)  List of `DebugProtocol.SourceBreakpoint`.
+function! dapper#model#SourceBreakpoints#breakpoints() abort dict
+  call dapper#model#SourceBreakpoints#CheckType(l:self)
+  return deepcopy(l:self['__bps'])
+endfunction
+
 " BRIEF:  Set a breakpoint on a line of a source file.
 " PARAM:  props   (v:t_dict)  Dictionary that may contain the following
 "     properties:
@@ -56,7 +67,7 @@ endfunction
 "         interpolated.
 function! dapper#model#SourceBreakpoints#setBreakpoint(props) abort dict
   call dapper#model#SourceBreakpoints#CheckType(l:self)
-  if type(a:props !=# v:t_dict)
+  if type(a:props) !=# v:t_dict
     throw 'ERROR(WrongType) (dapper#model#SourceBreakpoints) Arg isn''t dict:'
         \ . dapper#helpers#StrDump(a:props)
   endif
@@ -73,9 +84,14 @@ function! dapper#model#SourceBreakpoints#setBreakpoint(props) abort dict
   let l:curr_bps = l:self['__bps']
   call add(l:curr_bps, l:new)  " add this breakpoint to our list
 
+  let l:args = dapper#dap#SetBreakpointsArguments#new()
+  let l:args['source'] = l:self['__source']
+  let l:args['breakpoints'] = l:curr_bps
+  " TODO handle sourceModified?
+
   call l:self['__message_passer'].request(
       \ 'setBreakpoints',
-      \ l:curr_bps,
+      \ l:args,
       \ function('dapper#model#SourceBreakpoints#receive', l:self)
       \ )
   call l:self.unfulfill()
