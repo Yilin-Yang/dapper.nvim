@@ -84,6 +84,12 @@ function! dapper#MiddleTalker#request(command, request_args, Callback) abort dic
   " the latter isn't needed on the middle-end, vim_msg_typename shouldn't matter
   let l:vim_id = l:self.__getID()
   let l:self['__ids_to_callbacks'][l:vim_id] = a:Callback
+  call l:self.notifyReport(
+      \ 'status',
+      \ 'Sending request: '.dapper#helpers#StrDump(a:command),
+      \ 'Given callback: '.dapper#helpers#StrDump(a:Callback)
+        \ . ', given args: '.dapper#helpers#StrDump(a:request_args)
+      \ )
   call DapperRequest(a:command, l:vim_id, l:req_args)
 endfunction
 
