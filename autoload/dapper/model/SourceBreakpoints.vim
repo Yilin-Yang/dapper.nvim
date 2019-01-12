@@ -56,8 +56,8 @@ endfunction
 " BRIEF:  Set a breakpoint on a line of a source file.
 " DETAILS:  Can also be used to edit an existing breakpoint, by specifying
 "     that breakpoint's line number.
-" PARAM:  props   (v:t_dict)  Dictionary that may contain the following
-"     properties:
+" PARAM:  props   (v:t_dict)  Dictionary that may contain the following;
+"
 "     - line (v:t_number) *Required*. The line number on which to set the
 "         breakpoint.
 "     - column (v:t_number?)  The column number of the breakpoint.
@@ -83,23 +83,23 @@ function! dapper#model#SourceBreakpoints#setBreakpoint(props) abort dict
 
   " search for existing breakpoints with this line number
   let l:curr_bps = l:self['__bps']
-  let l:existing = {}
+  let l:target = {}
   for l:bp in l:curr_bps
     if l:bp['line'] ==# a:props['line']
-      let l:existing = l:bp
+      let l:target = l:bp
       break
     endif
   endfor
 
-  if empty(l:existing)  " is a new breakpoint
-    let l:new = dapper#dap#SourceBreakpoint#new()
-    for [l:prop, l:val] in items(a:props)
-      if !has_key(l:new, l:prop) | continue | endif
-      let l:new[l:prop] = l:val
-    endfor
-
-    call add(l:curr_bps, l:new)  " add this breakpoint to our list
+  if empty(l:target)  " is a new breakpoint
+    let l:target = dapper#dap#SourceBreakpoint#new()
+  call add(l:curr_bps, l:target)  " add this breakpoint to our list
   endif
+
+  for [l:prop, l:val] in items(a:props)
+    if !has_key(l:target, l:prop) | continue | endif
+    let l:target[l:prop] = l:val
+  endfor
 
   let l:args = l:self._argsFromSelf()
   call l:self['__message_passer'].request(
