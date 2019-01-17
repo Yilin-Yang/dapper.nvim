@@ -1,16 +1,20 @@
 " BRIEF:  Represent exception types on which to break.
 
 " BRIEF:  Construct a new ExceptionBreakpoints object.
-" PARAM:  filters     (dapper#model#Model)
 " PARAM:  msg_passer  (dapper#MiddleTalker)
-function! dapper#model#ExceptionBreakpoints#new(filters, msg_passer, ...) abort
-  if type(a:filters) !=# v:t_dict
-    throw 'ERROR(WrongType) (dapper#model#ExceptionBreakpoints) Filters must be '
-        \ .'given as dict: '.dapper#helpers#StrDump(a:filters)
-  endif
+" PARAM:  capabilities  (DebugProtocol.Capabilities)
+function! dapper#model#ExceptionBreakpoints#new(msg_passer, capabilities, ...) abort
   let l:new = call('dapper#model#Breakpoints#new', [a:msg_passer] + a:000)
   let l:new['TYPE']['ExceptionBreakpoints'] = 1
-  let l:new['_filters'] = a:filters
+
+  " populate supported filters from capabilities
+  let l:filters = {}
+  let l:new['_filters'] = l:filters
+  if has_key(a:capabilities, 'exceptionBreakpointFilters')
+    for l:filter in a:capabilities['exceptionBreakpointFilters']
+      let l:filters[l:filter] = 1
+    endfor
+  endif
 
   " monkey-patch a friendlier setBreakpoint interface
   let l:new['Breakpoints#setBreakpoint'] = l:new['setBreakpoint']

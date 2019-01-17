@@ -17,11 +17,17 @@ function! dapper#model#Model#new(message_passer) abort
       \ 'TYPE': {'Model': 1},
       \ '_ids_to_running': {},
       \ '_ids_to_stopped': {},
+      \ '_function_bps': dapper#model#FunctionBreakpoints#new(a:message_passer),
+      \ '_exception_bps': {},
+      \ '_sources': {},
       \ '_capabilities': {},
       \ '_message_passer': a:message_passer,
       \ 'update': function('dapper#model#Model#update'),
       \ 'thread': function('dapper#model#Model#thread'),
       \ 'threads': function('dapper#model#Model#threads'),
+      \ 'functionBps': function('dapper#model#Model#functionBps'),
+      \ 'exceptionBps': function('dapper#model#Model#exceptionBps'),
+      \ 'sources': function('dapper#model#Model#sources'),
       \ 'capabilities': function('dapper#model#Model#capabilities'),
       \ 'receive': function('dapper#model#Model#receive'),
       \ '_recvEvent': function('dapper#model#Model#_recvEvent'),
@@ -96,6 +102,32 @@ function! dapper#model#Model#threads(...) abort dict
   return l:to_return
 endfunction
 
+" RETURNS:  (dapper#model#FunctionBreakpoints)
+function! dapper#model#Model#functionBps() abort dict
+  call dapper#model#Model#CheckType(l:self)
+  return l:self['_function_bps']
+endfunction
+
+" RETURNS:  (dapper#model#ExceptionBreakpoints)
+function! dapper#model#Model#exceptionBps() abort dict
+  call dapper#model#Model#CheckType(l:self)
+  if empty(l:self['_exception_bps'])
+    throw 'ERROR(NotFound) (dapper#model#Model) '
+        \ 'ExceptionBreakpoints not yet initialized'
+  endif
+  return l:self['_exception_bps']
+endfunction
+
+" RETURNS:  (dapper#model#DebugSoruces)
+function! dapper#model#Model#sources() abort dict
+  call dapper#model#Model#CheckType(l:self)
+  if empty(l:self['_sources'])
+    throw 'ERROR(NotFound) (dapper#model#Model) '
+        \ 'DebugSources not yet initialized'
+  endif
+  return l:self['_sources']
+endfunction
+
 " RETURNS:  (DebugProtocol.Capabilities)  Capabilities of the active adapter.
 function! dapper#model#Model#capabilities() abort dict
   call dapper#model#Model#CheckType(l:self)
@@ -114,7 +146,23 @@ function! dapper#model#Model#receive(msg) abort dict
   elseif l:typename ==# 'ThreadsResponse'
     call l:self._recvResponse(a:msg)
   elseif l:typename ==# 'InitializeResponse'
-    let l:self['_capabilities'] = has_key(a:msg, 'body') ? a:msg['body'] : {}
+    " set capabilities
+    let l:capabilities = has_key(a:msg, 'body') ? a:msg['body'] : {}
+    let l:self['_capabilities'] = l:capabilities
+
+    " initialize ExceptionBreakpoints object
+    let l:filters = []
+    if has_key(l:capabilities, 'exceptionBreakpointFilters')
+      let l:filters = l:capabilities['exceptionBreakpointFilters']
+    endif
+    let l:self['_exception_bps'] =
+        \ dapper#model#ExceptionBreakpoints#new(
+            \ l:filters, l:self['_message_passer'])
+
+    " initialize DebugSources object
+    let l:self['_sources'] =
+        \ dapper#model#DebugSources#new(
+            \ l:self['_message_passer'], l:capabilities)
   else
     call l:self['_message_passer'].notifyReport(
         \ 'status',
