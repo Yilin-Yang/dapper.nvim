@@ -48,18 +48,15 @@ export function startAndConfigureUnpack(args: any[]): Promise<boolean> {
 export function startAndConfigure(config: Config.DapperConfig):
     Promise<boolean> {
   return new Promise<boolean>(async (resolve, reject) => {
-    if (!config.is_start || !config.attributes.hasOwnProperty('runtime_env')) {
-      reject('Attaching to a running process is currently unsupported.');
-    }
     const args = config.attributes as Config.StartArgs;
     const started = await middleman.startAdapter(
         args.runtime_env, args.exe_filepath, args.adapter_id, args.locale);
-    if (!started) resolve(false);
+    if (!started) reject('Failed to start debug adapter!');
 
     const bps = config.breakpoints;
     const configured = await middleman.configureAdapter(
         bps.bps, bps.function_bps, bps.exception_bps);
-    if (!configured) resolve(false);
+    if (!configured) reject('Failed to configure debug adapter!');
     resolve(true);
   });
 }

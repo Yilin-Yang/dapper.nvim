@@ -19,13 +19,11 @@ export interface InitialBreakpoints {
 }
 
 export interface DapperConfig {
-  is_start: boolean;
   attributes: StartArgs|AttachArgs;
   breakpoints: InitialBreakpoints;
 }
 
 // tslint:disable:no-any
 export function isDapperConfig(arg: any): arg is DapperConfig {
-  return arg.hasOwnProperty('is_start') && arg.hasOwnProperty('attributes') &&
-      arg.hasOwnProperty('breakpoints');
+  return arg.hasOwnProperty('attributes') && arg.hasOwnProperty('breakpoints');
 }
