@@ -1,7 +1,12 @@
 " BRIEF:  Represent breakpoints set on a particular function.
 
-function! dapper#model#FunctionBreakpoints#new(message_passer) abort
-  let l:new = dapper#model#Breakpoints#new()
+
+" BRIEF:  Construct and return a FunctionBreakpoints object.
+" PARAM:  message_passer  (dapper#MiddleTalker)
+" PARAM:  Resolve (v:t_func?)
+" PARAM:  Reject  (v:t_func?)
+function! dapper#model#FunctionBreakpoints#new(message_passer, ...) abort
+  let l:new = call('dapper#model#Breakpoints#new', [a:message_passer] + a:000)
   let l:new['TYPE']['SourceBreakpoints'] = 1
   let l:new['__message_passer'] = a:message_passer
 
