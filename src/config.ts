@@ -1,15 +1,9 @@
 import {DebugProtocol} from 'vscode-debugprotocol';
 
-export interface StartArgs {
+export interface DebugAdapterConfig {
   runtime_env: string;
   exe_filepath: string;
   adapter_id: string;
-  locale: string;
-}
-
-export interface AttachArgs {
-  // tslint:disable-next-line:no-any
-  __restart: any;
 }
 
 export interface InitialBreakpoints {
@@ -18,12 +12,31 @@ export interface InitialBreakpoints {
   exception_bps?: DebugProtocol.SetExceptionBreakpointsArguments;
 }
 
-export interface DapperConfig {
-  attributes: StartArgs|AttachArgs;
-  breakpoints: InitialBreakpoints;
+export interface DebuggeeArgs {
+  request: string;
+  name: string;
+  args: DebugProtocol.LaunchRequestArguments|
+      DebugProtocol.AttachRequestArguments;
+  initial_bps?: InitialBreakpoints;
+}
+
+export interface VSCodeAttributes {
+  preLaunchTask?: string;
+  postLaunchTask?: string;
+  internalConsoleOptions?: string;
+  debugServer?: string;
+}
+
+export interface StartArgs {
+  adapter_config: DebugAdapterConfig;
+  debuggee_args: DebuggeeArgs;
+  vscode_attr?: VSCodeAttributes;
+  locale: string;
 }
 
 // tslint:disable:no-any
-export function isDapperConfig(arg: any): arg is DapperConfig {
-  return arg.hasOwnProperty('attributes') && arg.hasOwnProperty('breakpoints');
+export function isStartArgs(arg: any): arg is StartArgs {
+  return arg.hasOwnProperty('adapter_config') &&
+      arg.hasOwnProperty('debuggee_args') &&
+      arg.hasOwnProperty('vscode_attr') && arg.hasOwnProperty('locale');
 }

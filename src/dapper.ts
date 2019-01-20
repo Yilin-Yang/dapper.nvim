@@ -27,9 +27,9 @@ export function initialize(ft: FrontTalker): void {
 export function startAndConfigureUnpack(args: any[]): Promise<boolean> {
   try {
     let config = undefined;
-    if (Config.isDapperConfig(args)) {
-      config = args as Config.DapperConfig;
-    } else if (isVimList(args) && Config.isDapperConfig(args[0])) {
+    if (Config.isStartArgs(args)) {
+      config = args as Config.StartArgs;
+    } else if (isVimList(args) && Config.isStartArgs(args[0])) {
       config = args[0];
     } else {
       rejectBadArgs('startAndConfigure', args);
@@ -45,18 +45,33 @@ export function startAndConfigureUnpack(args: any[]): Promise<boolean> {
  * Start a debug adapter, optionally setting breakpoints (during pre-launch
  * configuration).
  */
-export function startAndConfigure(config: Config.DapperConfig):
-    Promise<boolean> {
+export function startAndConfigure(config: Config.StartArgs): Promise<boolean> {
   return new Promise<boolean>(async (resolve, reject) => {
-    const args = config.attributes as Config.StartArgs;
+    const args = config.adapter_config as Config.DebugAdapterConfig;
     const started = await middleman.startAdapter(
-        args.runtime_env, args.exe_filepath, args.adapter_id, args.locale);
+        args.runtime_env, args.exe_filepath, args.adapter_id, config.locale);
     if (!started) reject('Failed to start debug adapter!');
 
-    const bps = config.breakpoints;
-    const configured = await middleman.configureAdapter(
-        bps.bps, bps.function_bps, bps.exception_bps);
+    const dbgArgs = config.debuggee_args;
+    const bps = dbgArgs.initial_bps;
+    let configured;
+    if (bps) {
+      configured = await middleman.configureAdapter(
+          bps.bps, bps.function_bps, bps.exception_bps);
+    } else {
+      configured = await middleman.configureAdapter();
+    }
     if (!configured) reject('Failed to configure debug adapter!');
+
+    let launchedOrAttached;
+    if (dbgArgs.request === 'launch' || dbgArgs.request === 'attach') {
+      launchedOrAttached =
+          await middleman.request(dbgArgs.request, 0, dbgArgs.args);
+    } else {
+      reject('Bad request type: ' + dbgArgs.request);
+    }
+    if (!launchedOrAttached) reject('Failed to launch/attach to debuggee!');
+
     resolve(true);
   });
 }
