@@ -19,8 +19,7 @@ Execute (SourceBreakpoints: Initialize Mock Debug Adapter, Perform Setup):
 
   " start mock debug adapter
   let g:start_args = dapper#config#DapperConfig#new(
-      \ v:true,
-      \ g:dapper_filetypes_to_configs['mock'],
+      \ g:dapper_filetypes_to_configs['markdown']['mock'],
       \ {})
   call DapperStart(g:start_args)
   call AwaitTimeout({ -> ReceivedMessage('InitializedEvent')}, 3000, v:true)

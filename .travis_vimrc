@@ -21,4 +21,5 @@ endif
 call dapper#AddDapperConfig(
   \ 'node',
   \ g:project_root.'/node_modules/vscode-mock-debug/out/debugAdapter.js',
-  \ 'mock')
+  \ 'mock',
+  \ 'markdown')
