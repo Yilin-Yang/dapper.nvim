@@ -31,7 +31,7 @@ function! dapper#AddDapperConfig(
       \ || type(a:filetype) !=# v:t_string
       \ || (!empty(a:locale) && type(a:locale[0]) !=# v:t_string)
     throw 'ERROR(WrongType) (dapper#AddDapperConfig) All given arguments must '
-        \ 'be strings. Gave: '
+        \ . 'be strings. Gave: '
             \ . dapper#helpers#StrDump(a:runtime_env)  . ', '
             \ . dapper#helpers#StrDump(a:exe_filepath) . ', '
             \ . dapper#helpers#StrDump(a:adapter_id)   . ', '

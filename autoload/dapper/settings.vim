@@ -202,3 +202,50 @@ function! dapper#settings#RedrawOnEcho() abort
       \ )
   return g:dapper_redraw_on_echo
 endfunction
+
+" RETURNS:  (v:t_string)  The absolute filepath to a VSCode executable, or
+"     garbage.
+function! dapper#settings#VSCodeExecutable() abort
+  if !exists('g:dapper_vscode_executable')
+    let g:dapper_vscode_executable = 'NO_VSCODE_EXE_PATH_SET'
+  endif
+  call s:AssertType(
+      \ g:dapper_vscode_executable,
+      \ v:t_string,
+      \ 'g:dapper_vscode_executable'
+      \ )
+  return g:dapper_vscode_executable
+endfunction
+
+" RETURNS:  (v:t_string)  A folder containing 'system-wide' configuration
+"     files, like `launch.json`.
+function! dapper#settings#ConfigFolder() abort
+  if !exists('g:dapper_config_folder')
+    let g:dapper_config_folder = $HOME
+  endif
+  call s:AssertType(
+      \ g:dapper_config_folder,
+      \ v:t_string,
+      \ 'g:dapper_config_folder'
+      \ )
+  return g:dapper_config_folder
+endfunction
+
+" RETURNS:  (v:t_string)  A command that can be run using `system()` to list
+"     *all* the contents of a directory followed by a space, e.g. `ls -a `
+"     on Unix.
+function! dapper#settings#lsCommand() abort
+  if !exists('g:dapper_ls_command')
+    let l:cmd = 'ls -a'
+    if has('win32') || has('win64') || has('win16')
+      let l:cmd = 'dir'
+    endif
+    let g:dapper_ls_command = l:cmd
+  endif
+  call s:AssertType(
+      \ g:dapper_ls_command,
+      \ v:t_string,
+      \ 'g:dapper_ls_command'
+      \ )
+  return g:dapper_ls_command.' '
+endfunction
