@@ -54,6 +54,11 @@ We recommend installing dapper.nvim using [vim-plug.](https://github.com/junegun
 call plug#begin('~/.vim/bundle')
 " ...
 Plug 'Yilin-Yang/dapper.nvim', { 'do': 'yarn install', }
+
+  " dependencies
+  Plug 'Google/vim-maktaba'
+  Plug 'Yilin-Yang/VSCrib.vim'
+  Plug 'Yilin-Yang/TypeVim'
 " ...
 call plug#end()
 ```
@@ -68,6 +73,11 @@ the following:
 call vundle#begin('~/.vim/bundle')
 " ...
 Plugin 'Yilin-Yang/dapper.nvim'
+
+  " dependencies
+  Plugin 'Google/vim-maktaba'
+  Plugin 'Yilin-Yang/VSCrib.vim'
+  Plugin 'Yilin-Yang/TypeVim'
 " ...
 call vundle#end()
 ```

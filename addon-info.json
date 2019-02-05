@@ -1,0 +1,12 @@
+{
+  "name": "dapper.nvim",
+  "description": "neovim frontend for Microsoft's Debug Adapter Protocol.",
+  "version": "0.0.0",
+  "author": "Yilin Yang <yiliny@umich.edu>",
+  "repository": {"type": "git", "url": "git://github.com/Yilin-Yang/dapper.nvim"},
+  "dependencies": {
+    "maktaba": {"type": "git", "url": "git://github.com/google/maktaba"},
+    "VSCrib.vim": {"type": "git", "url": "git://github.com/Yilin-Yang/VSCrib.vim"},
+    "TypeVim": {"type": "git", "url": "git://github.com/Yilin-Yang/TypeVim"}
+  }
+}
