@@ -14,11 +14,12 @@ function! dapper#config#StartArgs#new(
     \ adapter_config,
     \ debuggee_args,
     \ vscode_attr,
-    \ locale
+    \ ...
     \ ) abort
   call dapper#config#DebugAdapterConfig#CheckType(a:adapter_config)
   call dapper#config#DebuggeeArgs#CheckType(a:debuggee_args)
   " call dapper#config#VSCodeAttributes#CheckType(a:vscode_attr)
+  let a:locale = get(a:000, 0, '')
   let l:default_locale = split(v:ctype, '\.')[0]  " trim, e.g. '.UTF8'
   let l:locale = empty(a:locale) ? l:default_locale : a:locale
   let l:new = {

@@ -39,7 +39,7 @@ function! dapper#AddDapperConfig(
             \ . a:0 ? a:1 : ''
   endif
 
-  let l:new_cfg = call('dapper#config#StartArgs#new', l:args)
+  let l:new_cfg = call('dapper#config#DebugAdapterConfig#new', l:args)
 
   let l:fts_to_cfgs = dapper#settings#FiletypesToConfigs()
   if !has_key(l:fts_to_cfgs, a:filetype)

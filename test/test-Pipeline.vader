@@ -1,21 +1,13 @@
 Include: AwaitTimeout.vader
+Include: StartMockDebugAdapter.vader
 Include: SubscriptionHelpers.vader
 
 Execute (Pipeline: Setup Model, ThreadsBuffer; Subscribe; Initialize Mock Debug Adapter):
-  " subscribe to all incoming messages
-  call g:dapper_middletalker.subscribe('.*', function('StoreMessage'))
   let g:model = dapper#model#Model#new(g:dapper_middletalker)
 
   " setup ThreadsBuffer, which should (itself) subscribe
   if exists('g:tb') | unlet g:tb | endif
   let g:tb = dapper#view#ThreadsBuffer#new(g:model, g:dapper_middletalker)
-
-  " start mock debug adapter
-  let g:start_args = dapper#config#DapperConfig#new(
-      \ g:dapper_filetypes_to_configs['markdown']['mock'],
-      \ {})
-  call DapperStart(g:start_args)
-  call AwaitTimeout({ -> ReceivedMessage('InitializedEvent')}, 3000, v:true)
 
 Execute (Pipeline: Launch Debuggee):
   let g:launch_args = dapper#dap#LaunchRequestArguments#new()

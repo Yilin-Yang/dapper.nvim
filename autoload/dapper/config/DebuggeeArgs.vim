@@ -9,8 +9,7 @@
 function! dapper#config#DebuggeeArgs#new(
     \ request,
     \ name,
-    \ args,
-    ) abort
+    \ args) abort
   " TODO type checks?
   let l:new = {
       \ 'TYPE': {'DebuggeeArgs': 1},

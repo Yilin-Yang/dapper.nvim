@@ -1,9 +1,8 @@
 Include: AwaitTimeout.vader
+Include: StartMockDebugAdapter.vader
 Include: SubscriptionHelpers.vader
 
 Execute (SourceBreakpoints: Initialize Mock Debug Adapter, Perform Setup):
-  " subscribe to all incoming messages
-  call g:dapper_middletalker.subscribe('.*', function('StoreMessage'))
   let g:model = dapper#model#Model#new(g:dapper_middletalker)
 
   " construct SourceBreakpoints, which should (itself) subscribe
@@ -16,13 +15,6 @@ Execute (SourceBreakpoints: Initialize Mock Debug Adapter, Perform Setup):
   function! IsFulfilled(source_bps) abort
     return a:source_bps.status() == 'fulfilled'
   endfunction
-
-  " start mock debug adapter
-  let g:start_args = dapper#config#DapperConfig#new(
-      \ g:dapper_filetypes_to_configs['markdown']['mock'],
-      \ {})
-  call DapperStart(g:start_args)
-  call AwaitTimeout({ -> ReceivedMessage('InitializedEvent')}, 3000, v:true)
 
 Execute (SourceBreakpoints: Launch Debuggee):
   let g:launch_args = dapper#dap#LaunchRequestArguments#new()

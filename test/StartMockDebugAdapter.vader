@@ -1,0 +1,19 @@
+Include: SubscriptionHelpers.vader
+
+Execute (Start Mock Debug Adapter, Store Incoming Messages):
+  " subscribe to all incoming messages
+  call g:dapper_middletalker.subscribe('.*', function('StoreMessage'))
+
+  " start mock debug adapter
+  let g:debuggee_args = dapper#config#DebuggeeArgs#new(
+      \ 'launch',
+      \ 'mock',
+      \ {'stopOnEntry': 1}
+      \ )
+  let g:vscode_attr = dapper#config#VSCodeAttributes#new()
+  let g:start_args = dapper#config#StartArgs#new(
+      \ g:dapper_filetypes_to_configs['markdown']['mock'],
+      \ g:debuggee_args,
+      \ g:vscode_attr)
+  call DapperStart(g:start_args)
+  call AwaitTimeout({ -> ReceivedMessage('InitializedEvent')}, 3000, v:true)
