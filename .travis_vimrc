@@ -1,16 +1,25 @@
 set nocompatible
 filetype off
-execute 'set runtimepath+='.getcwd()
-execute 'set runtimepath+='.getcwd().'/..'
-set runtimepath+=vader.vim
-set runtimepath+=~/.vim/bundle/vader.vim
 filetype plugin indent on
 syntax enable
 set autoread
 set hidden
 set number
 
+execute 'set runtimepath+='.getcwd()
+execute 'set runtimepath+='.getcwd().'/..'
+function! AddDependency(plugin) abort
+  execute 'set runtimepath+='.a:plugin
+  execute 'set runtimepath+=~/.vim/bundle/'.a:plugin
+endfunction
+call AddDependency('vader.vim')
+call AddDependency('vim-maktaba')
+call AddDependency('TypeVim')
+call AddDependency('VSCrib.vim')
+call maktaba#plugin#Detect()
+
 let g:project_root = split(getcwd(), '/test')[0]
+let g:test_dir = g:project_root.'/test'
 let g:dapper_logfile = g:project_root.'/test/LOGFILE'
 let g:dapper_echo_messages = 'never'
 

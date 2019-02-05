@@ -1,21 +1,16 @@
+""
+" @dict AttachRequestArguments
+" A Debug Adapter Protocol type used for attaching to a running debugger
+" process. Properties are specific to a given debug adapter's implementation.
+
+""
+" @public
+" @dict AttachRequestArguments
+" @function dapper#dap#AttachRequestArguments#new()
+" Construct and return a skeletal AttachRequestArguments object.
 function! dapper#dap#AttachRequestArguments#new() abort
   let l:new = {
-    \ 'TYPE': {'AttachRequestArguments': 1},
     \ '__restart': {},
   \ }
-  return l:new
-endfunction
-
-function! dapper#dap#AttachRequestArguments#CheckType(object) abort
-  if type(a:object) !=# v:t_dict || !has_key(a:object, 'TYPE') || !has_key(a:object['TYPE'], 'AttachRequestArguments')
-  try
-    let l:err = '(dapper#dap#AttachRequestArguments) Object is not of type AttachRequestArguments: '.string(a:object)
-  catch
-    redir => l:object
-    silent! echo a:object
-    redir end
-    let l:err = '(dapper#dap#AttachRequestArguments) This object failed type check: '.l:object
-  endtry
-  throw l:err
-  endif
+  return typevim#make#Class('AttachRequestArguments', l:new)
 endfunction

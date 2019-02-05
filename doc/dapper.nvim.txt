@@ -1,0 +1,89 @@
+*dapper.nvim.txt*	neovim frontend for Microsoft's Debug Adapter Protocol.
+Yilin Yang <yiliny@umich.edu>                      *dapper.nvim* *dapper.nvim*
+
+==============================================================================
+CONTENTS                                                *dapper.nvim-contents*
+  1. Introduction..........................................|dapper.nvim-intro|
+  2. Dictionaries..........................................|dapper.nvim-dicts|
+  3. Functions.........................................|dapper.nvim-functions|
+
+==============================================================================
+INTRODUCTION                                               *dapper.nvim-intro*
+
+A neovim frontend for Microsoft's Debug Adapter Protocol, or, a concerted
+effort to take the best features of Microsoft's VSCode test editor and crudely
+staple them onto neovim.
+
+==============================================================================
+DICTIONARIES                                               *dapper.nvim-dicts*
+
+                                          *dapper.nvim.AttachRequestArguments*
+A Debug Adapter Protocol type used for attaching to a running debugger
+process. Properties are specific to a given debug adapter's implementation.
+
+dapper#dap#AttachRequestArguments#new()         *AttachRequestArguments.new()*
+  Construct and return a skeletal AttachRequestArguments object.
+
+                                              *dapper.nvim.DebugAdapterConfig*
+Basic startup configuration for a debug adapter.
+
+`adapter_id` appears to be the value of `type` in `launch.json`.
+
+dapper#config#DebugAdapterConfig#new({runtime_env} {exe_filepath} {adapter_id)
+                                                    *DebugAdapterConfig.new()*
+  Construct a new DebugAdapterConfig object.
+
+  {runtime_env} is the environment in which to run the debug adapter, e.g.
+  `"node"`, `"python3"`.
+
+  {exe_filepath} is the filepath of the debug adapter.
+
+  {adapter_id} is equivalent to the `type` attribute of a `launch.json` file.
+
+  Throws ERROR(WrongType) if any of the arguments above are not strings.
+
+                                                    *dapper.nvim.DebuggeeArgs*
+Arguments for starting the debuggee process.
+
+dapper#config#DebuggeeArgs#new({request} {name} {args})   *DebuggeeArgs.new()*
+  Construct a DebuggeeArgs object.
+
+  {request} is either `"launch"` or `"attach"`.
+
+  {name} is a "human-friendly" name for this debug adapter configuration.
+
+  {args} is either an |dapper.nvim.LaunchRequestArguments| or an
+  |dapper.nvim.AttachRequestArguments|: it consists of other arguments to
+  provide to the debug adapter, to start a debugger/debuggee or attach to a
+  preexisting one.
+
+  Throws ERROR(WrongType) if {request} or {name} aren't strings, or if {args}
+  is not a dictionary.
+
+                                              *dapper.nvim.InitialBreakpoints*
+Breakpoints to be set immediately after launching a debuggee process.
+
+                                          *dapper.nvim.LaunchRequestArguments*
+A Debug Adapter Protocol type used for starting a debugger process. Properties
+are specific to a given debug adapter's implementation.
+
+dapper#dap#LaunchRequestArguments#new()         *LaunchRequestArguments.new()*
+  Construct and return a skeletal LaunchRequestArguments object.
+
+                                                       *dapper.nvim.StartArgs*
+All arguments supplied to the middle-end. When provided in a call to
+|DapperStart()|, starts a debug adapter and a debuggee.
+
+                                                *dapper.nvim.VSCodeAttributes*
+Settings from a `launch.json` that normally control VSCode-specific behavior,
+e.g.  `"preLaunchTask"`, `"postLaunchTask"`, `"internalConsoleOptions"` and
+`"debugServer"`.
+
+dapper#config#VSCodeAttributes#new()                  *VSCodeAttributes.new()*
+  Construct and return a VSCodeAttributes object.
+
+==============================================================================
+FUNCTIONS                                              *dapper.nvim-functions*
+
+
+vim:tw=78:ts=8:ft=help:norl:

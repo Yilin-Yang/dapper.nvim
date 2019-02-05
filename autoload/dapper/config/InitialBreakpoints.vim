@@ -1,26 +1,28 @@
+""
+" @dict InitialBreakpoints
+" Breakpoints to be set immediately after launching a debuggee process.
+
+let s:typename = 'InitialBreakpoints'
+
+""
+" @dict InitialBreakpoints
+" @function dapper#config#InitialBreakpoints#new([bps], [function_bps], [exception_bps])
+" Return a new InitialBreakpoints object.
+"
+" [bps] should be a @dict(SetBreakpointsArguments); [function_bps] should be a
+" @dict(SetFunctionBreakpointsArguments); [exception_bps] should be a
+" @dict(SetExcepSetFunctionBreakpointsArguments). Each defaults to an empty
+" dictionary if omitted.
+"
+" @throws WrongType if [bps], [function_bps], or [exception_bps] are not dictionaries.
 function! dapper#config#InitialBreakpoints#new(...) abort
-  let a:bps = get(a:000, 0, {})
-  let a:function_bps = get(a:000, 0, {})
-  let a:exception_bps = get(a:000, 0, {})
+  let a:bps = maktaba#ensure#IsDict(get(a:000, 0, {}))
+  let a:function_bps = maktaba#ensure#IsDict(get(a:000, 0, {}))
+  let a:exception_bps = maktaba#ensure#IsDict(get(a:000, 0, {}))
   let l:new = {
-    \ 'TYPE': {'InitialBreakpoints': 1},
     \ 'bps': a:bps,
     \ 'function_bps': a:function_bps,
     \ 'exception_bps': a:exception_bps,
   \ }
-  return l:new
-endfunction
-
-function! dapper#config#InitialBreakpoints#CheckType(object) abort
-  if type(a:object) !=# v:t_dict || !has_key(a:object, 'TYPE') || !has_key(a:object['TYPE'], 'InitialBreakpoints')
-  try
-    let l:err = '(dapper#dap#InitialBreakpoints) Object is not of type InitialBreakpoints: '.string(a:object)
-  catch
-    redir => l:object
-    silent! echo a:object
-    redir end
-    let l:err = '(dapper#dap#InitialBreakpoints) This object failed type check: '.l:object
-  endtry
-  throw l:err
-  endif
+  return typevim#make#Class(s:typename, l:new)
 endfunction

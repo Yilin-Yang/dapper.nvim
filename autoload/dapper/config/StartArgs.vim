@@ -1,47 +1,41 @@
-" BRIEF:  All arguments supplied to the middle-end; starts adapter and debuggee.
+""
+" @dict StartArgs
+" All arguments supplied to the middle-end. When provided in a call to
+" @function(DapperStart), starts a debug adapter and a debuggee.
 
-" BRIEF:  Construct a new StartArgs object.
-" PARAM:  adapter_config  (dapper#config#DebugAdapterConfig)  Configuration
-"     for the debug adapter itself.
-" PARAM:  debuggee_args   (dapper#config#DebuggeeArgs)  Arguments supplied to
-"     the debug adapter, to start or attach to a 'debuggee' process.
-" PARAM:  vscode_attr     (dapper#config#VSCodeAttributes)  Other attributes
-"     from a `launch.json` file that are specific to VSCode.
-" PARAM:  locale  (v:t_string?) The ISO-639 locale with which to start the
-"     debug adapter. If empty, defaults to the locale of the running vim
-"     instance.
+let s:typename = 'StartArgs'
+
+""
+" @dict StartArgs
+" @function dapper#config#StartArgs#new({adapter_config}, {debuggee_args}, {vscode_attr}, [locale])
+" Construct and return new StartArgs object.
+"
+" {adapter_config} is a @dict(DebugAdapterConfig) object, acting as
+" configuration for the debug adapter itself.
+"
+" {debuggee_args} is a @dict(DebuggeeArgs) object: the debug adapter reads
+" this, and uses it to launch or attach to a debugger process.
+"
+" {vscode_attr} is a @dict(VSCodeAttributes) object, or a basic dictionary: it
+" contains other attributes from a `.vscode/launch.json` file used
+" specifically by VSCode itself.
+"
+" [locale] is a string containing the ISO-639 locale of the neovim frontend,
+" e.g. `en_US`.
+"
+" @throws WrongType if any of the arguments mentioned above are not of the specified types.
 function! dapper#config#StartArgs#new(
-    \ adapter_config,
-    \ debuggee_args,
-    \ vscode_attr,
-    \ ...
-    \ ) abort
-  call dapper#config#DebugAdapterConfig#CheckType(a:adapter_config)
-  call dapper#config#DebuggeeArgs#CheckType(a:debuggee_args)
-  " call dapper#config#VSCodeAttributes#CheckType(a:vscode_attr)
-  let a:locale = get(a:000, 0, '')
-  let l:default_locale = split(v:ctype, '\.')[0]  " trim, e.g. '.UTF8'
-  let l:locale = empty(a:locale) ? l:default_locale : a:locale
+    \ adapter_config, debuggee_args, vscode_attr, ...) abort
+  call typevim#ensure#IsType(a:adapter_config, 'DebugAdapterConfig')
+  call typevim#ensure#IsType(a:debuggee_args, 'DebuggeeArgs')
+  call typevim#ensure#IsType(a:vscode_attr, 'VSCodeAttributes')
+  " read default locale from v:ctype, trimming, e.g. '.UTF8'
+  let a:locale = maktaba#ensure#IsString(get(a:000, 0, split(v:ctype, '\.')[0]))
   let l:new = {
-      \ 'TYPE': {'StartArgs': 1},
       \ 'adapter_config': a:adapter_config,
       \ 'debuggee_args': a:debuggee_args,
       \ 'vscode_attr': a:vscode_attr,
       \ 'locale': a:locale
       \ }
-  return l:new
-endfunction
-
-function! dapper#config#StartArgs#CheckType(object) abort
-  if type(a:object) !=# v:t_dict || !has_key(a:object, 'TYPE') || !has_key(a:object['TYPE'], 'StartArgs')
-  try
-    let l:err = '(dapper#config#StartArgs) Object is not of type StartArgs: '.string(a:object)
-  catch
-    redir => l:object
-    echo a:object
-    redir end
-    let l:err = '(dapper#config#StartArgs) This object failed type check: '.l:object
-  endtry
-  throw l:err
-  endif
+  return typevim#make#Class(s:typename, l:new)
 endfunction
