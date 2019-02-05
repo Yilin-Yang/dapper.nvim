@@ -41,7 +41,7 @@ function! dapper#model#Source#updateFrom(source) abort dict
   if type(a:source) !=# v:t_dict
     throw 'ERROR(WrongType) (dapper#model#Source) '
         \ . 'Given source properties aren''t a dict: '
-        \ . dapper#helpers#StrDump(a:source)
+        \ . typevim#object#ShallowPrint(a:source)
   endif
   call extend(l:self['_props'], a:source, 'force')
 endfunction

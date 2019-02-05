@@ -16,4 +16,4 @@ Execute (Start Mock Debug Adapter, Store Incoming Messages):
       \ g:debuggee_args,
       \ g:vscode_attr)
   call DapperStart(g:start_args)
-  call AwaitTimeout({ -> ReceivedMessage('InitializedEvent')}, 3000, v:true)
+  call AwaitTimeout({ -> ReceivedMessage('InitializedEvent')}, 3000, 1)

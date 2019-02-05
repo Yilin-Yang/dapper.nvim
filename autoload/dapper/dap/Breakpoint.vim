@@ -2,7 +2,7 @@ function! dapper#dap#Breakpoint#new() abort
   let l:new = {
     \ 'TYPE': {'Breakpoint': 1},
     \ 'id': 0,
-    \ 'verified': v:false,
+    \ 'verified': 0,
     \ 'message': '',
     \ 'source': {},
     \ 'line': 0,

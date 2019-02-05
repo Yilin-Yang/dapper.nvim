@@ -1,4 +1,7 @@
-" BRIEF:  Handles incoming messages and logs them for debugging purposes.
+""
+" @dict ReportHandler
+" An object that subscribes to incoming @dict(Report)s and logs them for
+" debugging purposes, sometimes displaying them to the user.
 
 " BRIEF:  Construct a new ReportHandler object.
 " PARAM:  logger  (dapper#DebugLogger)  The interface used to log reports.
@@ -92,13 +95,13 @@ endfunction
 function! dapper#log#ReportHandler#_formatAndLog(msg, type) abort dict
   call dapper#log#ReportHandler#CheckType(l:self)
   let l:lines = [
-      \ 'BRIEF: '.dapper#helpers#StrDump(a:msg['brief']),
-      \ 'LONG:  '.dapper#helpers#StrDump(a:msg['long']),
-      \ 'ALERT: '.dapper#helpers#StrDump(a:msg['alert']),
+      \ 'BRIEF: '.typevim#object#ShallowPrint(a:msg['brief']),
+      \ 'LONG:  '.typevim#object#ShallowPrint(a:msg['long']),
+      \ 'ALERT: '.typevim#object#ShallowPrint(a:msg['alert']),
       \ ]
   if has_key(a:msg, 'other')
     let l:lines += [
-      \ 'OTHER: '.dapper#helpers#StrDump(a:msg['other']),
+      \ 'OTHER: '.typevim#object#ShallowPrint(a:msg['other']),
       \ ]
   endif
   call l:self._logReport(l:lines, a:type)

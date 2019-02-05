@@ -87,7 +87,7 @@ endfunction
 "     stack trace, as well.
 function! dapper#model#Thread#update(props, ...) abort dict
   call dapper#model#Thread#CheckType(l:self)
-  let a:update_stack_trace = get(a:000, 0, v:true)
+  let a:update_stack_trace = get(a:000, 0, 1)
   if has_key(a:props, 'id')
     let l:self['_id'] = a:props['id']
   elseif has_key(a:props, 'threadId')

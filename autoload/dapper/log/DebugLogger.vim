@@ -75,31 +75,31 @@ let s:writeback_to_bufsettings = {
     \ 'never': {
         \ 'fname': dapper#settings#LogBufferName(),
         \ 'bufhidden': 'hide',
-        \ 'buflisted': v:false,
+        \ 'buflisted': 0,
         \ 'buftype' : 'nofile',
-        \ 'swapfile': v:false,
+        \ 'swapfile': 0,
         \ },
     \ 'onclose': {
         \ 'fname': dapper#settings#Logfile(),
         \ 'bufhidden': 'hide',
-        \ 'buflisted': v:false,
+        \ 'buflisted': 0,
         \ 'buftype' : 'nofile',
-        \ 'swapfile': v:false,
+        \ 'swapfile': 0,
         \ },
     \ 'every': {
         \ 'fname': dapper#settings#Logfile(),
         \ 'bufhidden': 'hide',
-        \ 'buflisted': v:false,
+        \ 'buflisted': 0,
         \ 'buftype' : 'nofile',
-        \ 'swapfile': v:true,
+        \ 'swapfile': 1,
         \ 'interval': -1,
         \ },
     \ 'always': {
         \ 'fname': dapper#settings#Logfile(),
         \ 'bufhidden': 'hide',
-        \ 'buflisted': v:false,
+        \ 'buflisted': 0,
         \ 'buftype' : 'nofile',
-        \ 'swapfile': v:true,
+        \ 'swapfile': 1,
       \ }
     \ }
 
@@ -117,15 +117,15 @@ function! dapper#log#DebugLogger#CheckType(object) abort
   endif
 endfunction
 
-" RETURNS:  `v:true` if the DebugLogger should write the next message it
+" RETURNS:  `1` if the DebugLogger should write the next message it
 "           receives.
 function! dapper#log#DebugLogger#__shouldWrite() abort dict
   call dapper#log#DebugLogger#CheckType(l:self)
   let l:wb = l:self['__writeback']
   if l:wb ==# 'always'
-    return v:true
+    return 1
   endif
-  if l:wb !=# 'every' | return v:false | endif
+  if l:wb !=# 'every' | return 0 | endif
   let l:counter = l:self['__counter']
   let l:interval = l:self['__settings']['interval']
   return !float2nr(fmod(l:counter, l:interval))
@@ -136,7 +136,7 @@ function! dapper#log#DebugLogger#__write() abort dict
   call dapper#log#DebugLogger#CheckType(l:self)
   let l:from = l:self['__last_line_written']
   let l:bufnr = l:self['__bufnr']
-  let l:to_writeback = nvim_buf_get_lines(l:bufnr, l:from, -1, v:true)
+  let l:to_writeback = nvim_buf_get_lines(l:bufnr, l:from, -1, 1)
   let l:fname = l:self['__settings']['fname']
   " asynchronously append to file
   call writefile(l:to_writeback, l:fname, 'aS')

@@ -4,7 +4,7 @@ function! dapper#dap#SetBreakpointsArguments#new() abort
     \ 'source': {},
     \ 'breakpoints': [],
     \ 'lines': [],
-    \ 'sourceModified': v:false,
+    \ 'sourceModified': 0,
   \ }
   return l:new
 endfunction

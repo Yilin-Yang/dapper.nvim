@@ -99,8 +99,8 @@ function! dapper#view#DapperBuffer#emit(obj) abort dict
       call l:self['_message_passer'].notifyReport(
           \ 'status',
           \ '(view#DapperBuffer) Push failed, unsubbing:'
-            \ . dapper#helpers#StrDump(l:Cb),
-          \ 'Callback object was: '.dapper#helpers#StrDump(a:obj)
+            \ . typevim#object#ShallowPrint(l:Cb),
+          \ 'Callback object was: '.typevim#object#ShallowPrint(a:obj)
           \ )
       unlet l:callbacks[l:i]
     endtry
@@ -112,28 +112,28 @@ function! dapper#view#DapperBuffer#subscribe(Callback) abort dict
   call dapper#view#DapperBuffer#CheckType(l:self)
   if type(a:Callback) !=# v:t_func
     throw '(dapper#view#DapperBuffer) Not a funcref:'
-        \ . dapper#helpers#StrDump(a:Callback)
+        \ . typevim#object#ShallowPrint(a:Callback)
   endif
   let l:self['_subs'] += [a:Callback]
 endfunction
 
 " BRIEF:  Unsubscribe from pushes from this DapperBuffer.
-" RETURNS:  (v:t_bool)  `v:true` if a subscription was removed, `v:false`
+" RETURNS:  (v:t_bool)  `1` if a subscription was removed, `0`
 "     otherwise.
 function! dapper#view#DapperBuffer#unsubscribe(Callback) abort dict
   call dapper#view#DapperBuffer#CheckType(l:self)
   if type(a:Callback) !=# v:t_func
     throw '(dapper#view#DapperBuffer) Not a funcref:'
-        \ . dapper#helpers#StrDump(a:Callback)
+        \ . typevim#object#ShallowPrint(a:Callback)
   endif
   let l:callbacks = l:self['_subs']
   let l:i = 0 | while l:i <# len(l:callbacks)
     if l:callbacks[l:i] ==# a:Callback
       unlet l:callbacks[l:i]
-      return v:true
+      return 1
     endif
   let l:i += 1 | endwhile
-  return v:false
+  return 0
 endfunction
 
 " BRIEF:  Log a report.
@@ -181,7 +181,7 @@ endfunction
 "     has been set.
 function! dapper#view#DapperBuffer#climbUp(...) abort dict
   call dapper#view#DapperBuffer#CheckType(l:self)
-  let a:fail_silently = get(a:000, 0, v:false)
+  let a:fail_silently = get(a:000, 0, 0)
   let l:parent = l:self['_parent']
   if type(l:parent) ==# v:t_number
     if a:fail_silently | return | endif

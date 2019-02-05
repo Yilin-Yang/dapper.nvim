@@ -18,14 +18,14 @@ Execute (AwaitTimeout: Declare Helper Functions):
   "                                   and may not respond to calls from remote
   "                                   plugins.
   function! AwaitTimeout(Condition, timeout, ...) abort
-    let a:should_throw = get(a:000, 0, v:false)
+    let a:should_throw = get(a:000, 0, 0)
     let a:resolution = get(a:000, 1, 100)
     let l:start = reltime()
     let l:sec = a:timeout / 1000.0
-    let l:timed_out = v:true
+    let l:timed_out = 1
     while TimeSince(l:start) <# l:sec
       if a:Condition()
-        let l:timed_out = v:false
+        let l:timed_out = 0
         break
       endif
       execute 'sleep '.a:resolution.'m'

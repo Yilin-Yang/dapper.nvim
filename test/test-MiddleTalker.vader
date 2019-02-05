@@ -2,7 +2,7 @@ Execute (MiddleTalker: Set Up):
   let g:middletalker = dapper#MiddleTalker#get()
   function! TestCbSingle(msg)
     let g:received = a:msg
-    return v:true
+    return 1
   endfunction
 
   function! TestCbList(msg)
@@ -10,7 +10,7 @@ Execute (MiddleTalker: Set Up):
       let g:received = []
     endif
     let g:received += [ a:msg ]
-    return v:true
+    return 1
   endfunction
 
   function! TestAltCbList(msg)
@@ -18,7 +18,7 @@ Execute (MiddleTalker: Set Up):
       let g:alt_received = []
     endif
     let g:alt_received += [a:msg]
-    return v:true
+    return 1
   endfunction
 
 Execute (MiddleTalker: Test Subscribe to Incoming):

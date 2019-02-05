@@ -58,9 +58,9 @@ function! dapper#log#BreakpointsHandler#receive(msg) abort dict
     call l:self._reportSuccess(a:msg)
   elseif len(l:failed) ==# 1
     call l:self['__message_passer'].notifyReport(
-        \ 'error', 'Failed to set breakpoint. ', l:failed[0], v:true)
+        \ 'error', 'Failed to set breakpoint. ', l:failed[0], 1)
   else
     call l:self['__message_passer'].notifyReport(
-        \ 'error', 'Failed to set multiple breakpoints. ', l:failed, v:true)
+        \ 'error', 'Failed to set multiple breakpoints. ', l:failed, 1)
   endif
 endfunction

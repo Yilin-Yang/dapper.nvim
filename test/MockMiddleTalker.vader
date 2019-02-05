@@ -38,21 +38,21 @@ Execute (Declare Mock MiddleTalker):
 
   function! MockGotRequest(command) abort
     let l:i = 0 | while l:i <# len(g:reqs)
-      if g:reqs[l:i][0] ==# a:command | return v:true | endif
+      if g:reqs[l:i][0] ==# a:command | return 1 | endif
     let l:i += 1 | endwhile
-    return v:false
+    return 0
   endfunction
 
   function! MockGotSubscription(pattern) abort
     let l:i = 0 | while l:i <# len(g:subs)
-      if g:subs[l:i][0] ==# a:pattern | return v:true | endif
+      if g:subs[l:i][0] ==# a:pattern | return 1 | endif
     let l:i += 1 | endwhile
-    return v:false
+    return 0
   endfunction
 
   function! MockReceived(pattern) abort
     let l:i = 0 | while l:i <# len(g:msgs)
-      if g:msgs[l:i]['vim_msg_typename'] ==# a:pattern | return v:true | endif
+      if g:msgs[l:i]['vim_msg_typename'] ==# a:pattern | return 1 | endif
     let l:i += 1 | endwhile
-    return v:false
+    return 0
   endfunction

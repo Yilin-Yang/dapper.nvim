@@ -21,12 +21,12 @@ function! dapper#Promise#new(...) abort
   let a:Resolve = get(a:000, 0, function('dapper#Promise#__noOp'))
   if type(a:Resolve) !=# v:t_func
     throw '(dapper#Promise) Given `Resolve()` callback isn''t a funcref:'
-        \ . dapper#helpers#StrDump(a:Resolve)
+        \ . typevim#object#ShallowPrint(a:Resolve)
   endif
   let a:Reject = get(a:000, 1, function('dapper#Promise#__noOp'))
   if type(a:Reject) !=# v:t_func
     throw '(dapper#Promise) Given `Reject()` callback isn''t a funcref:'
-        \ . dapper#helpers#StrDump(a:Reject)
+        \ . typevim#object#ShallowPrint(a:Reject)
   endif
   let l:new = {
       \ 'TYPE': {'Promise': 1},
@@ -103,12 +103,12 @@ endfunction
 function! dapper#Promise#subscribe(Resolve, ...) abort dict
   if type(a:Resolve) !=# v:t_func
     throw '(dapper#Promise) Given `Resolve()` callback isn''t a funcref:'
-        \ . dapper#helpers#StrDump(a:Resolve)
+        \ . typevim#object#ShallowPrint(a:Resolve)
   endif
   let a:Reject = get(a:000, 0, function('dapper#Promise#__noOp'))
   if type(a:Reject) !=# v:t_func
     throw '(dapper#Promise) Given `Reject()` callback isn''t a funcref:'
-        \ . dapper#helpers#StrDump(a:Reject)
+        \ . typevim#object#ShallowPrint(a:Reject)
   endif
   let l:state = l:self['_state']
   let l:res = l:self['_resolve_cbs']

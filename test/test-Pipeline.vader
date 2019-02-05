@@ -13,12 +13,12 @@ Execute (Pipeline: Launch Debuggee):
   let g:launch_args = dapper#dap#LaunchRequestArguments#new()
   let g:launch_args['program'] = g:project_root.'/test/TEST_README.md'
   call DapperRequest('launch', 0, g:launch_args)
-  call AwaitTimeout({ -> ReceivedMessage('LaunchResponse')}, 4000, v:true)
+  call AwaitTimeout({ -> ReceivedMessage('LaunchResponse')}, 4000, 1)
 
 Execute (Pipeline: Request Threads):
   call g:model.update()
   call g:tb.open()
-  call AwaitTimeout({ -> ReceivedMessage('ThreadsResponse')}, 3000, v:true)
+  call AwaitTimeout({ -> ReceivedMessage('ThreadsResponse')}, 3000, 1)
 Expect:
   <threads>
   thread id: 1	name: thread 1		status: (N/A)

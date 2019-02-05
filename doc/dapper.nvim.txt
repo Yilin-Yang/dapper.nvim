@@ -70,9 +70,112 @@ are specific to a given debug adapter's implementation.
 dapper#dap#LaunchRequestArguments#new()         *LaunchRequestArguments.new()*
   Construct and return a skeletal LaunchRequestArguments object.
 
+                                                    *dapper.nvim.MiddleTalker*
+The connection between dapper.nvim's VimL frontend and its TypeScript
+"middle-end". Provides a subscription-based interface for sending requests to
+and receiving messages from the middle-end through neovim's remote plugin
+|RPC|, in a manner comparable to a Node.js-style `EventEmitter` object.
+
+Objects can subscribe to messages whose `"vim_msg_typename"` matches a given
+regex pattern: MiddleTalker will, on receiving a matching message, call the
+subscriber's provided callback function with that matching message. Objects
+may also send requests: MiddleTalker will note the sender of the request, and
+if it receives a response, will return that request to the sender (and to any
+other objects subscribed to messages of that type).
+
+MiddleTalker is a singleton. Because MiddleTalker encapsulates neovim's
+program-wide RPC, it does not make sense to have multiple MiddleTalker
+instances at a given time.
+
+dapper#MiddleTalker#get()                                 *MiddleTalker.get()*
+  Get the MiddleTalker singleton, or make one if it doesn't yet exist.
+
+MiddleTalker.Receive({msg})                           *MiddleTalker.Receive()*
+  Receive a response or event {msg}, passing it to subscribers.
+  Throws ERROR(WrongType) if {msg} is not a dictionary.
+
+MiddleTalker.Request({command}, {request_args}, {Callback})
+                                                      *MiddleTalker.Request()*
+  Make a request of the debug adapter. {command} is the `"command"` property
+  of a DAP Request; {request_args} is the `"[blank]RequestArguments"` object
+  associated with that request type; and {Callback} is the function that the
+  MiddleTalker should call after receiving a response to this request.
+
+  Throws ERROR(WrongType) if {command} is not a string, {request_args} is not
+  a dict, or if {Callback} is not a |Funcref|.
+
+MiddleTalker.Subscribe({name_pattern}, {Callback})  *MiddleTalker.Subscribe()*
+  Register a subscription to messages whose typenames match a {name_pattern},
+  a regular expression used to |string-match| against the `"vim_msg_typename"`
+  of an incoming message. `"vim_msg_typename"` is a construct of dapper.nvim,
+  not of the DAP itself: the middle-end annotates front-going DAP messages
+  with a straightforward "human-readable" typename (e.g. a
+  LaunchRequestArgument has the `"vim_msg_typename"`:
+  `"LaunchRequestArgument"`).
+
+  When {name_pattern} matches against an incoming messages
+  `"vim_msg_typename"`, the MiddleTalker will call {Callback}.
+
+  Throws ERROR(WrongType) if {name_pattern} is not a string, or if {Callback}
+  is not a |Funcref|.
+
+MiddleTalker.Unsubscribe({name_pattern}, {Callback})
+                                                  *MiddleTalker.Unsubscribe()*
+  Cancel a subscription, returning 1 when a matching subscription was
+  successfully removed, and 0 otherwise.
+
+  {name_pattern} and {Callback} are exactly the same as in
+  |MiddleTalker.Subscribe()|; in fact, they should be exactly the same as the
+  original arguments (i.e. should compare equal by |expr-==#|) provided when
+  the subscription was originally registered.
+
+  Throws ERROR(WrongType) if {name_pattern} is not a string, or if {Callback}
+  is not a |Funcref|.
+
+MiddleTalker.NotifyReport({kind}, {brief}, [long], [alert], [other])
+                                                 *MiddleTalker.NotifyReport()*
+  Broadcast a |dapper.nvim.Report| constructed using the given arguments,
+  which might be logged by a subscribed |dapper.nvim.ReportHandler|.
+
+  Throws ERROR(WrongType) if {kind} or {brief} are not strings. The remaining
+  arguments may be of any type.
+
+                                                          *dapper.nvim.Report*
+Report is a "fake" DAP message type, i.e. a message that is not formally part
+of the DAP specification. It is a "DAP-esque" message type used to relay
+status updates and error messages to the user, either by echoing it to the
+statusline, or just by printing it to a logfile.
+
+dapper#dap#Report#new([vim_id], [vim_msg_typename], [kind], [brief], [long],
+  [alert], [other])                                             *Report.new()*
+
+                                                   *dapper.nvim.ReportHandler*
+An object that subscribes to incoming |dapper.nvim.Report|s and logs them for
+debugging purposes, sometimes displaying them to the user.
+
                                                        *dapper.nvim.StartArgs*
 All arguments supplied to the middle-end. When provided in a call to
 |DapperStart()|, starts a debug adapter and a debuggee.
+
+dapper#config#StartArgs#new({adapter_config}, {debuggee_args}, {vscode_attr},
+  [locale])                                                  *StartArgs.new()*
+  Construct and return new StartArgs object.
+
+  {adapter_config} is a |dapper.nvim.DebugAdapterConfig| object, acting as
+  configuration for the debug adapter itself.
+
+  {debuggee_args} is a |dapper.nvim.DebuggeeArgs| object: the debug adapter
+  reads this, and uses it to launch or attach to a debugger process.
+
+  {vscode_attr} is a |dapper.nvim.VSCodeAttributes| object, or a basic
+  dictionary: it contains other attributes from a `.vscode/launch.json` file
+  used specifically by VSCode itself.
+
+  [locale] is a string containing the ISO-639 locale of the neovim frontend,
+  e.g. `en_US`.
+
+  Throws ERROR(WrongType) if any of the arguments mentioned above are not of
+  the specified types.
 
                                                 *dapper.nvim.VSCodeAttributes*
 Settings from a `launch.json` that normally control VSCode-specific behavior,

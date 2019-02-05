@@ -58,17 +58,17 @@ function! dapper#model#ExceptionBreakpoints#setBreakpoint(props) abort dict
   if type(a:props) !=# v:t_dict || !has_key(a:props, 'filter')
       \ || !has_key(a:props, 'exceptionOptions')
     throw 'ERROR(BadValue) (dapper#model#ExceptionBreakpoints) Malformed '
-        \ . 'props: '.dapper#helpers#StrDump(a:props)
+        \ . 'props: '.typevim#object#ShallowPrint(a:props)
   endif
   let a:filter = a:props['filter']
   let a:opts   = a:props['exceptionOptions']
   if type(a:filter) !=# v:t_string
     throw 'ERROR(WrongType) (dapper#model#ExceptionBreakpoints) Filter must be '
-        \ . 'string: '.dapper#helpers#StrDump(a:filter)
+        \ . 'string: '.typevim#object#ShallowPrint(a:filter)
   endif
   if type(a:opts) !=# v:t_dict || !has_key(a:opts, 'breakMode')
     throw 'ERROR(BadValue) (dapper#model#ExceptionBreakpoints) '
-        \ . 'Malformed ExceptionOptions: '.dapper#helpers#StrDump(a:opts)
+        \ . 'Malformed ExceptionOptions: '.typevim#object#ShallowPrint(a:opts)
   endif
   let l:supported_filters = l:self['_filters']
   if !has_key(l:supported_filters, a:filter) || !l:supported_filters[a:filter]
@@ -76,14 +76,14 @@ function! dapper#model#ExceptionBreakpoints#setBreakpoint(props) abort dict
         \ 'error',
         \ 'Unsupported exception filter: '.a:filter,
         \ a:props,
-        \ v:true
+        \ 1
         \ )
     return
   endif
   let l:br_mode = a:opts['breakMode']
   if index(s:break_modes, l:br_mode) ==# -1
     throw 'ERROR(BadValue) (dapper#model#ExceptionBreakpoints) '
-        \ . 'Invalid break mode: '.dapper#helpers#StrDump(l:br_mode)
+        \ . 'Invalid break mode: '.typevim#object#ShallowPrint(l:br_mode)
   endif
   call l:self['Breakpoints#setBreakpoint'](a:props)
 endfunction

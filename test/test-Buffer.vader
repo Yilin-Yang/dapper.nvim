@@ -167,24 +167,24 @@ Execute (Buffer: Is Open in this Tab, Yes):
   tabnew
   call g:buffer.setBuffer(bufnr('%'))
 Then:
-  AssertEqual v:true, g:buffer.isOpenInTab()
-  AssertEqual v:true, g:buffer.isOpenInTab(tabpagenr())
+  AssertEqual 1, g:buffer.isOpenInTab()
+  AssertEqual 1, g:buffer.isOpenInTab(tabpagenr())
 
 Execute (Buffer: Is Open in Previous Tab):
   call g:buffer.setBuffer(bufnr('%'))
   let g:old_tab = tabpagenr()
   tabnew
 Then:
-  AssertEqual v:true, g:buffer.isOpenInTab(g:old_tab)
-  AssertEqual v:false, g:buffer.isOpenInTab()
-  AssertEqual v:false, g:buffer.isOpenInTab(tabpagenr())
+  AssertEqual 1, g:buffer.isOpenInTab(g:old_tab)
+  AssertEqual 0, g:buffer.isOpenInTab()
+  AssertEqual 0, g:buffer.isOpenInTab(tabpagenr())
 
 Execute (Buffer: Is Open in Previous Tab, and In Current):
   call g:buffer.open()
 Then:
-  AssertEqual v:true, g:buffer.isOpenInTab(g:old_tab)
-  AssertEqual v:true, g:buffer.isOpenInTab()
-  AssertEqual v:true, g:buffer.isOpenInTab(tabpagenr())
+  AssertEqual 1, g:buffer.isOpenInTab(g:old_tab)
+  AssertEqual 1, g:buffer.isOpenInTab()
+  AssertEqual 1, g:buffer.isOpenInTab(tabpagenr())
 
 Execute (Buffer: Is Not Open At All):
   tabnew
@@ -192,9 +192,9 @@ Execute (Buffer: Is Not Open At All):
   tabnew
   call g:buffer.destroy()
 Then:
-  AssertEqual v:false, g:buffer.isOpenInTab(g:old_tab)
-  AssertEqual v:false, g:buffer.isOpenInTab()
-  AssertEqual v:false, g:buffer.isOpenInTab(tabpagenr())
+  AssertEqual 0, g:buffer.isOpenInTab(g:old_tab)
+  AssertEqual 0, g:buffer.isOpenInTab()
+  AssertEqual 0, g:buffer.isOpenInTab(tabpagenr())
 
 Execute (Buffer: Switch, Not Open):
   AssertThrows call g:buffer.switch()
@@ -216,7 +216,7 @@ Execute (Buffer: Switch, Is Open, Different Tab (but not allowed)):
   let g:tabnr = tabpagenr()
   tabnew
 Then:
-  AssertThrows call g:buffer.switch(v:false)
+  AssertThrows call g:buffer.switch(0)
   AssertNotEqual -1, match(g:vader_exception, 'ERROR(NotFound)')
 
 Execute (Buffer: Switch, Is Open, Different Tab (which is allowed)):
@@ -228,7 +228,7 @@ Then:
 Execute (Buffer: Switch, Is Only Open in Different (Specific) Tab (which isn't allowed)):
   tabnew
 Then:
-  AssertThrows call g:buffer.switch(v:false)
+  AssertThrows call g:buffer.switch(0)
   AssertNotEqual -1, match(g:vader_exception, 'ERROR(NotFound)')
 
 Execute (Buffer: Switch, Is Only Open in Different (Specific) Tab (which is given)):
@@ -236,7 +236,7 @@ Execute (Buffer: Switch, Is Only Open in Different (Specific) Tab (which is give
   call g:buffer.setBuffer(bufnr('%'))
   let g:tabnr = tabpagenr()
   tabnew
-  call g:buffer.switch(v:false, g:tabnr)
+  call g:buffer.switch(0, g:tabnr)
 Then:
   AssertEqual g:tabnr, tabpagenr()
   AssertEqual g:buffer.bufnr(), bufnr('%')
@@ -247,7 +247,7 @@ Execute (Buffer: Switch, Is Open in Different (Specific) Tab (which is given), a
   let g:tabnr = tabpagenr()
   tabnew
   call g:buffer.open()
-  call g:buffer.switch(v:false, g:tabnr)
+  call g:buffer.switch(0, g:tabnr)
 Then:
   AssertEqual g:tabnr, tabpagenr()
   AssertEqual g:buffer.bufnr(), bufnr('%')

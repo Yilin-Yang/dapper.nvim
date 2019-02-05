@@ -4,8 +4,8 @@ function! dapper#dap#Message#new() abort
     \ 'id': 0,
     \ 'format': '',
     \ 'variables': {},
-    \ 'sendTelemetry': v:false,
-    \ 'showUser': v:false,
+    \ 'sendTelemetry': 0,
+    \ 'showUser': 0,
     \ 'url': '',
     \ 'urlLabel': '',
   \ }

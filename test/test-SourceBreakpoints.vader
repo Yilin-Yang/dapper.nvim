@@ -10,7 +10,7 @@ Execute (SourceBreakpoints: Initialize Mock Debug Adapter, Perform Setup):
   let g:sb = dapper#model#SourceBreakpoints#new(
       \ g:dapper_middletalker, {'path': g:project_root.'/test/TEST_README.md'})
 
-  " RETURNS:  (v:t_bool)  `v:true` when the given `dapper#model#SourceBreakpoints`
+  " RETURNS:  (v:t_bool)  `1` when the given `dapper#model#SourceBreakpoints`
   "     has been fulfilled, e.g. after having received a `SetBreakpointsResponse`.
   function! IsFulfilled(source_bps) abort
     return a:source_bps.status() == 'fulfilled'
@@ -20,12 +20,12 @@ Execute (SourceBreakpoints: Launch Debuggee):
   let g:launch_args = dapper#dap#LaunchRequestArguments#new()
   let g:launch_args['program'] = g:project_root.'/test/TEST_README.md'
   call DapperRequest('launch', 0, g:launch_args)
-  call AwaitTimeout({ -> ReceivedMessage('LaunchResponse')}, 4000, v:true)
+  call AwaitTimeout({ -> ReceivedMessage('LaunchResponse')}, 4000, 1)
 
 Execute (SourceBreakpoints: Set Breakpoints):
   " line 2 is empty, so breakpoint should actually be set on line 3
   call g:sb.setBreakpoint({'line': 2, 'condition': '(foo == bar)'})
-  call AwaitTimeout({ -> IsFulfilled(g:sb)}, 3000, v:true)
+  call AwaitTimeout({ -> IsFulfilled(g:sb)}, 3000, 1)
 Then:
   let g:bps = g:sb.breakpoints()
   AssertEqual 1, len(g:bps)
@@ -35,7 +35,7 @@ Then:
 
 Execute (SourceBreakpoints: Set Additional Breakpoints):
   call g:sb.setBreakpoint({'line': 4})
-  call AwaitTimeout({ -> IsFulfilled(g:sb)}, 3000, v:true)
+  call AwaitTimeout({ -> IsFulfilled(g:sb)}, 3000, 1)
 Then:
   let g:bps = g:sb.breakpoints()
   AssertEqual 2, len(g:bps)
@@ -46,7 +46,7 @@ Then:
 Execute (SourceBreakpoints: Edit Existing Breakpoint):
   call g:sb.setBreakpoint({'line': 3})
   call g:sb.setBreakpoint({'line': 4, 'hitCondition': 'foo'})
-  call AwaitTimeout({ -> IsFulfilled(g:sb)}, 3000, v:true)
+  call AwaitTimeout({ -> IsFulfilled(g:sb)}, 3000, 1)
 Then:
   let g:bps = g:sb.breakpoints()
   AssertEqual 2, len(g:bps)
@@ -66,7 +66,7 @@ Then:
 
 Execute (SourceBreakpoints: Remove Existing Breakpoint):
   call g:sb.removeBreakpoint(3)
-  call AwaitTimeout({ -> IsFulfilled(g:sb)}, 3000, v:true)
+  call AwaitTimeout({ -> IsFulfilled(g:sb)}, 3000, 1)
 Then:
   let g:bps = g:sb.breakpoints()
   AssertEqual 1, len(g:bps)
@@ -74,7 +74,7 @@ Then:
 
 Execute (SourceBreakpoints: Set Bad Breakpoint):
   call g:sb.setBreakpoint({'line': 999})
-  call AwaitTimeout({ -> IsFulfilled(g:sb)}, 3000, v:true)
+  call AwaitTimeout({ -> IsFulfilled(g:sb)}, 3000, 1)
 Then:
   let g:bps = g:sb.breakpoints()
   AssertEqual 1, len(g:bps)
@@ -82,7 +82,7 @@ Then:
 
 Execute (SourceBreakpoints: Clear All Breakpoints):
   call g:sb.clearBreakpoints()
-  call AwaitTimeout({ -> IsFulfilled(g:sb)}, 3000, v:true)
+  call AwaitTimeout({ -> IsFulfilled(g:sb)}, 3000, 1)
 Then:
   let g:bps = g:sb.breakpoints()
   AssertEqual 0, len(g:bps)

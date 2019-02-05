@@ -1,7 +1,7 @@
 function! dapper#dap#Terminaterguments#new() abort
   let l:new = {
     \ 'TYPE': {'TerminateArguments': 1},
-    \ 'restart': v:false,
+    \ 'restart': 0,
   \ }
   return l:new
 endfunction

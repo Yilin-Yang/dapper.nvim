@@ -75,7 +75,7 @@ function! dapper#model#DebugSources#source(abs_fpath) abort dict
   call dapper#model#DebugSources#CheckType(l:self)
   if type(a:abs_fpath) !=# v:t_string
     throw 'ERROR(WrongType) (dapper#model#DebugSources) '
-        \ . 'Given fpath not a string: ' . dapper#helpers#StrDump(a:abs_fpath)
+        \ . 'Given fpath not a string: ' . typevim#object#ShallowPrint(a:abs_fpath)
   endif
   let l:fpaths_to_sources = l:self['_fpaths_to_sources']
   if has_key(l:fpaths_to_sources, a:abs_fpath)
@@ -96,7 +96,7 @@ function! dapper#model#DebugSources#_updateSource(updated_source) abort dict
   call dapper#model#DebugSources#CheckType(l:self)
   if type(a:updated_source) !=# v:t_dict
     throw 'ERROR(WrongType) (dapper#model#DebugSources) '
-        \ . 'Given Source not a dict: '.dapper#helpers#StrDump(a:updated_source)
+        \ . 'Given Source not a dict: '.typevim#object#ShallowPrint(a:updated_source)
   endif
   if !has_key(a:updated_source, 'path') | return | endif
   let l:current = l:self.source(a:updated_source, 'path')
@@ -111,5 +111,5 @@ function! dapper#model#DebugSources#_supportsLoadedSources() abort dict
   if has_key(l:capabilities, 'supportsLoadedSourcesRequest')
     return l:capabilities['supportsLoadedSourcesRequest']
   endif
-  return v:false
+  return 0
 endfunction

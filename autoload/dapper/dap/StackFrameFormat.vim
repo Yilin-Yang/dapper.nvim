@@ -1,13 +1,13 @@
 function! dapper#dap#StackFrameFormat#new() abort
   let l:new = {
     \ 'TYPE': {'StackFrameFormat': 1},
-    \ 'parameters': v:false,
-    \ 'parameterTypes': v:false,
-    \ 'parameterNames': v:false,
-    \ 'parameterValues': v:false,
-    \ 'line': v:false,
-    \ 'module': v:false,
-    \ 'includeAll': v:false,
+    \ 'parameters': 0,
+    \ 'parameterTypes': 0,
+    \ 'parameterNames': 0,
+    \ 'parameterValues': 0,
+    \ 'line': 0,
+    \ 'module': 0,
+    \ 'includeAll': 0,
   \ }
   return l:new
 endfunction

@@ -193,7 +193,7 @@ endfunction
 "                       helpful for reducing `hit-enter` prompts.
 function! dapper#settings#RedrawOnEcho() abort
   if !exists('g:dapper_redraw_on_echo')
-    let g:dapper_redraw_on_echo = v:false
+    let g:dapper_redraw_on_echo = 0
   endif
   call s:AssertType(
       \ g:dapper_redraw_on_echo,

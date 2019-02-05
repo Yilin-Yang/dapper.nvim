@@ -9,7 +9,7 @@ let s:thread_id_search_pat = '^thread id: '
 function! dapper#view#ThreadsBuffer#new(model, message_passer) abort
   let l:new =
       \ dapper#view#DapperBuffer#new(a:message_passer,
-      \ {'fname': '[dapper.nvim] Threads', 'mangle': v:false})
+      \ {'fname': '[dapper.nvim] Threads', 'mangle': 0})
   let l:new['TYPE']['ThreadsBuffer'] = 1
   let l:new['_ids_to_threads'] = {}
   let l:new['_model'] = a:model  " reference to the global debug model
@@ -71,7 +71,7 @@ function! dapper#view#ThreadsBuffer#receive(msg) abort dict
   let l:type = a:msg['vim_msg_typename']
   if l:type ==# 'StoppedEvent'
     " update the full list
-    let l:ids_to_threads = l:model.threads(v:true)  " all of them
+    let l:ids_to_threads = l:model.threads(1)  " all of them
     call l:self._updateThreads(l:ids_to_threads) " TODO test
   elseif l:type ==# 'ThreadEvent'
     let l:tid = l:body['threadId']
@@ -99,7 +99,7 @@ endfunction
 function! dapper#view#ThreadsBuffer#getRange(thread_id) abort dict
   call dapper#view#ThreadsBuffer#CheckType(l:self)
   " TODO optimize this? (...it's surprisingly fast...)
-  let l:entire_buffer = nvim_buf_get_lines(l:self['__bufnr'], 0, -1, v:false)
+  let l:entire_buffer = nvim_buf_get_lines(l:self['__bufnr'], 0, -1, 0)
   let l:idx = match(l:entire_buffer, s:thread_id_search_pat.a:thread_id)
   if l:idx ==# -1
     throw '(dapper#view#ThreadsBuffer) EntryNotFound, thread_id:'.a:thread_id
@@ -117,12 +117,12 @@ endfunction
 
 " BRIEF:  Add a new Thread to the buffer, or replace/update what's there.
 " PARAM:  thread  (dapper#model#Thread)
-" PARAM:  add_at_top  (v:t_bool?) `v:true` if a new entry should be added at
-"                                 the top of the buffer; `v:false` if it
+" PARAM:  add_at_top  (v:t_bool?) `1` if a new entry should be added at
+"                                 the top of the buffer; `0` if it
 "                                 should be appended to the bottom.
 function! dapper#view#ThreadsBuffer#_addThreadEntry(thread, ...) abort dict
   call dapper#view#ThreadsBuffer#CheckType(l:self)
-  let a:add_at_top = get(a:000, 0, v:true)
+  let a:add_at_top = get(a:000, 0, 1)
   let l:tid    = a:thread.id()
   let l:name   = a:thread.name()
   let l:status = a:thread.status()

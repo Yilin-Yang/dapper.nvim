@@ -2,14 +2,14 @@
 
 " BRIEF:  Global StackFrameFormat, sent to the debug adapter.
 let s:stack_frame_format = {
-    \ 'hex': v:false,
-    \ 'parameters': v:true,
-    \ 'parameterTypes': v:true,
-    \ 'parameterNames': v:true,
-    \ 'parameterValues': v:true,
-    \ 'line': v:true,
-    \ 'module': v:true,
-    \ 'includeAll': v:false,
+    \ 'hex': 0,
+    \ 'parameters': 1,
+    \ 'parameterTypes': 1,
+    \ 'parameterNames': 1,
+    \ 'parameterValues': 1,
+    \ 'line': 1,
+    \ 'module': 1,
+    \ 'includeAll': 0,
     \ }
 
 " BRIEF:  Initial `StackTraceArguments`.
@@ -74,12 +74,12 @@ function! dapper#model#StackTrace#receive(msg) abort dict
   if !a:msg['success']
     call l:self['_message_passer'].notifyReport(
         \ 'error', '(model#StackTrace) Request failed.',
-        \ dapper#helpers#StrDump(a:msg))
+        \ typevim#object#ShallowPrint(a:msg))
     call l:self.break(a:msg)
   endif
   call l:self['_message_passer'].notifyReport(
       \ 'status', '(model#StackTrace) Received StackTraceResponse.',
-      \ dapper#helpers#StrDump(a:msg))
+      \ typevim#object#ShallowPrint(a:msg))
 
   let l:frames = a:msg['body']['stackFrames']
   let l:populated = l:self['_stack_trace']
@@ -103,7 +103,7 @@ function! dapper#model#StackTrace#frame(idx) abort dict
   call dapper#model#StackTrace#CheckType(l:self)
   if type(a:idx) !=# v:t_number
     throw 'ERROR(WrongType) (dapper#model#StackTrace) Index isn''t number':
-        \ . dapper#helpers#StrDump(a:idx)
+        \ . typevim#object#ShallowPrint(a:idx)
   endif
   if a:idx >=# len(l:self['_stack_trace']) || a:idx <# 0
     throw 'ERROR(NotFound) (dapper#model#StackTrace) Frame not found at index: '

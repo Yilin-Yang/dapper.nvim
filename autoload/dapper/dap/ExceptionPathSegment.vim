@@ -1,7 +1,7 @@
 function! dapper#dap#ExceptionPathSegment#new() abort
   let l:new = {
     \ 'TYPE': {'ExceptionPathSegment': 1},
-    \ 'negate': v:false,
+    \ 'negate': 0,
     \ 'names': [],
   \ }
   return l:new

@@ -3,7 +3,7 @@ function! dapper#dap#ExceptionBreakpointsFilter#new() abort
     \ 'TYPE': {'ExceptionBreakpointsFilter': 1},
     \ 'filter': '',
     \ 'label': '',
-    \ 'default': v:false,
+    \ 'default': 0,
   \ }
   return l:new
 endfunction

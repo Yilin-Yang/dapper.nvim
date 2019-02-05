@@ -38,11 +38,11 @@ function! dapper#log#ErrorHandler#receive(msg) abort dict
 
   " echo the message, if we should
   let l:to_echo = dapper#settings#EchoMessages()
-  let l:should_echo = v:false
+  let l:should_echo = 0
   if match(l:to_echo, 'all_') !=# -1 || l:to_echo ==# 'statuses'
-    let l:should_echo = v:true
+    let l:should_echo = 1
   elseif l:to_echo ==# 'only_errors' && a:msg['alert']
-    let l:should_echo = v:true
+    let l:should_echo = 1
   endif
   if l:should_echo | call l:self._echoMsg(a:msg, 'WarningMsg') | endif
 endfunction

@@ -11,7 +11,7 @@ let s:buffer_fname_mangle = 0
 "               - 'buftype'   (v:t_string)
 "               - 'fname'     (v:t_string)  Name of the newly created buffer.
 "                             If empty (''), do not create a new buffer.
-"               - 'mangle'    (v:t_bool)  If v:true, append a number to the
+"               - 'mangle'    (v:t_bool)  If 1, append a number to the
 "                             given buffer name to make it unique.
 "               - 'swapfile'  (v:t_bool)
 "
@@ -22,11 +22,11 @@ let s:buffer_fname_mangle = 0
 "
 let s:bufsettings = {
     \ 'bufhidden':  'hide',
-    \ 'buflisted':  v:false,
+    \ 'buflisted':  0,
     \ 'buftype':    'nofile',
-    \ 'swapfile':   v:false,
+    \ 'swapfile':   0,
     \ }
-let s:bufparams_default = extend(deepcopy(s:bufsettings), {'mangle': v:true})
+let s:bufparams_default = extend(deepcopy(s:bufsettings), {'mangle': 1})
 let s:bufprops = ['bufhidden', 'buflisted', 'buftype', 'fname', 'swapfile', 'mangle']
 function! dapper#view#Buffer#new(...) abort
   let s:buffer_fname_mangle += 1 " guarantee unique buffer name
@@ -81,8 +81,8 @@ function! dapper#view#Buffer#new(...) abort
     \ 'open': function('dapper#view#Buffer#open'),
     \ 'switch': function('dapper#view#Buffer#switch'),
     \ 'setBuffer': function('dapper#view#Buffer#setBuffer'),
-    \ 'split': function('dapper#view#Buffer#openSplit', [v:false]),
-    \ 'vsplit': function('dapper#view#Buffer#openSplit', [v:true]),
+    \ 'split': function('dapper#view#Buffer#openSplit', [0]),
+    \ 'vsplit': function('dapper#view#Buffer#openSplit', [1]),
     \ 'getLines': function('dapper#view#Buffer#getLines'),
     \ 'replaceLines': function('dapper#view#Buffer#replaceLines'),
     \ 'insertLines': function('dapper#view#Buffer#insertLines'),
@@ -117,7 +117,7 @@ endfunction
 " DETAIL: See `:h getbufvar`.
 function! dapper#view#Buffer#getbufvar(varname, ...) abort dict
   call dapper#view#Buffer#CheckType(l:self)
-  let a:default = get(a:000, 0, v:false)
+  let a:default = get(a:000, 0, 0)
   let l:to_return = 0
   execute 'let l:to_return = getbufvar(l:self["__bufnr"], a:varname'
     \ . (type(a:default) !=# v:t_bool ? ', a:default)' : ')')
@@ -151,12 +151,12 @@ endfunction
 "     specified. Prefers to switch to a buffer in the current tabpage, if
 "     possible. Does nothing if the current tabpage is 'acceptable' and the
 "     current window has this buffer open.
-" PARAM:  open_in_any (v:t_bool?) `v:true` when it's okay to switch to an
+" PARAM:  open_in_any (v:t_bool?) `1` when it's okay to switch to an
 "     instance of this buffer in a different tabpage.
 " PARAM:  tabnr     (v:t_number?) The tab page in which to search.
 function! dapper#view#Buffer#switch(...) abort dict
   call dapper#view#Buffer#CheckType(l:self)
-  let a:open_in_any = get(a:000, 0, v:true)
+  let a:open_in_any = get(a:000, 0, 1)
   let a:tabnr = get(a:000, 1, tabpagenr())
   let l:bufnr = l:self.bufnr()
   if a:tabnr ==# tabpagenr() || a:open_in_any
@@ -194,7 +194,7 @@ function! dapper#view#Buffer#setBuffer(bufnr, ...) abort dict
     throw '(dapper#view#Buffer) Cannot find buffer: '.a:bufnr
   endif
   let a:action = get(a:000, 0, '')
-  let a:force  = get(a:000, 1, v:true)
+  let a:force  = get(a:000, 1, 1)
   let l:to_return = l:self['__bufnr']
   if      a:action ==# ''
   elseif  a:action ==# 'bunload'
@@ -236,7 +236,7 @@ endfunction
 " PARAM:  strict_indexing   (v:t_bool?)   Throw error on 'line out-of-range.'
 function! dapper#view#Buffer#getLines(lnum, ...) abort dict
   call dapper#view#Buffer#CheckType(l:self)
-  let a:strict_indexing = get(a:000, 1, v:false)
+  let a:strict_indexing = get(a:000, 1, 0)
   let a:rnum = get(a:000, 0, a:lnum)
   return nvim_buf_get_lines(l:self['__bufnr'], a:lnum, a:rnum, a:strict_indexing)
 endfunction
@@ -246,10 +246,10 @@ endfunction
 " PARAM:  through   (v:t_number)  Replace until this line number, inclusive.
 " PARAM:  strict_indexing   (v:t_bool?)   Throw error on 'line out-of-range.'
 " DETAILS:  See `:h nvim_buf_set_lines` for details on function parameters.
-"           `{strict_indexing}` is always `v:false`.
+"           `{strict_indexing}` is always `0`.
 function! dapper#view#Buffer#replaceLines(after, through, replacement, ...) abort dict
   call dapper#view#Buffer#CheckType(l:self)
-  let a:strict_indexing = get(a:000, 0, v:false)
+  let a:strict_indexing = get(a:000, 0, 0)
   call nvim_buf_set_lines(
     \ l:self['__bufnr'],
     \ a:after,
@@ -264,7 +264,7 @@ endfunction
 " PARAM:  strict_indexing   (v:t_bool?)   Throw error on 'line out-of-range.'
 function! dapper#view#Buffer#insertLines(after, lines, ...) abort dict
   call dapper#view#Buffer#CheckType(l:self)
-  let a:strict_indexing = get(a:000, 0, v:false)
+  let a:strict_indexing = get(a:000, 0, 0)
   call nvim_buf_set_lines(
     \ l:self['__bufnr'],
     \ a:after,
@@ -279,7 +279,7 @@ endfunction
 " PARAM:  strict_indexing   (v:t_bool?)   Throw error on 'line out-of-range.'
 function! dapper#view#Buffer#deleteLines(after, through, ...) abort dict
   call dapper#view#Buffer#CheckType(l:self)
-  let a:strict_indexing = get(a:000, 0, v:false)
+  let a:strict_indexing = get(a:000, 0, 0)
   call nvim_buf_set_lines(
     \ l:self['__bufnr'],
     \ a:after,
@@ -296,7 +296,7 @@ function! dapper#view#Buffer#isOpenInTab(...) abort dict
   let l:this_buf = l:self.bufnr()
   let l:bufs_in_tab = tabpagebuflist(a:tabnr)
   for l:buf in l:bufs_in_tab
-    if l:buf ==# l:this_buf | return v:true | endif
+    if l:buf ==# l:this_buf | return 1 | endif
   endfor
-  return v:false
+  return 0
 endfunction

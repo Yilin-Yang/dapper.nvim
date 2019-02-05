@@ -49,7 +49,7 @@ Expect:
 Execute (ThreadsBuffer: Update With ThreadsResponse):
   let g:msg = dapper#dap#Response#new(0, 'ThreadsResponse')
   let g:msg['command'] = 'threads'
-  let g:msg['success'] = v:true
+  let g:msg['success'] = 1
   let g:msg['body'] = {'threads': [
     \ {'id': 123, 'name': 'foo'},
     \ {'id': 789, 'name': 'bar'},

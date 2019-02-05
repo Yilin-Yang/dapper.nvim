@@ -68,7 +68,7 @@ function! dapper#model#StackFrame#scope(scope_name) abort dict
   call dapper#model#StackFrame#CheckType(l:self)
   if type(a:scope_name) !=# v:t_string
     throw 'ERROR(WrongType) (dapper#model#StackFrame) Bad argument to scope():'
-        \ . dapper#helpers#StrDump(a:scope_name)
+        \ . typevim#object#ShallowPrint(a:scope_name)
   endif
   if !has_key(l:self['_scopes'], a:scope_name)
     throw 'ERROR(NotFound) (dapper#model#StackFrame) Scope not found: '.a:scope

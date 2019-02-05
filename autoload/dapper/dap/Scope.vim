@@ -5,7 +5,7 @@ function! dapper#dap#Scope#new() abort
     \ 'variablesReference': 0,
     \ 'namedVariables': 0,
     \ 'indexedVariables': 0,
-    \ 'expensive': v:false,
+    \ 'expensive': 0,
     \ 'source': {},
     \ 'line': 0,
     \ 'column': 0,

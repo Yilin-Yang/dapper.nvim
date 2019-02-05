@@ -80,16 +80,16 @@ function! dapper#model#Breakpoints#setBreakpoint(props) abort dict
   call dapper#model#Breakpoints#CheckType(l:self)
   if type(a:props) !=# v:t_dict
     throw 'ERROR(WrongType) (dapper#model#Breakpoints) Arg isn''t dict:'
-        \ . dapper#helpers#StrDump(a:props)
+        \ . typevim#object#ShallowPrint(a:props)
   endif
   let l:match_prop = l:self._matchOn()
   if !has_key(a:props, l:match_prop)
     throw "ERROR(WrongType) (dapper#model#Breakpoints) Didn't give "
-        \ .l:match_prop.': '.dapper#helpers#StrDump(a:props)
+        \ .l:match_prop.': '.typevim#object#ShallowPrint(a:props)
   endif
   if type(a:props[l:match_prop]) !=# l:self._matchOnType()
     throw 'ERROR(WrongType) (dapper#model#Breakpoints) Bad type for match '
-        \ .'property: '.l:match_prop.' in '.dapper#helpers#StrDump(a:props)
+        \ .'property: '.l:match_prop.' in '.typevim#object#ShallowPrint(a:props)
   endif
 
   " search for existing, matching breakpoints
@@ -130,7 +130,7 @@ function! dapper#model#Breakpoints#removeBreakpoint(key) abort dict
   call dapper#model#Breakpoints#CheckType(l:self)
   if type(a:key) !=# l:self._matchOnType()
     throw 'ERROR(WrongType) (dapper#model#Breakpoints) Given key '
-        \ . 'has the wrong type: ' . dapper#helpers#StrDump(a:key)
+        \ . 'has the wrong type: ' . typevim#object#ShallowPrint(a:key)
   endif
 
   " search for matching breakpoints
@@ -190,8 +190,8 @@ function! dapper#model#Breakpoints#receive(msg) abort dict
   if len(l:resp) !=# len(l:bps)
     throw 'ERROR(Failure) (dapper#model#Breakpoints) '
         \ . 'Mismatched array sizes, sent breakpoints vs. breakpoints received:'
-        \ . dapper#helpers#StrDump(l:bps) . ', '
-        \ . dapper#helpers#StrDump(a:msg)
+        \ . typevim#object#ShallowPrint(l:bps) . ', '
+        \ . typevim#object#ShallowPrint(a:msg)
   endif
 
   " update our current breakpoints from the response message

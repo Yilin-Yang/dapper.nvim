@@ -5,12 +5,12 @@ function! dapper#dap#InitializeRequestArguments#new() abort
     \ 'clientName': '',
     \ 'adapterID': '',
     \ 'locale': '',
-    \ 'linesStartAt1': v:true,
-    \ 'columnsStartAt1': v:true,
+    \ 'linesStartAt1': 1,
+    \ 'columnsStartAt1': 1,
     \ 'pathFormat': '',
-    \ 'supportsVariableType': v:true,
-    \ 'supportsVariablePaging': v:true,
-    \ 'supportsRunInTerminalRequest': v:true,
+    \ 'supportsVariableType': 1,
+    \ 'supportsVariablePaging': 1,
+    \ 'supportsRunInTerminalRequest': 1,
   \ }
   return l:new
 endfunction

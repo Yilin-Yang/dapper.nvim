@@ -10,7 +10,7 @@
 " Construct and return a skeletal LaunchRequestArguments object.
 function! dapper#dap#LaunchRequestArguments#new() abort
   let l:new = {
-    \ 'noDebug': v:false,
+    \ 'noDebug': 0,
     \ '__restart': {},
   \ }
   return typevim#make#Class('LaunchRequestArguments', l:new)

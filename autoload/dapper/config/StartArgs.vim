@@ -6,6 +6,7 @@
 let s:typename = 'StartArgs'
 
 ""
+" @public
 " @dict StartArgs
 " @function dapper#config#StartArgs#new({adapter_config}, {debuggee_args}, {vscode_attr}, [locale])
 " Construct and return new StartArgs object.

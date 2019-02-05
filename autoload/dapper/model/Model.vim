@@ -92,7 +92,7 @@ endfunction
 "     threads.
 function! dapper#model#Model#threads(...) abort dict
   call dapper#model#Model#CheckType(l:self)
-  let a:include_exited = get(a:000, 0, v:false)
+  let a:include_exited = get(a:000, 0, 0)
   let l:to_return = copy(l:self['_ids_to_running'])  " shallow copy
   if !a:include_exited | return l:to_return | endif
   let l:exited = l:self['_ids_to_stopped']
@@ -167,7 +167,7 @@ function! dapper#model#Model#receive(msg) abort dict
     call l:self['_message_passer'].notifyReport(
         \ 'status',
         \ 'model#Model Received '.l:typename.', for some reason(?)',
-        \ dapper#helpers#StrDump(a:msg)
+        \ typevim#object#ShallowPrint(a:msg)
         \ )
   endif
 endfunction
@@ -179,7 +179,7 @@ function! dapper#model#Model#_recvEvent(event) abort dict
   " make Thread object
   let l:body = a:event['body']
   let l:reason = l:body['reason']
-  let l:long_msg = dapper#helpers#StrDump(l:body)
+  let l:long_msg = typevim#object#ShallowPrint(l:body)
   if l:reason ==# 'started'
     call l:self._makeThread(l:body)
   elseif l:reason ==# 'exited'
@@ -207,8 +207,8 @@ function! dapper#model#Model#_recvResponse(response) abort dict
     call l:self['_message_passer'].notifyReport(
         \ 'error',
         \ 'model#Model ThreadsRequest failed outright!',
-        \ dapper#helpers#StrDump(a:response),
-        \ v:true)
+        \ typevim#object#ShallowPrint(a:response),
+        \ 1)
     return
   endif
   let l:threads = a:response['body']['threads']
@@ -229,7 +229,7 @@ function! dapper#model#Model#_recvResponse(response) abort dict
           \ 'error',
           \ 'model#Model received unknown Thread:'.l:tid
             \ . ', constructing from response.',
-          \ dapper#helpers#StrDump(l:new_thread))
+          \ typevim#object#ShallowPrint(l:new_thread))
     endif
   let l:i += 1 | endwhile
 endfunction
@@ -247,7 +247,7 @@ function! dapper#model#Model#_makeThread(body) abort dict
   call l:self['_message_passer'].notifyReport(
       \ 'status',
       \ 'model#Model constructed new Thread object.',
-      \ dapper#helpers#StrDump(l:thread) )
+      \ typevim#object#ShallowPrint(l:thread) )
 endfunction
 
 " BRIEF:  Process an exited Thread.
@@ -260,7 +260,7 @@ function! dapper#model#Model#_archiveThread(body) abort dict
   let l:long_msg = ''
   try
     let l:thread = l:self['_ids_to_running'][l:tid]
-    call l:thread.update(a:body, v:false)
+    call l:thread.update(a:body, 0)
     unlet l:self['_ids_to_running'][l:tid]
     let l:self['_ids_to_stopped'][l:tid] = l:thread
     let l:long_msg = 'Thread archived.'

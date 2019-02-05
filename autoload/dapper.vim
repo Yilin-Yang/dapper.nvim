@@ -43,10 +43,10 @@ function! dapper#AddDapperConfig(
       \ || (!empty(a:locale) && type(a:locale[0]) !=# v:t_string)
     throw 'ERROR(WrongType) (dapper#AddDapperConfig) All given arguments must '
         \ 'be strings. Gave: '
-            \ . dapper#helpers#StrDump(a:runtime_env)  . ', '
-            \ . dapper#helpers#StrDump(a:exe_filepath) . ', '
-            \ . dapper#helpers#StrDump(a:adapter_id)   . ', '
-            \ . dapper#helpers#StrDump(a:filetype)
+            \ . typevim#object#ShallowPrint(a:runtime_env)  . ', '
+            \ . typevim#object#ShallowPrint(a:exe_filepath) . ', '
+            \ . typevim#object#ShallowPrint(a:adapter_id)   . ', '
+            \ . typevim#object#ShallowPrint(a:filetype)
             \ . a:0 ? a:1 : ''
   endif
 
