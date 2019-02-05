@@ -46,6 +46,8 @@ export function startAndConfigureUnpack(args: any[]): Promise<boolean> {
  * configuration).
  */
 export function startAndConfigure(config: Config.StartArgs): Promise<boolean> {
+  console.log('Received call to startAndConfigure.');
+  console.log('Given args: ' + JSON.stringify(config));
   return new Promise<boolean>(async (resolve, reject) => {
     const args = config.adapter_config as Config.DebugAdapterConfig;
     const started = await middleman.startAdapter(
@@ -102,6 +104,10 @@ export function terminateUnpack(args: any[]): Promise<boolean> {
   }
 }
 export async function terminate(restart = false): Promise<boolean> {
+  console.log('Received call to terminate.');
+  if (!middleman.debugClientRunning()) {
+    throw new Error('Debug client not running!');
+  }
   return middleman.terminate(restart).then(() => true, () => false);
 }
 export const FN_TERMINATE_OPTIONS = {
@@ -134,6 +140,9 @@ export function request(command: string, vimID: number, args: any):
   console.log('command:' + JSON.stringify(command));
   console.log('vimID:' + JSON.stringify(vimID));
   console.log('args:' + JSON.stringify(args));
+  if (!middleman.debugClientRunning()) {
+    throw new Error('Debug client not running!');
+  }
   return middleman.request(command, vimID, args);
 }
 export const FN_REQUEST_OPTIONS = {

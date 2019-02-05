@@ -77,6 +77,14 @@ export class Middleman {
   }
 
   /**
+   * Returns true if this Middleman has a running DebugClient, and false
+   * otherwise.
+   */
+  debugClientRunning(): boolean {
+    return !deepEqual(this.dc, Middleman.EMPTY_DC);
+  }
+
+  /**
    * Start a debug adapter.
    *
    * Runs through the startup sequence for a protocol-compliant debug adapter:

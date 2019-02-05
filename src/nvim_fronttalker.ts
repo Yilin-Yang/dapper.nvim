@@ -23,6 +23,7 @@ export class NvimFrontTalker extends BasicFrontTalker {
 
   send(msg: DapperAnyMsg): void {
     try {
+      console.log('NvimFrontTalker) Sending message: ' + JSON.stringify(msg));
       this.nvim.call(NvimFrontTalker.VIM_RECEIVE_FUNC, msg);
     } catch (e) {
       if (msg.type === 'report') {
