@@ -62,5 +62,5 @@ function! dapper#dap#Report#new(...)
   endif
 
   return typevim#make#Derived(
-      \ 'Report', call('dapper#dap#ProtocolMessage#new', a:000), l:new)
+      \ 'Report', call('dapper#dap#ProtocolMessage#new', a:000), l:new, 0, 1)
 endfunction

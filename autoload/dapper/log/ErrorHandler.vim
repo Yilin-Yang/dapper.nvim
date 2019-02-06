@@ -6,9 +6,9 @@ function! dapper#log#ErrorHandler#new(logger, message_passer) abort
   let l:new['TYPE']['ErrorHandler'] = 1
   let l:new['DESTRUCTORS'] += [function('dapper#log#ErrorHandler#destroy', l:new)]
   let l:new['__message_passer'] = a:message_passer
-  let l:new['receive'] = function('dapper#log#ErrorHandler#receive')
-  call a:message_passer.subscribe(s:name_pattern,
-      \ function('dapper#log#ErrorHandler#receive', l:new))
+  let l:new['Receive'] = function('dapper#log#ErrorHandler#Receive')
+  call a:message_passer.Subscribe(s:name_pattern,
+      \ function('dapper#log#ErrorHandler#Receive', l:new))
   return l:new
 endfunction
 
@@ -28,11 +28,11 @@ endfunction
 
 function! dapper#log#ErrorHandler#destroy() abort dict
   call dapper#log#ErrorHandler#CheckType(l:self)
-  call l:self['__message_passer'].unsubscribe(
-      \ s:name_pattern, function('dapper#log#ErrorHandler#receive', l:self))
+  call l:self['__message_passer'].Unsubscribe(
+      \ s:name_pattern, function('dapper#log#ErrorHandler#Receive', l:self))
 endfunction
 
-function! dapper#log#ErrorHandler#receive(msg) abort dict
+function! dapper#log#ErrorHandler#Receive(msg) abort dict
   call dapper#log#ErrorHandler#CheckType(l:self)
   call l:self._formatAndLog(a:msg, 'error')  " log to outfile
 

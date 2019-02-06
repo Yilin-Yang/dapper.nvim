@@ -12,7 +12,7 @@ function! dapper#model#DebugSources#new(message_passer, capabilities, ...) abort
   let l:new['_fpaths_to_sources'] = {}
   let l:new['_message_passer'] = a:message_passer
   let l:new['_capabilities'] = a:capabilities
-  let l:new['receive'] = function('dapper#model#DebugSources#receive')
+  let l:new['Receive'] = function('dapper#model#DebugSources#Receive')
   let l:new['source'] = function('dapper#model#DebugSources#source')
 
   let l:new['_updateSource'] = function('dapper#model#DebugSources#_updateSource')
@@ -20,15 +20,15 @@ function! dapper#model#DebugSources#new(message_passer, capabilities, ...) abort
       \ function('dapper#model#DebugSources#_supportsLoadedSources')
 
   if l:new._supportsLoadedSources()
-    call a:message_passer.request(
+    call a:message_passer.Request(
         \ 'loadedSources',
         \ {},
-        \ function('dapper#model#DebugSources#receive', l:new))
+        \ function('dapper#model#DebugSources#Receive', l:new))
   endif
 
-  call a:message_passer.subscribe(
+  call a:message_passer.Subscribe(
       \ 'LoadedSourceEvent',
-      \ function('dapper#model#DebugSources#receive', l:new))
+      \ function('dapper#model#DebugSources#Receive', l:new))
 
   return l:new
 endfunction
@@ -48,7 +48,7 @@ function! dapper#model#DebugSources#CheckType(object) abort
 endfunction
 
 " BRIEF:  Update held Source objects from a debug adapter response.
-function! dapper#model#DebugSources#receive(msg) abort dict
+function! dapper#model#DebugSources#Receive(msg) abort dict
   call dapper#model#DebugSources#CheckType(l:self)
   let l:typename = a:msg['vim_msg_typename']
   if l:typename ==# 'LoadedSourcesResponse'
@@ -60,10 +60,10 @@ function! dapper#model#DebugSources#receive(msg) abort dict
     " even if it's a 'removed' event
     call l:self._updateSource(a:msg['body']['source'])
     if l:self._supportsLoadedSources()
-      call l:self['_message_passer'].request(
+      call l:self['_message_passer'].Request(
           \ 'loadedSources',
           \ {},
-          \ function('dapper#model#DebugSources#receive', l:self'))
+          \ function('dapper#model#DebugSources#Receive', l:self'))
     endif
   endif
 endfunction

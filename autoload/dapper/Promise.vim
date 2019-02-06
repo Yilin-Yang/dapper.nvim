@@ -38,7 +38,7 @@ function! dapper#Promise#new(...) abort
       \ 'unfulfill': function('dapper#Promise#unfulfill'),
       \ 'fulfill': function('dapper#Promise#fulfill'),
       \ 'break': function('dapper#Promise#break'),
-      \ 'subscribe': function('dapper#Promise#subscribe'),
+      \ 'Subscribe': function('dapper#Promise#Subscribe'),
       \ 'status': function('dapper#Promise#status'),
       \ }
   return l:new
@@ -100,7 +100,7 @@ endfunction
 " PARAM:  Reject  (v:t_func)  Function to be called back when this Promise
 "     breaks, possibly immediately.
 " DETAILS:  See constructor for additional details on parameters.
-function! dapper#Promise#subscribe(Resolve, ...) abort dict
+function! dapper#Promise#Subscribe(Resolve, ...) abort dict
   if type(a:Resolve) !=# v:t_func
     throw '(dapper#Promise) Given `Resolve()` callback isn''t a funcref:'
         \ . typevim#object#ShallowPrint(a:Resolve)

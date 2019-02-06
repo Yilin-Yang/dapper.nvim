@@ -22,8 +22,8 @@ function! dapper#model#Breakpoints#new(message_passer, ...) abort
       \ function('dapper#model#Breakpoints#removeBreakpoint')
   let l:new['clearBreakpoints'] =
       \ function('dapper#model#Breakpoints#clearBreakpoints')
-  let l:new['receive'] =
-      \ function('dapper#model#Breakpoints#receive')
+  let l:new['Receive'] =
+      \ function('dapper#model#Breakpoints#Receive')
 
   " the property on which to compare breakpoints to see if they're 'the same'
   let l:new['_matchOn'] =
@@ -115,10 +115,10 @@ function! dapper#model#Breakpoints#setBreakpoint(props) abort dict
 
   " construct a Set*BreakpointArguments object
   let l:args = l:self._argsFromSelf()
-  call l:self['__message_passer'].request(
+  call l:self['__message_passer'].Request(
       \ l:self._command(),
       \ l:args,
-      \ function('dapper#model#Breakpoints#receive', l:self)
+      \ function('dapper#model#Breakpoints#Receive', l:self)
       \ )
 
   call l:self.unfulfill()
@@ -152,10 +152,10 @@ function! dapper#model#Breakpoints#removeBreakpoint(key) abort dict
 
   " send new, 'pruned' list of breakpoints in a request
   let l:args = l:self._argsFromSelf()
-  call l:self['__message_passer'].request(
+  call l:self['__message_passer'].Request(
       \ l:self._command(),
       \ l:args,
-      \ function('dapper#model#Breakpoints#receive', l:self)
+      \ function('dapper#model#Breakpoints#Receive', l:self)
       \ )
   call l:self.unfulfill()
 
@@ -167,10 +167,10 @@ function! dapper#model#Breakpoints#clearBreakpoints() abort dict
   call dapper#model#Breakpoints#CheckType(l:self)
   let l:self['_bps'] = []
   let l:args = l:self._argsFromSelf()
-  call l:self['__message_passer'].request(
+  call l:self['__message_passer'].Request(
       \ l:self._command(),
       \ l:args,
-      \ function('dapper#model#Breakpoints#receive', l:self)
+      \ function('dapper#model#Breakpoints#Receive', l:self)
       \ )
   call l:self.unfulfill()
 endfunction
@@ -179,10 +179,10 @@ endfunction
 " DETAILS:  Announcing that a given breakpoint failed to set is handled by
 "     `BreakpointsHandler`.
 let s:bp_props = ['id', 'source', 'line', 'column', 'endLine', 'endColumn']
-function! dapper#model#Breakpoints#receive(msg) abort dict
+function! dapper#model#Breakpoints#Receive(msg) abort dict
   call dapper#model#Breakpoints#CheckType(l:self)
 
-  call l:self['__message_passer'].notifyReport(
+  call l:self['__message_passer'].NotifyReport(
       \ 'status', 'Received '.a:msg['vim_msg_typename'].'.', a:msg)
 
   let l:resp = a:msg['body']['breakpoints']

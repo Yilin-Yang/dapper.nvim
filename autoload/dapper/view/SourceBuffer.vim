@@ -12,7 +12,7 @@ function! dapper#view#SourceBuffer#new(model, message_passer, bufnr) abort
   let l:new['_model'] = a:model
 
   let l:new['show']        = function('dapper#view#SourceBuffer#show')
-  let l:new['receive']     = function('dapper#view#SourceBuffer#receive')
+  let l:new['Receive']     = function('dapper#view#SourceBuffer#Receive')
   let l:new['getRange']    = function('dapper#view#SourceBuffer#getRange')
   let l:new['setMappings'] = function('dapper#view#SourceBuffer#setMappings')
 
@@ -25,10 +25,10 @@ function! dapper#view#SourceBuffer#new(model, message_passer, bufnr) abort
   let l:new['digDown']     = function('dapper#view#SourceBuffer#digDown')
   let l:new['_makeChild']  = function('dapper#view#SourceBuffer#_makeChild')
 
-  call a:message_passer.subscribe('StoppedEvent',
-      \ function('dapper#view#SourceBuffer#receive', l:new))
-  call a:message_passer.subscribe('BreakpointsResponse',
-      \ function('dapper#view#SourceBuffer#receive', l:new))
+  call a:message_passer.Subscribe('StoppedEvent',
+      \ function('dapper#view#SourceBuffer#Receive', l:new))
+  call a:message_passer.Subscribe('BreakpointsResponse',
+      \ function('dapper#view#SourceBuffer#Receive', l:new))
 
   return l:new
 endfunction
@@ -80,7 +80,7 @@ function! dapper#view#SourceBuffer#show(source) abort dict
   call l:self.setBuffer(l:bufnr)
 endfunction
 
-function! dapper#view#SourceBuffer#receive() abort dict
+function! dapper#view#SourceBuffer#Receive() abort dict
   call dapper#view#SourceBuffer#TypeCheck(l:self)
 endfunction
 

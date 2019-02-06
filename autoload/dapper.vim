@@ -11,7 +11,7 @@
 ""
 " Receive a response or event from the TypeScript middle-end.
 function! dapper#receive(msg) abort
-  call g:dapper_middletalker.receive(a:msg)
+  call g:dapper_middletalker.Receive(a:msg)
 endfunction
 
 " BRIEF:  Add a configuration for a particular debug adapter.

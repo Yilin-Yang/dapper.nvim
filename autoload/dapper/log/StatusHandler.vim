@@ -5,9 +5,9 @@ function! dapper#log#StatusHandler#new(logger, message_passer) abort
   let l:new['TYPE']['StatusHandler'] = 1
   let l:new['DESTRUCTORS'] += [function('dapper#log#StatusHandler#destroy', l:new)]
   let l:new['__message_passer'] = a:message_passer
-  let l:new['receive'] = function('dapper#log#StatusHandler#receive')
-  call a:message_passer.subscribe(s:name_pattern,
-      \ function('dapper#log#StatusHandler#receive', l:new))
+  let l:new['Receive'] = function('dapper#log#StatusHandler#Receive')
+  call a:message_passer.Subscribe(s:name_pattern,
+      \ function('dapper#log#StatusHandler#Receive', l:new))
   return l:new
 endfunction
 
@@ -27,11 +27,11 @@ endfunction
 
 function! dapper#log#StatusHandler#destroy() abort dict
   call dapper#log#StatusHandler#CheckType(l:self)
-  call l:self['__message_passer'].unsubscribe(
-      \ s:name_pattern, function('dapper#log#StatusHandler#receive', l:self))
+  call l:self['__message_passer'].Unsubscribe(
+      \ s:name_pattern, function('dapper#log#StatusHandler#Receive', l:self))
 endfunction
 
-function! dapper#log#StatusHandler#receive(msg) abort dict
+function! dapper#log#StatusHandler#Receive(msg) abort dict
   call dapper#log#StatusHandler#CheckType(l:self)
   call l:self._formatAndLog(a:msg, 'status')  " log to outfile
 

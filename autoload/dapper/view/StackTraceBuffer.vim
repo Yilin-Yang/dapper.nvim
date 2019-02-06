@@ -57,7 +57,7 @@ function! dapper#view#StackTraceBuffer#show(thread) abort dict
   let l:self['_thread'] = a:thread
   let l:stack_trace = a:thread.stackTrace()
   " TODO display stack trace
-  call l:stack_trace.subscribe(
+  call l:stack_trace.Subscribe(
       \ function('dapper#view#StackTraceBuffer#_showCallstack', l:self))
 endfunction
 

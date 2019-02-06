@@ -29,25 +29,25 @@ function! dapper#model#Model#new(message_passer) abort
       \ 'exceptionBps': function('dapper#model#Model#exceptionBps'),
       \ 'sources': function('dapper#model#Model#sources'),
       \ 'capabilities': function('dapper#model#Model#capabilities'),
-      \ 'receive': function('dapper#model#Model#receive'),
+      \ 'Receive': function('dapper#model#Model#Receive'),
       \ '_recvEvent': function('dapper#model#Model#_recvEvent'),
       \ '_recvResponse': function('dapper#model#Model#_recvResponse'),
       \ '_makeThread': function('dapper#model#Model#_makeThread'),
       \ '_archiveThread': function('dapper#model#Model#_archiveThread'),
       \ '_reqThreads': function('dapper#model#Model#_reqThreads'),
       \ }
-  call a:message_passer.subscribe(
+  call a:message_passer.Subscribe(
       \ 'InitializeResponse',
-      \ function('dapper#model#Model#receive', l:new))
-  call a:message_passer.subscribe(
+      \ function('dapper#model#Model#Receive', l:new))
+  call a:message_passer.Subscribe(
       \ 'ThreadEvent',
-      \ function('dapper#model#Model#receive', l:new))
-  call a:message_passer.subscribe(
+      \ function('dapper#model#Model#Receive', l:new))
+  call a:message_passer.Subscribe(
       \ 'StoppedEvent',
-      \ function('dapper#model#Model#receive', l:new))
-  call a:message_passer.subscribe(
+      \ function('dapper#model#Model#Receive', l:new))
+  call a:message_passer.Subscribe(
       \ 'ThreadsResponse',
-      \ function('dapper#model#Model#receive', l:new))
+      \ function('dapper#model#Model#Receive', l:new))
   " let g:dapper_model = l:new
   return l:new
 endfunction
@@ -69,8 +69,8 @@ endfunction
 " BRIEF:  Prompt the Model to update its contents.
 function! dapper#model#Model#update() abort dict
   call dapper#model#Model#CheckType(l:self)
-  call l:self['_message_passer'].request(
-      \ 'threads', {}, function('dapper#model#Model#receive', l:self))
+  call l:self['_message_passer'].Request(
+      \ 'threads', {}, function('dapper#model#Model#Receive', l:self))
 endfunction
 
 " RETURNS:  (dapper#model#Thread)   A thread with the requested ID.
@@ -135,7 +135,7 @@ function! dapper#model#Model#capabilities() abort dict
 endfunction
 
 " BRIEF:  Handle incoming debug adapter protocol messages.
-function! dapper#model#Model#receive(msg) abort dict
+function! dapper#model#Model#Receive(msg) abort dict
   call dapper#model#Model#CheckType(l:self)
   let l:typename = a:msg['vim_msg_typename']
   if l:typename ==# 'ThreadEvent'
@@ -164,7 +164,7 @@ function! dapper#model#Model#receive(msg) abort dict
         \ dapper#model#DebugSources#new(
             \ l:self['_message_passer'], l:capabilities)
   else
-    call l:self['_message_passer'].notifyReport(
+    call l:self['_message_passer'].NotifyReport(
         \ 'status',
         \ 'model#Model Received '.l:typename.', for some reason(?)',
         \ typevim#object#ShallowPrint(a:msg)
@@ -192,7 +192,7 @@ function! dapper#model#Model#_recvEvent(event) abort dict
     endtry
       let l:long_msg = 'Unrecognized reason: '.l:reason."\n".l:long_msg
   endif
-  call l:self['_message_passer'].notifyReport(
+  call l:self['_message_passer'].NotifyReport(
       \ 'status',
       \ 'model#Model received ThreadEvent',
       \ l:long_msg
@@ -204,7 +204,7 @@ endfunction
 function! dapper#model#Model#_recvResponse(response) abort dict
   call dapper#model#Model#CheckType(l:self)
   if !a:response['success']
-    call l:self['_message_passer'].notifyReport(
+    call l:self['_message_passer'].NotifyReport(
         \ 'error',
         \ 'model#Model ThreadsRequest failed outright!',
         \ typevim#object#ShallowPrint(a:response),
@@ -225,7 +225,7 @@ function! dapper#model#Model#_recvResponse(response) abort dict
     else
       call l:self._makeThread(l:thread)
       let l:new_thread = l:self.thread(l:tid)
-      call l:self['_message_passer'].notifyReport(
+      call l:self['_message_passer'].NotifyReport(
           \ 'error',
           \ 'model#Model received unknown Thread:'.l:tid
             \ . ', constructing from response.',
@@ -244,7 +244,7 @@ function! dapper#model#Model#_makeThread(body) abort dict
       \ l:self['_message_passer'])
   let l:self['_ids_to_running'][l:thread.id()] = l:thread
 
-  call l:self['_message_passer'].notifyReport(
+  call l:self['_message_passer'].NotifyReport(
       \ 'status',
       \ 'model#Model constructed new Thread object.',
       \ typevim#object#ShallowPrint(l:thread) )
@@ -270,7 +270,7 @@ function! dapper#model#Model#_archiveThread(body) abort dict
     let l:kind = 'error'
     let l:long_msg = 'Model state unchanged.'
   endtry
-  call l:self['_message_passer'].notifyReport(
+  call l:self['_message_passer'].NotifyReport(
       \ l:kind,
       \ l:brief,
       \ l:long_msg )
@@ -279,6 +279,6 @@ endfunction
 " BRIEF:  Request all active threads from the debug adapter.
 function! dapper#model#Model#_reqThreads() abort dict
   call dapper#model#Model#CheckType(l:self)
-  call l:self['_message_passer'].request(
-      \ 'threads', {}, function('dapper#model#Model#receive', l:self))
+  call l:self['_message_passer'].Request(
+      \ 'threads', {}, function('dapper#model#Model#Receive', l:self))
 endfunction

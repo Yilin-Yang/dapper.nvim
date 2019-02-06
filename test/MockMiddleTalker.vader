@@ -23,11 +23,11 @@ Execute (Declare Mock MiddleTalker):
   endfunction
 
   let g:mock_mt = {
-    \ 'subscribe': function('MockSub'),
-    \ 'unsubscribe': function('MockNoOp'),
-    \ 'request': function('MockReq'),
-    \ 'receive': function('MockNoOp'),
-    \ 'notifyReport': function('dapper#MiddleTalker#notifyReport', g:dapper_middletalker),
+    \ 'Subscribe': function('MockSub'),
+    \ 'Unsubscribe': function('MockNoOp'),
+    \ 'Request': function('MockReq'),
+    \ 'Receive': function('MockNoOp'),
+    \ 'NotifyReport': function('dapper#MiddleTalker#NotifyReport', g:dapper_middletalker),
   \ }
 
   function! MockCleanUp() abort

@@ -17,8 +17,8 @@ function! dapper#model#SourceBreakpoints#new(message_passer, source, ...) abort
   let l:new['_argsFromSelf'] =
       \ function('dapper#model#SourceBreakpoints#_argsFromSelf')
 
-  call a:message_passer.subscribe('SetBreakpointsResponse',
-      \ function('dapper#model#Breakpoints#receive', l:new))
+  call a:message_passer.Subscribe('SetBreakpointsResponse',
+      \ function('dapper#model#Breakpoints#Receive', l:new))
   return l:new
 endfunction
 

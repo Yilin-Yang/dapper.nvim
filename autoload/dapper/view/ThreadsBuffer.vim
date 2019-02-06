@@ -15,7 +15,7 @@ function! dapper#view#ThreadsBuffer#new(model, message_passer) abort
   let l:new['_model'] = a:model  " reference to the global debug model
 
   let l:new['show']        = function('dapper#view#ThreadsBuffer#show')
-  let l:new['receive']     = function('dapper#view#ThreadsBuffer#receive')
+  let l:new['Receive']     = function('dapper#view#ThreadsBuffer#Receive')
   let l:new['getRange']    = function('dapper#view#ThreadsBuffer#getRange')
   let l:new['setMappings'] = function('dapper#view#ThreadsBuffer#setMappings')
 
@@ -30,12 +30,12 @@ function! dapper#view#ThreadsBuffer#new(model, message_passer) abort
   let l:new['_getSelected'] = function('dapper#view#ThreadsBuffer#_getSelected')
 
   " should update *after* the model has been updated
-  call a:message_passer.subscribe('StoppedEvent',
-      \ function('dapper#view#ThreadsBuffer#receive', l:new))
-  call a:message_passer.subscribe('ThreadEvent',
-      \ function('dapper#view#ThreadsBuffer#receive', l:new))
-  call a:message_passer.subscribe('ThreadsResponse',
-      \ function('dapper#view#ThreadsBuffer#receive', l:new))
+  call a:message_passer.Subscribe('StoppedEvent',
+      \ function('dapper#view#ThreadsBuffer#Receive', l:new))
+  call a:message_passer.Subscribe('ThreadEvent',
+      \ function('dapper#view#ThreadsBuffer#Receive', l:new))
+  call a:message_passer.Subscribe('ThreadsResponse',
+      \ function('dapper#view#ThreadsBuffer#Receive', l:new))
 
   call l:new.replaceLines(0, -1, ['<threads>', '</threads>'])
 
@@ -62,7 +62,7 @@ function! dapper#view#ThreadsBuffer#show(threads) abort dict
 endfunction
 
 " BRIEF:  Notify this ThreadsBuffer that it should update its listed threads.
-function! dapper#view#ThreadsBuffer#receive(msg) abort dict
+function! dapper#view#ThreadsBuffer#Receive(msg) abort dict
   call dapper#view#ThreadsBuffer#CheckType(l:self)
   if a:msg['type'] ==# 'response' && !a:msg['success'] | return | endif
   let l:model = l:self['_model']

@@ -15,15 +15,15 @@ function! dapper#model#StackFrame#new(frame_msg, message_passer, ...) abort
   let l:new['_message_passer'] = a:message_passer
   let l:new['_frame_msg'] = a:frame_msg
   let l:new['_scopes'] = {}
-  let l:new['receive'] = function('dapper#model#StackFrame#receive')
+  let l:new['Receive'] = function('dapper#model#StackFrame#Receive')
   let l:new['scopes'] = function('dapper#model#StackFrame#scopes')
   let l:new['scope'] = function('dapper#model#StackFrame#scope')
   let l:new['about'] = function('dapper#model#StackFrame#about')
 
-  call a:message_passer.request(
+  call a:message_passer.Request(
       \ 'scopes',
       \ {'frameId': a:frame_msg['id']},
-      \ function('dapper#model#StackFrame#receive', l:new))
+      \ function('dapper#model#StackFrame#Receive', l:new))
 
   return l:new
 endfunction
@@ -44,7 +44,7 @@ endfunction
 
 " BRIEF:  Populate this StackFrame and notify subscribers.
 " PARAM:  msg   (DebugProtocol.ScopesResponse)
-function! dapper#model#StackFrame#receive(msg) abort dict
+function! dapper#model#StackFrame#Receive(msg) abort dict
   call dapper#model#StackFrame#CheckType(l:self)
   if !a:msg['success']
     call l:self.break(a:msg)

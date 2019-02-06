@@ -8,11 +8,11 @@ Execute (DapperBuffer: Set Up (if this fails, further tests will fail):
   let g:msg = dapper#dap#Event#new(0, 'ThreadEvent')
   let g:msg['event'] = 'ThreadEvent'
   let g:msg['body'] = {'threadId': 123, 'reason': 'started'}
-  call g:model.receive(g:msg)
-  call g:tb.receive(g:msg)
+  call g:model.Receive(g:msg)
+  call g:tb.Receive(g:msg)
   let g:msg['body'] = {'threadId': 789, 'reason': 'started'}
-  call g:model.receive(g:msg)
-  call g:tb.receive(g:msg)
+  call g:model.Receive(g:msg)
+  call g:tb.Receive(g:msg)
   call g:tb.open()
 Expect:
   <threads>

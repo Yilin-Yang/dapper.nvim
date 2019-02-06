@@ -29,8 +29,8 @@ function! dapper#model#ExceptionBreakpoints#new(msg_passer, capabilities, ...) a
   let l:new['_argsFromSelf'] =
       \ function('dapper#model#ExceptionBreakpoints#_argsFromSelf')
 
-  call a:msg_passer.subscribe('SetExceptionBreakpointsResponse',
-      \ function('dapper#model#Breakpoints#receive', l:new))
+  call a:msg_passer.Subscribe('SetExceptionBreakpointsResponse',
+      \ function('dapper#model#Breakpoints#Receive', l:new))
 
   return l:new
 endfunction
@@ -72,7 +72,7 @@ function! dapper#model#ExceptionBreakpoints#setBreakpoint(props) abort dict
   endif
   let l:supported_filters = l:self['_filters']
   if !has_key(l:supported_filters, a:filter) || !l:supported_filters[a:filter]
-    call l:self['__message_passer'].notifyReport(
+    call l:self['__message_passer'].NotifyReport(
         \ 'error',
         \ 'Unsupported exception filter: '.a:filter,
         \ a:props,

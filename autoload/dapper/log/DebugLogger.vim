@@ -35,7 +35,7 @@ function! dapper#log#DebugLogger#get(...) abort
   let l:new['__write'] = function('dapper#log#DebugLogger#__write')
   let l:new['__onExit'] = function('dapper#log#DebugLogger#__onExit')
   let l:new['log'] = function('dapper#log#DebugLogger#log')
-  let l:new['notifyReport'] = function('dapper#log#DebugLogger#notifyReport')
+  let l:new['NotifyReport'] = function('dapper#log#DebugLogger#NotifyReport')
 
   let g:dapper_debug_logger = l:new
 
@@ -58,7 +58,7 @@ endfunction
 function! dapper#log#DebugLogger#dummy() abort
   return {
       \ 'log': funcref('<SID>DoNothing'),
-      \ 'notifyReport': funcref('<SID>DoNothing'),
+      \ 'NotifyReport': funcref('<SID>DoNothing'),
       \ }
 endfunction
 
@@ -209,7 +209,7 @@ endfunction
 " PARAM:  long  (v:t_string?)
 " PARAM:  alert (v:t_bool?)
 " PARAM:  other (any?)
-function! dapper#log#DebugLogger#notifyReport(kind, brief, ...) abort dict
+function! dapper#log#DebugLogger#NotifyReport(kind, brief, ...) abort dict
   call dapper#log#DebugLogger#CheckType(l:self)
   let l:msg = call('dapper#dap#Report#new', [0, '', a:kind, a:brief] + a:000)
   call dapper#receive(l:msg)

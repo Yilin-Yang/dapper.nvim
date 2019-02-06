@@ -13,7 +13,7 @@ Execute (Model: ...updates with started Threads from a ThreadEvent):
         \ 'reason': 'started'
         \ },
       \ }
-  call g:model.receive(g:started_1)
+  call g:model.Receive(g:started_1)
   let g:started_2 = {
       \ 'event': 'thread',
       \ 'vim_msg_typename': 'ThreadEvent',
@@ -23,7 +23,7 @@ Execute (Model: ...updates with started Threads from a ThreadEvent):
         \ 'reason': 'started'
         \ },
       \ }
-  call g:model.receive(g:started_2)
+  call g:model.Receive(g:started_2)
 Then:
   let g:thread_1 = g:model.thread(1)
   AssertEqual 'unnamed', g:thread_1.name()
@@ -48,7 +48,7 @@ Execute (Model: ...updates with exited Threads from a ThreadEvent):
         \ 'reason': 'exited'
         \ },
       \ }
-  call g:model.receive(g:started_1)
+  call g:model.Receive(g:started_1)
 Then:
   let g:thread_1 = g:model.thread(1)
   AssertEqual 'unnamed', g:thread_1.name()
@@ -67,7 +67,7 @@ Execute (Model: ...updates all Threads from a ThreadsResponse):
           \ ]
         \ },
       \ }
-  call g:model.receive(g:response)
+  call g:model.Receive(g:response)
 Then:
   let g:thread_1 = g:model.thread(1)
   AssertEqual 'foo', g:thread_1.name()
@@ -85,7 +85,7 @@ Execute (Model: ...gracefully handles ThreadsRequest failure):
       \ 'message': 'all is foobar',
       \ 'body': {},
       \ }
-  call g:model.receive(g:response)  " shouldn't throw
+  call g:model.Receive(g:response)  " shouldn't throw
 
 Execute (Model: Test Cleanup):
   call MockCleanUp()

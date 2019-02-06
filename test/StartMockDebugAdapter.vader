@@ -2,7 +2,7 @@ Include: SubscriptionHelpers.vader
 
 Execute (Start Mock Debug Adapter, Store Incoming Messages):
   " subscribe to all incoming messages
-  call g:dapper_middletalker.subscribe('.*', function('StoreMessage'))
+  call g:dapper_middletalker.Subscribe('.*', function('StoreMessage'))
 
   " start mock debug adapter
   let g:debuggee_args = dapper#config#DebuggeeArgs#new(

@@ -15,7 +15,7 @@ function! dapper#log#ReportHandler#new(logger) abort
       \ 'DESTRUCTORS': [],
       \ 'destroy': function('dapper#log#ReportHandler#destroy'),
       \ '___logger___': a:logger,
-      \ 'receive': function('dapper#log#ReportHandler#receive'),
+      \ 'Receive': function('dapper#log#ReportHandler#Receive'),
       \ '_echoMsg': function('dapper#log#ReportHandler#_echoMsg'),
       \ '_formatAndLog': function('dapper#log#ReportHandler#_formatAndLog'),
       \ '_logReport': function('dapper#log#ReportHandler#_logReport'),
@@ -51,7 +51,7 @@ function! dapper#log#ReportHandler#destroy() abort dict
 endfunction
 
 " BRIEF:  Process an incoming message, potentially writing it to the log.
-function! dapper#log#ReportHandler#receive(msg) abort dict
+function! dapper#log#ReportHandler#Receive(msg) abort dict
   call dapper#log#ReportHandler#CheckType(l:self)
   call dapper#log#ReportHandler#__noImpl('receive')
 endfunction

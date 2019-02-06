@@ -22,61 +22,61 @@ Execute (MiddleTalker: Set Up):
   endfunction
 
 Execute (MiddleTalker: Test Subscribe to Incoming):
-  call g:middletalker.subscribe('foo', function('TestCbSingle'))
+  call g:middletalker.Subscribe('foo', function('TestCbSingle'))
   let g:will_match = dapper#dap#ProtocolMessage#new(0, 'foobar')
-  call g:middletalker.receive(g:will_match)
+  call g:middletalker.Receive(g:will_match)
 Then:
   AssertEqual g:will_match, g:received
   unlet g:received
 
 Execute (MiddleTalker: Test Unsubscribe):
-  call g:middletalker.unsubscribe('foo', function('TestCbSingle'))
-  call g:middletalker.receive(g:will_match)
+  call g:middletalker.Unsubscribe('foo', function('TestCbSingle'))
+  call g:middletalker.Receive(g:will_match)
 Then:
   Assert !exists('g:received')
 
 Execute (MiddleTalker: Test Regex Subscription, Unsubscribe):
   let g:received = []
-  call g:middletalker.subscribe('.*', function('TestCbList'))
+  call g:middletalker.Subscribe('.*', function('TestCbList'))
   let g:alphabet = dapper#dap#ProtocolMessage#new(0, 'ABCDEFGH')
   let g:will_match = dapper#dap#ProtocolMessage#new(0, 'foobar')
-  call g:middletalker.receive(g:will_match)
-  call g:middletalker.receive(g:alphabet)
+  call g:middletalker.Receive(g:will_match)
+  call g:middletalker.Receive(g:alphabet)
 Then:
   AssertEqual g:will_match, g:received[0]
   AssertEqual g:alphabet, g:received[1]
-  call g:middletalker.unsubscribe('.*', function('TestCbList'))
+  call g:middletalker.Unsubscribe('.*', function('TestCbList'))
   unlet g:received
 
 Execute (MiddleTalker: Test Won't Match):
   let g:wont_match = dapper#dap#ProtocolMessage#new(0, 'justbar')
-  call g:middletalker.receive(g:wont_match)
+  call g:middletalker.Receive(g:wont_match)
 Then:
   Assert !exists('g:received')
 
 Execute (MiddleTalker: Test Several Messages, Will/Won't Match):
-  call g:middletalker.subscribe('foo', function('TestCbList'))
-  call g:middletalker.receive(g:wont_match)
+  call g:middletalker.Subscribe('foo', function('TestCbList'))
+  call g:middletalker.Receive(g:wont_match)
 
-  call g:middletalker.receive(g:will_match)
-  call g:middletalker.receive(g:will_match)
+  call g:middletalker.Receive(g:will_match)
+  call g:middletalker.Receive(g:will_match)
 
-  call g:middletalker.receive(g:wont_match)
+  call g:middletalker.Receive(g:wont_match)
 
-  call g:middletalker.receive(g:will_match)
+  call g:middletalker.Receive(g:will_match)
 Then:
   AssertEqual [g:will_match, g:will_match, g:will_match], g:received
-  call g:middletalker.unsubscribe('foo', function('TestCbList'))
+  call g:middletalker.Unsubscribe('foo', function('TestCbList'))
   unlet g:received
 
 Execute (MiddleTalker: Test Multiple Subscriptions):
-  call g:middletalker.subscribe('foob', function('TestAltCbList'))
-  call g:middletalker.subscribe('foo', function('TestCbList'))
-  call g:middletalker.subscribe('foo', function('TestCbList'))
+  call g:middletalker.Subscribe('foob', function('TestAltCbList'))
+  call g:middletalker.Subscribe('foo', function('TestCbList'))
+  call g:middletalker.Subscribe('foo', function('TestCbList'))
   let g:will_match_first = dapper#dap#ProtocolMessage#new(0, 'foo')
-  call g:middletalker.receive(g:will_match)
-  call g:middletalker.receive(g:will_match_first)
-  call g:middletalker.receive(g:wont_match)
+  call g:middletalker.Receive(g:will_match)
+  call g:middletalker.Receive(g:will_match_first)
+  call g:middletalker.Receive(g:wont_match)
 Then:
   AssertEqual [g:will_match, g:will_match, 
       \ g:will_match_first, g:will_match_first], g:received

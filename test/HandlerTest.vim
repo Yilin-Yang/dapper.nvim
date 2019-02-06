@@ -16,7 +16,7 @@
 "   \ 'long':'errorerror',
 "   \ 'alert':1
 "   \ }
-" call g:dapper_middletalker.receive(g:err_msg)
+" call g:dapper_middletalker.Receive(g:err_msg)
 
 
 let g:dapper_echo_messages = 'statuses'
@@ -30,4 +30,4 @@ let g:sta_msg = {
   \ 'long':'statusstatus',
   \ 'alert':1
   \ }
-call g:dapper_middletalker.receive(g:sta_msg)
+call g:dapper_middletalker.Receive(g:sta_msg)

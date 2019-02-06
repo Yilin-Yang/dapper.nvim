@@ -23,7 +23,7 @@ Then:
   call Reset()
 
 Execute (Promise: Immediate Resolution):
-  call g:promise.subscribe(function('Resolve'), function('Reject'))
+  call g:promise.Subscribe(function('Resolve'), function('Reject'))
 Then:
   AssertEqual 42, g:resolved
   AssertEqual 0,  g:rejected
@@ -31,7 +31,7 @@ Then:
 
 Execute (Promise: Unfulfillment):
   call g:promise.unfulfill()
-  call g:promise.subscribe(function('Resolve'), function('Reject'))
+  call g:promise.Subscribe(function('Resolve'), function('Reject'))
 Then:
   AssertEqual 0, g:resolved
   AssertEqual 0,  g:rejected
@@ -42,7 +42,7 @@ Execute (Promise: Test Subscription, Then Fulfillment):
     let g:another_resolved = a:val
   endfunction
   let g:promise = dapper#Promise#new(function('Resolve'), function('Reject'))
-  call g:promise.subscribe(function('AnotherResolve'))
+  call g:promise.Subscribe(function('AnotherResolve'))
   call g:promise.fulfill(24)
 Then:
   AssertEqual 24, g:resolved
@@ -52,7 +52,7 @@ Then:
 
 Execute (Promise: Test Broken Promise):
   let g:promise = dapper#Promise#new(function('Resolve'), function('Reject'))
-  call g:promise.subscribe(function('AnotherResolve'))
+  call g:promise.Subscribe(function('AnotherResolve'))
   call g:promise.break(24)
 Then:
   AssertEqual 'broken', g:promise.status()
@@ -62,7 +62,7 @@ Then:
   call Reset()
 
 Execute (Promise: Test Immediate Rejection):
-  call g:promise.subscribe(function('AnotherResolve'), function('AnotherResolve'))
+  call g:promise.Subscribe(function('AnotherResolve'), function('AnotherResolve'))
 Then:
   AssertEqual 'broken', g:promise.status()
   AssertEqual 24, g:another_resolved

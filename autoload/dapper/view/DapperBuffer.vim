@@ -96,7 +96,7 @@ function! dapper#view#DapperBuffer#emit(obj) abort dict
       let l:i += 1
     catch
       " assume destroyed, unsubscribe this object
-      call l:self['_message_passer'].notifyReport(
+      call l:self['_message_passer'].NotifyReport(
           \ 'status',
           \ '(view#DapperBuffer) Push failed, unsubbing:'
             \ . typevim#object#ShallowPrint(l:Cb),
@@ -144,7 +144,7 @@ endfunction
 " PARAM:  other (any?)
 function! dapper#view#DapperBuffer#_log(kind, brief, ...) abort dict
   call dapper#view#DapperBuffer#CheckType(l:self)
-  call call(l:self['_message_passer'].notifyReport, [a:kind, a:brief] + a:000)
+  call call(l:self['_message_passer'].NotifyReport, [a:kind, a:brief] + a:000)
 endfunction
 
 " BRIEF:  Make this buffer display the given object.

@@ -38,17 +38,17 @@ function! dapper#model#StackTrace#new(thread_id, message_passer, ...) abort
   let l:new['_message_passer'] = a:message_passer
   let l:new['_thread_id'] = a:thread_id
   let l:new['_stack_trace'] = []
-  let l:new['receive'] = function('dapper#model#StackTrace#receive')
+  let l:new['Receive'] = function('dapper#model#StackTrace#Receive')
   let l:new['frame'] = function('dapper#model#StackTrace#frame')
   let l:new['frames'] = function('dapper#model#StackTrace#frames')
   let l:new['id'] = function('dapper#model#StackTrace#id')
 
   let l:args = deepcopy(s:stack_trace_args)
   let l:args['threadId'] = a:thread_id
-  call a:message_passer.request(
+  call a:message_passer.Request(
       \ 'stackTrace',
       \ l:args,
-      \ function('dapper#model#StackTrace#receive', l:new))
+      \ function('dapper#model#StackTrace#Receive', l:new))
 
   return l:new
 endfunction
@@ -69,15 +69,15 @@ endfunction
 
 " BRIEF:  Populate this StackTrace and notify subscribers.
 " PARAM:  msg   (DebugProtocol.StackTraceResponse)
-function! dapper#model#StackTrace#receive(msg) abort dict
+function! dapper#model#StackTrace#Receive(msg) abort dict
   call dapper#model#StackTrace#CheckType(l:self)
   if !a:msg['success']
-    call l:self['_message_passer'].notifyReport(
+    call l:self['_message_passer'].NotifyReport(
         \ 'error', '(model#StackTrace) Request failed.',
         \ typevim#object#ShallowPrint(a:msg))
     call l:self.break(a:msg)
   endif
-  call l:self['_message_passer'].notifyReport(
+  call l:self['_message_passer'].NotifyReport(
       \ 'status', '(model#StackTrace) Received StackTraceResponse.',
       \ typevim#object#ShallowPrint(a:msg))
 
@@ -102,7 +102,7 @@ endfunction
 function! dapper#model#StackTrace#frame(idx) abort dict
   call dapper#model#StackTrace#CheckType(l:self)
   if type(a:idx) !=# v:t_number
-    throw 'ERROR(WrongType) (dapper#model#StackTrace) Index isn''t number':
+    throw 'ERROR(WrongType) (dapper#model#StackTrace) Index isn''t number:'
         \ . typevim#object#ShallowPrint(a:idx)
   endif
   if a:idx >=# len(l:self['_stack_trace']) || a:idx <# 0

@@ -9,11 +9,11 @@ function! dapper#log#BreakpointsHandler#new(logger, message_passer) abort
   let l:new['TYPE']['BreakpointsHandler'] = 1
   let l:new['DESTRUCTORS'] += [function('dapper#log#BreakpointsHandler#destroy', l:new)]
   let l:new['__message_passer'] = a:message_passer
-  let l:new['receive'] = function('dapper#log#BreakpointsHandler#receive')
+  let l:new['Receive'] = function('dapper#log#BreakpointsHandler#Receive')
   let l:new['_reportSuccess'] =
       \ function('dapper#log#BreakpointsHandler#_reportSuccess')
-  call a:message_passer.subscribe(s:name_pattern,
-      \ function('dapper#log#BreakpointsHandler#receive', l:new))
+  call a:message_passer.Subscribe(s:name_pattern,
+      \ function('dapper#log#BreakpointsHandler#Receive', l:new))
   return l:new
 endfunction
 
@@ -33,17 +33,17 @@ endfunction
 
 function! dapper#log#BreakpointsHandler#destroy() abort dict
   call dapper#log#BreakpointsHandler#CheckType(l:self)
-  call l:self['__message_passer'].unsubscribe(
-      \ s:name_pattern, function('dapper#log#BreakpointsHandler#receive', l:self))
+  call l:self['__message_passer'].Unsubscribe(
+      \ s:name_pattern, function('dapper#log#BreakpointsHandler#Receive', l:self))
 endfunction
 
 function! dapper#log#BreakpointsHandler#_reportSuccess(msg) abort dict
   call dapper#log#BreakpointsHandler#CheckType(l:self)
-  call l:self['__message_passer'].notifyReport(
+  call l:self['__message_passer'].NotifyReport(
       \ 'status', 'Set breakpoints successfully.', a:msg)
 endfunction
 
-function! dapper#log#BreakpointsHandler#receive(msg) abort dict
+function! dapper#log#BreakpointsHandler#Receive(msg) abort dict
   call dapper#log#BreakpointsHandler#CheckType(l:self)
   if !has_key(a:msg['body'], 'breakpoints')
     call l:self._reportSuccess(a:msg)
@@ -57,10 +57,10 @@ function! dapper#log#BreakpointsHandler#receive(msg) abort dict
   if empty(l:failed)
     call l:self._reportSuccess(a:msg)
   elseif len(l:failed) ==# 1
-    call l:self['__message_passer'].notifyReport(
+    call l:self['__message_passer'].NotifyReport(
         \ 'error', 'Failed to set breakpoint. ', l:failed[0], 1)
   else
-    call l:self['__message_passer'].notifyReport(
+    call l:self['__message_passer'].NotifyReport(
         \ 'error', 'Failed to set multiple breakpoints. ', l:failed, 1)
   endif
 endfunction

@@ -4,7 +4,7 @@ Execute (ThreadsBuffer: Construct, Initialize; Test Subscription):
   let g:model = dapper#model#Model#new(g:mock_mt)
   let g:tb = dapper#view#ThreadsBuffer#new(g:model, g:mock_mt)
 Then:
-  AssertEqual function(g:tb.receive), g:last_sub[1]
+  AssertEqual function(g:tb.Receive), g:last_sub[1]
   " TODO check other subscriptions?
   AssertNotEqual -1, match(g:last_sub[0], 'Thread')
 
@@ -12,8 +12,8 @@ Execute (ThreadsBuffer: Receive ThreadEvent, started):
   let g:msg = dapper#dap#Event#new(0, 'ThreadEvent')
   let g:msg['event'] = 'ThreadEvent'
   let g:msg['body'] = {'threadId': 123, 'reason': 'started'}
-  call g:model.receive(g:msg)
-  call g:tb.receive(g:msg)
+  call g:model.Receive(g:msg)
+  call g:tb.Receive(g:msg)
   call g:tb.open()
 Expect:
   <threads>
@@ -24,8 +24,8 @@ Execute (ThreadsBuffer: New Thread Started):
   let g:msg = dapper#dap#Event#new(0, 'ThreadEvent')
   let g:msg['event'] = 'ThreadEvent'
   let g:msg['body'] = {'threadId': 789, 'reason': 'started'}
-  call g:model.receive(g:msg)
-  call g:tb.receive(g:msg)
+  call g:model.Receive(g:msg)
+  call g:tb.Receive(g:msg)
   call g:tb.open()
 Expect:
   <threads>
@@ -37,8 +37,8 @@ Execute (ThreadsBuffer: Thread Exited):
   let g:msg = dapper#dap#Event#new(0, 'ThreadEvent')
   let g:msg['event'] = 'ThreadEvent'
   let g:msg['body'] = {'threadId': 789, 'reason': 'exited'}
-  call g:model.receive(g:msg)
-  call g:tb.receive(g:msg)
+  call g:model.Receive(g:msg)
+  call g:tb.Receive(g:msg)
   call g:tb.open()
 Expect:
   <threads>
@@ -54,8 +54,8 @@ Execute (ThreadsBuffer: Update With ThreadsResponse):
     \ {'id': 123, 'name': 'foo'},
     \ {'id': 789, 'name': 'bar'},
   \ ]}
-  call g:model.receive(g:msg)
-  call g:tb.receive(g:msg)
+  call g:model.Receive(g:msg)
+  call g:tb.Receive(g:msg)
   call g:tb.open()
 Expect:
   <threads>
