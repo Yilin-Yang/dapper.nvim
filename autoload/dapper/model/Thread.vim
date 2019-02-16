@@ -1,54 +1,52 @@
-" BRIEF:  Stores information about a running (or stopped) thread.
-" DETAILS:  Will automatically request its own stack trace on construction.
+""
+" @private
+" @dict Thread
+" Stores information about a running (or stopped) thread.
 
-" BRIEF:  Construct a new Thread object.
-" PARAM:  props   (v:t_dict)  The body of a `ThreadEvent`. Can accept the
-"     following properties:
-"       - 'id' or 'threadId'
-"       - 'name'
-"       - 'reason'
-" PARAM:  message_passer  (dapper#MiddleTalker)
-" PARAM:  Resolve (v:t_func?)
-" PARAM:  Reject  (v:t_func?)
-function! dapper#model#Thread#new(props, message_passer, ...) abort
-  " let l:new = call('dapper#Promise#new', a:000)
-  " TODO Thread isn't really a promise?
-  let l:new = {}
+let s:typename = 'Thread'
 
-  let l:tid = 0
-  if has_key(a:props, 'id')
-    let l:tid = a:props['id']
-  elseif has_key(a:props, 'threadId')
-    let l:tid = a:props['threadId']
-  endif
+let s:thread_event_body = {
+    \ 'id?': typevim#Number(),
+    \ 'threadId?': typevim#Number(),
+    \ 'name?': typevim#String(),
+    \ 'reason?': typevim#String()
+    \ }
+call typevim#make#Interface('ThreadEventBody', s:thread_event_body)
 
-  let l:new['TYPE'] = {'Thread': 1}
-  let l:new['_tid'] = l:tid
-  let l:new['_name'] = has_key(a:props, 'name') ? a:props['name'] : 'unnamed'
-  let l:new['_status'] = has_key(a:props, 'reason') ? a:props['reason'] : '(N/A)'
-  let l:new['_callstack'] = dapper#model#StackTrace#new(l:tid, a:message_passer)
-  let l:new['_message_passer'] = a:message_passer
-  let l:new['id'] = function('dapper#model#Thread#id')
-  let l:new['name'] = function('dapper#model#Thread#name')
-  let l:new['status'] = function('dapper#model#Thread#status')
-  let l:new['stackTrace'] = function('dapper#model#Thread#stackTrace')
-  let l:new['update'] = function('dapper#model#Thread#update')
+""
+" @dict Thread
+" @function dapper#model#Thread#New({props} {message_passer})
+" Construct a new Thread object. Will automatically request its own stack
+" trace on construction.
+"
+" {props} is the body of a ThreadEvent, which can contain the following
+" properties:
+" - "id" or "threadId", which are numbers.
+" - "name", a string.
+" - "reason", a string.
+" @throws WrongType if the {props} don't have the above types, or if {message_passer} isn't a dict.
+function! dapper#model#Thread#new(props, message_passer) abort
+  call typevim#ensure#Implements(a:props, s:thread_event_body)
+  call typevim#ensure#Implements(a:message_passer, dapper#MiddleTalker#Interface())
+  let l:tid = get(a:props, 'id', get(a:props, 'threadId', 0))
+  let l:new = {
+      \ '_tid': l:tid,
+      \ '_name': get(a:props, 'name', 'unnamed'),
+      \ '_status': get(a:props, 'reason', '(N/A)'),
+      \ '_callstack': dapper#model#StackTrace#new(l:tid, a:message_passer),
+      \ '_message_passer': a:message_passer,
+      \ 'id': typevim#make#Member('id'),
+      \ 'name': typevim#make#Member('name'),
+      \ 'status': typevim#make#Member('status'),
+      \ 'stackTrace': typevim#make#Member('stackTrace'),
+      \ 'Update': typevim#make#Member('Update'),
+      \ }
 
-  return l:new
+  return typevim#make#Class(s:typename, l:new)
 endfunction
 
-function! dapper#model#Thread#CheckType(object) abort
-  if type(a:object) !=# v:t_dict || !has_key(a:object, 'TYPE') || !has_key(a:object['TYPE'], 'Thread')
-  try
-    let l:err = '(dapper#model#Thread) Object is not of type Thread: '.string(a:object)
-  catch
-    redir => l:object
-    silent! echo a:object
-    redir end
-    let l:err = '(dapper#model#Thread) This object failed type check: '.l:object
-  endtry
-  throw l:err
-  endif
+function! s:CheckType(Obj) abort
+  call typevim#ensure#IsType(a:Obj, s:typename)
 endfunction
 
 function! dapper#model#Thread#id() abort dict
@@ -66,26 +64,31 @@ function! dapper#model#Thread#status() abort dict
   return l:self['_status']
 endfunction
 
-" RETURNS:  (dapper#model#StackTrace)   The thread's StackTrace. Will throw an
-"   `ERROR(NotFound)` if it has not yet been received.
+""
+" @dict Thread
+" Returns a Promise that, when resolved, returns the thread's StackTrace.
 function! dapper#model#Thread#stackTrace() abort dict
   call dapper#model#Thread#CheckType(l:self)
-  let l:callstack = l:self['_callstack']
-  if l:callstack ==# {}
-    throw 'ERROR(NotFound) (dapper#model#Thread) No StackTrace found'
+  let l:callstack = l:self._callstack
+  if empty(l:callstack)
+    let l:doer = dapper#RequestDoer#New(
+        \ l:self._message_passer, 'stackTrace', {'threadId': l:self.id()})
+    return typevim#Promise#New(l:doer)
   endif
-  return l:callstack
+  let l:to_return = typevim#Promise#New()
+  call l:to_return.Resolve(l:callstack)
+  return l:to_return
 endfunction
 
-" BRIEF:  Update the properties of this Thread from the properties given.
-" PARAM:  props   (v:t_dict)  The body of a `ThreadEvent`. Can accept the
-"     following properties:
-"       - 'id' or 'threadId'
-"       - 'name'
-"       - 'reason'
-" PARAM:  update_stack_trace  (v:t_bool?)   Whether to update the Thread's
-"     stack trace, as well.
-function! dapper#model#Thread#update(props, ...) abort dict
+""
+" Update the properties of this Thread from {props}, which is the body of a
+" ThreadEvent. {props} may contain the following properties:
+" - 'id' or 'threadId'
+" - 'name'
+" - 'reason'
+"
+" If [update_stack_trace] is true, calling this function will prompt the Thread to update its cached stack trace.
+function! dapper#model#Thread#Update(props, ...) abort dict
   call dapper#model#Thread#CheckType(l:self)
   let a:update_stack_trace = get(a:000, 0, 1)
   if has_key(a:props, 'id')
