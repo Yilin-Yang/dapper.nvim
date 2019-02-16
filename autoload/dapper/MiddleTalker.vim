@@ -30,16 +30,17 @@ function! dapper#MiddleTalker#Interface() abort
         \ 'Unsubscribe': typevim#Func(),
         \ 'NotifyReport': typevim#Func(),
         \ }
-    call typevim#make#Interface(s:interface)
+    call typevim#make#Interface('MiddleTalker', s:interface)
   endif
   return s:interface
 endfunction
+call dapper#MiddleTalker#Interface()  " initialize interface
 
 ""
 " @function dapper#MiddleTalker#get()
 " @dict MiddleTalker
 " Get the MiddleTalker singleton, or make one if it doesn't yet exist.
-function! dapper#MiddleTalker#get() abort
+function! dapper#MiddleTalker#Get() abort
   if exists('g:dapper_middletalker')
     if typevim#value#IsType(g:dapper_middletalker, s:typename)
         \ && typevim#value#Implements(g:dapper_middletalker, s:interface)
