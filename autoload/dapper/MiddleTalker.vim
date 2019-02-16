@@ -19,13 +19,30 @@
 let s:typename = 'MiddleTalker'
 
 ""
-" @public
+" @function dapper#MiddleTalker#Interface()
+" @dict MiddleTalker
+" Returns the interface that MiddleTalker implements.
+function! dapper#MiddleTalker#Interface() abort
+  if !exists('s:interface')
+    let s:interface = {
+        \ 'Request': typevim#Func(),
+        \ 'Subscribe': typevim#Func(),
+        \ 'Unsubscribe': typevim#Func(),
+        \ 'NotifyReport': typevim#Func(),
+        \ }
+    call typevim#make#Interface(s:interface)
+  endif
+  return s:interface
+endfunction
+
+""
 " @function dapper#MiddleTalker#get()
 " @dict MiddleTalker
 " Get the MiddleTalker singleton, or make one if it doesn't yet exist.
 function! dapper#MiddleTalker#get() abort
   if exists('g:dapper_middletalker')
     if typevim#value#IsType(g:dapper_middletalker, s:typename)
+        \ && typevim#value#Implements(g:dapper_middletalker, s:interface)
       " already exists
       return g:dapper_middletalker
     endif
@@ -45,7 +62,8 @@ function! dapper#MiddleTalker#get() abort
     \ 'NotifyReport': typevim#make#Member('NotifyReport')
   \ }
 
-  return typevim#make#Class(s:typename, g:dapper_middletalker)
+  call typevim#make#Class(s:typename, g:dapper_middletalker)
+  return typevim#ensure#Implements(g:dapper_middletalker, s:interface)
 endfunction
 
 function s:CheckType(Obj) abort
@@ -63,7 +81,6 @@ function! dapper#MiddleTalker#__GetID() abort dict
 endfunction
 
 ""
-" @public
 " @dict MiddleTalker
 " Receive a response or event {msg}, passing it to subscribers.
 " @throws WrongType if {msg} is not a dictionary.
@@ -90,7 +107,6 @@ function! dapper#MiddleTalker#Receive(msg) abort dict
 endfunction
 
 ""
-" @public
 " @dict MiddleTalker
 " Make a request of the debug adapter. {command} is the `"command"` property
 " of a DAP Request; {request_args} is the `"[blank]RequestArguments"` object
@@ -118,7 +134,6 @@ function! dapper#MiddleTalker#Request(command, request_args, Callback) abort dic
 endfunction
 
 ""
-" @public
 " @dict MiddleTalker
 " Register a subscription to messages whose typenames match a {name_pattern},
 " a regular expression used to |string-match| against the `"vim_msg_typename"`
@@ -150,7 +165,6 @@ function! dapper#MiddleTalker#Subscribe(name_pattern, Callback) abort dict
 endfunction
 
 ""
-" @public
 " @dict MiddleTalker
 " Cancel a subscription, returning 1 when a matching subscription was
 " successfully removed, and 0 otherwise.
@@ -184,7 +198,6 @@ function! dapper#MiddleTalker#Unsubscribe(name_pattern, Callback) abort dict
 endfunction
 
 ""
-" @public
 " @dict MiddleTalker
 " @usage {kind} {brief} [long] [alert] [other]
 " Broadcast a @dict(Report) constructed using the given arguments, which might
