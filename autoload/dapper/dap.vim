@@ -1,5 +1,23 @@
 let s:MsgTypenameToInterface = {}
 
+""
+" @private
+" @dict DapperMessage
+" A dictionary, annotated with a human-readable (and @dict(MiddleTalker)-parsable)
+" typename, and possibly the ID of a frontend object.
+function! dapper#dap#DapperMessage() abort
+  let l:vim_msg_typename = 'DapperMessage'
+  if !has_key(s:MsgTypenameToInterface, l:vim_msg_typename)
+    let l:prototype = {
+      \ 'vim_msg_typename': typevim#String(),
+      \ 'vim_id': typevim#Number(),
+      \ }
+    let s:MsgTypenameToInterface[l:vim_msg_typename] =
+        \ typevim#make#Interface(l:vim_msg_typename, l:prototype)
+  endif
+  return s:MsgTypenameToInterface[l:vim_msg_typename]
+endfunction
+
 function! dapper#dap#ProtocolMessage() abort
   let l:vim_msg_typename = 'ProtocolMessage'
   if !has_key(s:MsgTypenameToInterface, l:vim_msg_typename)
