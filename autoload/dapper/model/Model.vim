@@ -1,28 +1,32 @@
-" BRIEF:  Encapsulates the state of the debugging process.
-" DETAILS:  Model is primarily responsible for managing the VimL frontend's
-"     knowledge of the debugger's state. It sends `ThreadsRequest`s in
-"     response to `ThreadEvent`s and `StoppedEvent`, and starts the 'request
-"     waterfall' described by the Debug Adapter Protocol specification overview.
+""
+" @private
+" @dict Model
+" Encapsulates the state of the debugging process.
 "
-"     **Only** objects in the `dapper#model` namespace should directly
-"     modify the model state. (`dapper#view` objects can modify the model
-"     state 'indirectly', by sending DebugProtocol.Request messages.)
+" Model is primarily responsible for managing the VimL frontend's knowledge of
+" the debugger's state. It sends `ThreadsRequest`s in response to
+" `ThreadEvent`s and `StoppedEvent`s, and starts the "request waterfall"
+" described by the Debug Adapter Protocol specification overview.
+"
+" Only objects in the `dapper#model` namespace should directly modify the
+" model state. (`dapper#view` objects can modify the model state indirectly,
+" by sending DebugProtocol.Request messages.)
 
-" BRIEF:  Construct a new Model.
-" PARAM:  message_passer  (dapper#MiddleTalker)
+let s:typename = 'Model'
+
+""
+" @dict Model
+" @function dapper#model#Model#New({message_passer})
+" Construct a new Model.
 function! dapper#model#Model#new(message_passer) abort
-  let a:debug_logger = get(a:000, 0, dapper#log#DebugLogger#dummy())
-
   let l:new = {
-      \ 'TYPE': {'Model': 1},
       \ '_ids_to_running': {},
       \ '_ids_to_stopped': {},
-      \ '_function_bps': dapper#model#FunctionBreakpoints#new(a:message_passer),
+      \ '_function_bps': {},
       \ '_exception_bps': {},
       \ '_sources': {},
       \ '_capabilities': {},
       \ '_message_passer': a:message_passer,
-      \ 'update': function('dapper#model#Model#update'),
       \ 'thread': function('dapper#model#Model#thread'),
       \ 'threads': function('dapper#model#Model#threads'),
       \ 'functionBps': function('dapper#model#Model#functionBps'),
@@ -30,141 +34,149 @@ function! dapper#model#Model#new(message_passer) abort
       \ 'sources': function('dapper#model#Model#sources'),
       \ 'capabilities': function('dapper#model#Model#capabilities'),
       \ 'Receive': function('dapper#model#Model#Receive'),
-      \ '_recvEvent': function('dapper#model#Model#_recvEvent'),
-      \ '_recvResponse': function('dapper#model#Model#_recvResponse'),
-      \ '_makeThread': function('dapper#model#Model#_makeThread'),
-      \ '_archiveThread': function('dapper#model#Model#_archiveThread'),
-      \ '_reqThreads': function('dapper#model#Model#_reqThreads'),
+      \ 'Update': function('dapper#model#Model#Update'),
+      \ '_RecvEvent': function('dapper#model#Model#_RecvEvent'),
+      \ '_RecvResponse': function('dapper#model#Model#_RecvResponse'),
+      \ '_MakeThread': function('dapper#model#Model#_MakeThread'),
+      \ '_ArchiveThread': function('dapper#model#Model#_ArchiveThread'),
+      \ '_ReqThreads': function('dapper#model#Model#_ReqThreads'),
       \ }
-  call a:message_passer.Subscribe(
-      \ 'InitializeResponse',
-      \ function('dapper#model#Model#Receive', l:new))
-  call a:message_passer.Subscribe(
-      \ 'ThreadEvent',
-      \ function('dapper#model#Model#Receive', l:new))
-  call a:message_passer.Subscribe(
-      \ 'StoppedEvent',
-      \ function('dapper#model#Model#Receive', l:new))
-  call a:message_passer.Subscribe(
-      \ 'ThreadsResponse',
-      \ function('dapper#model#Model#Receive', l:new))
-  " let g:dapper_model = l:new
+  call typevim#make#Class(s:typename, l:new)
+  let l:new.Receive = typevim#object#Bind(l:new.Receive, l:new)
+
+  call a:message_passer.Subscribe('InitializeResponse', l:new.Receive)
+  call a:message_passer.Subscribe('ThreadEvent',        l:new.Receive)
+  call a:message_passer.Subscribe('StoppedEvent',       l:new.Receive)
+  call a:message_passer.Subscribe('ThreadsResponse',    l:new.Receive)
+
   return l:new
 endfunction
 
-function! dapper#model#Model#CheckType(object) abort
-  if type(a:object) !=# v:t_dict || !has_key(a:object, 'TYPE') || !has_key(a:object['TYPE'], 'Model')
-  try
-    let l:err = '(dapper#model#Model) Object is not of type Model: '.string(a:object)
-  catch
-    redir => l:object
-    silent! echo a:object
-    redir end
-    let l:err = '(dapper#model#Model) This object failed type check: '.l:object
-  endtry
-  throw l:err
-  endif
+function! s:CheckType(Obj) abort
+  call typevim#ensure#IsType(a:Obj, s:typename)
 endfunction
 
-" BRIEF:  Prompt the Model to update its contents.
-function! dapper#model#Model#update() abort dict
-  call dapper#model#Model#CheckType(l:self)
-  call l:self['_message_passer'].Request(
-      \ 'threads', {}, function('dapper#model#Model#Receive', l:self))
+""
+" @dict Model
+" Prompt the Model to update its contents.
+function! dapper#model#Model#Update() abort dict
+  call s:CheckType(l:self)
+  call l:self._message_passer.Request('threads', {}, l:self.Receive)
 endfunction
 
-" RETURNS:  (dapper#model#Thread)   A thread with the requested ID.
-" DETAILS:  May throw a `NotFound` exception if a matching thread isn't found.
-" PARAM:    tid   (v:t_number)  The ID of the thread.
+""
+" @dict Model
+" Returns a @dict(Thread) with the requested numerical {tid}.
+" @throws NotFound if a matching thread can't be found.
+" @throws WrongType if {tid} isn't a number.
 function! dapper#model#Model#thread(tid) abort dict
-  call dapper#model#Model#CheckType(l:self)
-  let l:running = l:self['_ids_to_running']
+  call s:CheckType(l:self)
+
+  let l:running = l:self._ids_to_running
   if !has_key(l:running, a:tid)
-    let l:stopped = l:self['_ids_to_stopped']
+    let l:stopped = l:self._ids_to_stopped
     if has_key(l:stopped, a:tid) | return l:stopped[a:tid] | endif
-    throw 'ERROR(NotFound) (dapper#model#Model) No thread with ID: '.a:tid
+    throw maktaba#error#NotFound('No thread with ID: %s', a:tid)
   endif
+
   return l:running[a:tid]
 endfunction
 
-" RETURNS:  (v:t_dict)  Dictionary containing all requested threads.
-" PARAM:  include_exited  (v:t_bool?)   Whether to *also* provide stopped
-"     threads.
+""
+" @dict Model
+" Returns a dictionary of numerical thread IDs to all stored threads. If
+" [include_exited] is true, the returned dictionary will also include stopped
+" threads.
+"
+" @throws WrongType if [include_exited] is not a bool.
 function! dapper#model#Model#threads(...) abort dict
-  call dapper#model#Model#CheckType(l:self)
-  let a:include_exited = get(a:000, 0, 0)
-  let l:to_return = copy(l:self['_ids_to_running'])  " shallow copy
-  if !a:include_exited | return l:to_return | endif
-  let l:exited = l:self['_ids_to_stopped']
+  call s:CheckType(l:self)
+  let l:include_exited = get(a:000, 0, 0)
+  call typevim#ensure#IsBool(l:include_exited)
+  let l:to_return = copy(l:self._ids_to_running)  " shallow copy
+  if !l:include_exited | return l:to_return | endif
+  let l:exited = l:self._ids_to_stopped
   for [l:tid, l:thread] in items(l:exited)
     let l:to_return[l:tid] = l:thread
   endfor
   return l:to_return
 endfunction
 
-" RETURNS:  (dapper#model#FunctionBreakpoints)
+""
+" @dict Model
+" Returns stored function breakpoints.
 function! dapper#model#Model#functionBps() abort dict
-  call dapper#model#Model#CheckType(l:self)
-  return l:self['_function_bps']
+  call s:CheckType(l:self)
+  return l:self._function_bps
 endfunction
 
-" RETURNS:  (dapper#model#ExceptionBreakpoints)
+""
+" @dict Model
+" Returns stored exception breakpoints.
 function! dapper#model#Model#exceptionBps() abort dict
-  call dapper#model#Model#CheckType(l:self)
+  call s:CheckType(l:self)
   if empty(l:self['_exception_bps'])
     throw 'ERROR(NotFound) (dapper#model#Model) '
-        \ 'ExceptionBreakpoints not yet initialized'
+        \ . 'ExceptionBreakpoints not yet initialized'
   endif
-  return l:self['_exception_bps']
+  return l:self._exception_bps
 endfunction
 
-" RETURNS:  (dapper#model#DebugSoruces)
+""
+" @dict Model
+" Returns all stored @dict(DebugSource)s.
 function! dapper#model#Model#sources() abort dict
-  call dapper#model#Model#CheckType(l:self)
+  call s:CheckType(l:self)
   if empty(l:self['_sources'])
     throw 'ERROR(NotFound) (dapper#model#Model) '
-        \ 'DebugSources not yet initialized'
+        \ . 'DebugSources not yet initialized'
   endif
-  return l:self['_sources']
+  return l:self._sources
 endfunction
 
-" RETURNS:  (DebugProtocol.Capabilities)  Capabilities of the active adapter.
+""
+" @dict Model
+" Returns the capabilities of the running debug adapter.
 function! dapper#model#Model#capabilities() abort dict
-  call dapper#model#Model#CheckType(l:self)
-  return deepcopy(l:self['_capabilities'])
+  call s:CheckType(l:self)
+  return deepcopy(l:self._capabilities)
 endfunction
 
-" BRIEF:  Handle incoming debug adapter protocol messages.
+""
+" @dict Model
+" Update from incoming Debug Adapter Protocol messages.
+" @throws WrongType if {msg} is not a dict, or if it is not a @dict(DapperMessage).
 function! dapper#model#Model#Receive(msg) abort dict
-  call dapper#model#Model#CheckType(l:self)
-  let l:typename = a:msg['vim_msg_typename']
+  call s:CheckType(l:self)
+  call typevim#ensure#Implements(a:msg, dapper#dap#DapperMessage())
+  let l:typename = a:msg.vim_msg_typename
   if l:typename ==# 'ThreadEvent'
-    call l:self._reqThreads()
-    call l:self._recvEvent(a:msg)
+    call l:self._ReqThreads()
+    call l:self._RecvEvent(a:msg)
   elseif l:typename ==# 'StoppedEvent'
-    call l:self._reqThreads()
+    call l:self._ReqThreads()
   elseif l:typename ==# 'ThreadsResponse'
     call l:self._recvResponse(a:msg)
   elseif l:typename ==# 'InitializeResponse'
     " set capabilities
-    let l:capabilities = has_key(a:msg, 'body') ? a:msg['body'] : {}
-    let l:self['_capabilities'] = l:capabilities
+    let l:capabilities = has_key(a:msg, 'body') ? a:msg.body : {}
+    let l:self._capabilities = l:capabilities
 
     " initialize ExceptionBreakpoints object
     let l:filters = []
     if has_key(l:capabilities, 'exceptionBreakpointFilters')
-      let l:filters = l:capabilities['exceptionBreakpointFilters']
+      let l:filters = l:capabilities.exceptionBreakpointFilters
     endif
-    let l:self['_exception_bps'] =
+    let l:self._exception_bps =
         \ dapper#model#ExceptionBreakpoints#new(
-            \ l:filters, l:self['_message_passer'])
+            \ l:filters, l:self._message_passer)
 
     " initialize DebugSources object
-    let l:self['_sources'] =
+    let l:self._sources =
         \ dapper#model#DebugSources#new(
-            \ l:self['_message_passer'], l:capabilities)
+            \ l:self._message_passer, l:capabilities)
   else
-    call l:self['_message_passer'].NotifyReport(
+    call l:self._message_passer.NotifyReport(
         \ 'status',
         \ 'model#Model Received '.l:typename.', for some reason(?)',
         \ typevim#object#ShallowPrint(a:msg)
@@ -174,20 +186,20 @@ endfunction
 
 " BRIEF:  Process an incoming ThreadEvent.
 " PARAM:  event   (DebugProtocol.ThreadEvent)
-function! dapper#model#Model#_recvEvent(event) abort dict
-  call dapper#model#Model#CheckType(l:self)
+function! dapper#model#Model#_RecvEvent(event) abort dict
+  call s:CheckType(l:self)
   " make Thread object
-  let l:body = a:event['body']
-  let l:reason = l:body['reason']
+  let l:body = a:event.body
+  let l:reason = l:body.reason
   let l:long_msg = typevim#object#ShallowPrint(l:body)
   if l:reason ==# 'started'
-    call l:self._makeThread(l:body)
+    call l:self._MakeThread(l:body)
   elseif l:reason ==# 'exited'
-    call l:self._archiveThread(l:body)
+    call l:self._ArchiveThread(l:body)
   else
     try
-      let l:thread = l:self.thread(l:body['threadId'])
-      call l:thread.updateProps(l:body)
+      let l:thread = l:self.thread(l:body.threadId)
+      call l:thread.UpdateProps(l:body)
     catch
     endtry
       let l:long_msg = 'Unrecognized reason: '.l:reason."\n".l:long_msg
@@ -201,8 +213,8 @@ endfunction
 
 " BRIEF:  Process an incoming ThreadsResponse.
 " PARAM:  response  (DebugProtocol.ThreadsResponse)
-function! dapper#model#Model#_recvResponse(response) abort dict
-  call dapper#model#Model#CheckType(l:self)
+function! dapper#model#Model#_RecvResponse(response) abort dict
+  call s:CheckType(l:self)
   if !a:response['success']
     call l:self['_message_passer'].NotifyReport(
         \ 'error',
@@ -211,21 +223,21 @@ function! dapper#model#Model#_recvResponse(response) abort dict
         \ 1)
     return
   endif
-  let l:threads = a:response['body']['threads']
+  let l:threads = a:response.body.threads
   let l:i = 0 | while l:i <# len(l:threads)
     let l:thread = l:threads[l:i]
-    let l:tid = l:thread['id']
-    let l:name = l:thread['name']
-    let l:running = l:self['_ids_to_running']
-    let l:stopped = l:self['_ids_to_stopped']
+    let l:tid = l:thread.id
+    let l:name = l:thread.name
+    let l:running = l:self._ids_to_running
+    let l:stopped = l:self._ids_to_stopped
     if has_key(l:running, l:tid)
       call l:running[l:tid].update(l:thread)
     elseif has_key(l:stopped, l:tid)
       call l:stopped[l:tid].update(l:thread)
     else
-      call l:self._makeThread(l:thread)
+      call l:self._MakeThread(l:thread)
       let l:new_thread = l:self.thread(l:tid)
-      call l:self['_message_passer'].NotifyReport(
+      call l:self._message_passer.NotifyReport(
           \ 'error',
           \ 'model#Model received unknown Thread:'.l:tid
             \ . ', constructing from response.',
@@ -236,13 +248,13 @@ endfunction
 
 " BRIEF:  Add a new Thread object from the body of a ThreadEvent.
 " PARAM:  body  (DebugProtocol.ThreadEvent.body)
-function! dapper#model#Model#_makeThread(body) abort dict
-  call dapper#model#Model#CheckType(l:self)
+function! dapper#model#Model#_MakeThread(body) abort dict
+  call s:CheckType(l:self)
 
   let l:thread = dapper#model#Thread#new(
       \ a:body,
-      \ l:self['_message_passer'])
-  let l:self['_ids_to_running'][l:thread.id()] = l:thread
+      \ l:self._message_passer)
+  let l:self._ids_to_running[l:thread.id()] = l:thread
 
   call l:self['_message_passer'].NotifyReport(
       \ 'status',
@@ -252,17 +264,17 @@ endfunction
 
 " BRIEF:  Process an exited Thread.
 " PARAM:  body  (DebugProtocol.ThreadEvent.body)
-function! dapper#model#Model#_archiveThread(body) abort dict
-  call dapper#model#Model#CheckType(l:self)
-  let l:tid = a:body['threadId']
+function! dapper#model#Model#_ArchiveThread(body) abort dict
+  call s:CheckType(l:self)
+  let l:tid = a:body.threadId
   let l:brief = 'model#Model archived exited thread:'.l:tid
   let l:kind = 'status'
   let l:long_msg = ''
   try
-    let l:thread = l:self['_ids_to_running'][l:tid]
+    let l:thread = l:self._ids_to_running[l:tid]
     call l:thread.update(a:body, 0)
-    unlet l:self['_ids_to_running'][l:tid]
-    let l:self['_ids_to_stopped'][l:tid] = l:thread
+    unlet l:self._ids_to_running[l:tid]
+    let l:self._ids_to_stopped[l:tid] = l:thread
     let l:long_msg = 'Thread archived.'
     " TODO: destroy older threads after this gets too large
   catch /ERROR(NotFound)/
@@ -270,15 +282,15 @@ function! dapper#model#Model#_archiveThread(body) abort dict
     let l:kind = 'error'
     let l:long_msg = 'Model state unchanged.'
   endtry
-  call l:self['_message_passer'].NotifyReport(
+  call l:self._message_passer.NotifyReport(
       \ l:kind,
       \ l:brief,
       \ l:long_msg )
 endfunction
 
 " BRIEF:  Request all active threads from the debug adapter.
-function! dapper#model#Model#_reqThreads() abort dict
-  call dapper#model#Model#CheckType(l:self)
-  call l:self['_message_passer'].Request(
+function! dapper#model#Model#_ReqThreads() abort dict
+  call s:CheckType(l:self)
+  call l:self._message_passer.Request(
       \ 'threads', {}, function('dapper#model#Model#Receive', l:self))
 endfunction
