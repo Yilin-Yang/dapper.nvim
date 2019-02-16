@@ -94,8 +94,8 @@ while [[ $# -gt 0 ]]; do
       ;;
     '-v' | '--visible')
       export VISIBLE=1
-      BASE_CMD_NVIM="nvim -Nnu .test_vimrc -i NONE"
-      BASE_CMD_VIM="vim -Nnu .test_vimrc -i NONE"
+      BASE_CMD_NVIM="-Nnu .test_vimrc -i NONE"
+      BASE_CMD_VIM="-Nnu .test_vimrc -i NONE"
       VADER_CMD="-c 'Vader *'"
       ;;
     '--vim')
@@ -134,7 +134,7 @@ while [[ $# -gt 0 ]]; do
   esac
   shift
 done
-export IS_TYPEVIM_DEBUG=1
+export IS_DAPPER_DEBUG=1
 
 set -p
 export VADER_OUTPUT_FILE=/dev/stderr
@@ -171,5 +171,5 @@ else
     runTests "${BASE_CMD}" "${VADER_CMD}" "-c 'language es_ES.utf8'" "${GLOB_ORDINARY}" "${GLOB_STANDALONE}"
   fi
 fi
-unset IS_TYPEVIM_DEBUG
+unset IS_DAPPER_DEBUG
 unset VISIBLE
