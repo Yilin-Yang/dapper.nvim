@@ -1,82 +1,89 @@
-" BRIEF:  Show active threads in the debuggee; 'dig down' into callstacks.
-" DETAILS:  Emits the `Thread` that the user wants to dig into.
+""
+" @private
+" @dict ThreadsBuffer
+" Shows active threads in the debuggee; 'digs down' into callstacks.
 
+let s:typename = 'ThreadsBuffer'
 let s:thread_id_search_pat = '^thread id: '
 
-" BRIEF:  Construct a ThreadsBuffer.
-" PARAM:  model   (dapper#model#Model)
-" PARAM:  message_passer  (dapper#MiddleTalker)
-function! dapper#view#ThreadsBuffer#new(model, message_passer) abort
-  let l:new =
-      \ dapper#view#DapperBuffer#new(a:message_passer,
-      \ {'fname': '[dapper.nvim] Threads', 'mangle': 0})
-  let l:new['TYPE']['ThreadsBuffer'] = 1
-  let l:new['_ids_to_threads'] = {}
-  let l:new['_model'] = a:model  " reference to the global debug model
+""
+" @dict ThreadsBuffer
+" @function dapper#view#ThreadsBuffer#New()
+" Construct a ThreadsBuffer using the given {model} (see @dict(Model)) and
+" {message_passer} (see @dict(MiddleTalker)).
+"
+" @throws WrongType if {model} or {message_passer} aren't dictionaries.
+function! dapper#view#ThreadsBuffer#New(model, message_passer) abort
+  call maktaba#ensure#IsDict(a:model)
+  call maktaba#ensure#IsDict(a:message_passer)
+  let l:base = dapper#view#DapperBuffer#new(
+      \ a:message_passer, {'fname': '[dapper.nvim] Threads'})
 
-  let l:new['show']        = function('dapper#view#ThreadsBuffer#show')
-  let l:new['Receive']     = function('dapper#view#ThreadsBuffer#Receive')
-  let l:new['getRange']    = function('dapper#view#ThreadsBuffer#getRange')
-  let l:new['setMappings'] = function('dapper#view#ThreadsBuffer#setMappings')
+  let l:new = {
+      \ '_ids_to_threads': {},
+      \ '_model': a:model,
+      \ 'Show': typevim#make#Member('Show'),
+      \ 'Receive': typevim#make#Member('Receive'),
+      \ 'GetRange': typevim#make#Member('GetRange'),
+      \ 'SetMappings': typevim#make#Member('SetMappings'),
+      \ '_AddThreadEntry': typevim#make#Member('_AddThreadEntry'),
+      \ '_UpdateThreads': typevim#make#Member('_UpdateThreads'),
+      \ 'MakeEntry': typevim#make#Member('MakeEntry'),
+      \ 'ClimbUp': typevim#make#Member('ClimbUp'),
+      \ 'DigDown': typevim#make#Member('DigDown'),
+      \ '_MakeChild': typevim#make#Member('_MakeChild'),
+      \ '_GetSelected': typevim#make#Member('_GetSelected'),
+      \ }
 
-  let l:new['_addThreadEntry'] = function('dapper#view#ThreadsBuffer#_addThreadEntry')
-  let l:new['_updateThreads'] = function('dapper#view#ThreadsBuffer#_updateThreads')
-  let l:new['makeEntry'] = function('dapper#view#ThreadsBuffer#makeEntry')
+  call typevim#make#Derived(s:typename, l:base, l:new)
 
-  let l:new['climbUp'] = function('dapper#view#ThreadsBuffer#climbUp')
-  let l:new['digDown'] = function('dapper#view#ThreadsBuffer#digDown')
-  let l:new['_makeChild'] = function('dapper#view#ThreadsBuffer#_makeChild')
-
-  let l:new['_getSelected'] = function('dapper#view#ThreadsBuffer#_getSelected')
+  let l:new.Receive = typevim#object#Bind(l:new.Receive, l:new)
 
   " should update *after* the model has been updated
-  call a:message_passer.Subscribe('StoppedEvent',
-      \ function('dapper#view#ThreadsBuffer#Receive', l:new))
-  call a:message_passer.Subscribe('ThreadEvent',
-      \ function('dapper#view#ThreadsBuffer#Receive', l:new))
-  call a:message_passer.Subscribe('ThreadsResponse',
-      \ function('dapper#view#ThreadsBuffer#Receive', l:new))
+  call a:message_passer.Subscribe('StoppedEvent', l:new.Receive)
+  call a:message_passer.Subscribe('ThreadEvent', l:new.Receive)
+  call a:message_passer.Subscribe('ThreadsResponse', l:new.Receive)
 
   call l:new.replaceLines(0, -1, ['<threads>', '</threads>'])
 
   return l:new
 endfunction
 
-function! dapper#view#ThreadsBuffer#CheckType(object) abort
-  if type(a:object) !=# v:t_dict || !has_key(a:object, 'TYPE') || !has_key(a:object['TYPE'], 'ThreadsBuffer')
-  try
-    let l:err = '(dapper#view#ThreadsBuffer) Object is not of type ThreadsBuffer: '.string(a:object)
-  catch
-    redir => l:object
-    silent! echo a:object
-    redir end
-    let l:err = '(dapper#view#ThreadsBuffer) This object failed type check: '.l:object
-  endtry
-  throw l:err
-  endif
+function! s:CheckType(Obj) abort
+  call typevim#ensure#IsType(a:Obj, s:typename)
 endfunction
 
-" BRIEF:  Show the given set of threads.
-function! dapper#view#ThreadsBuffer#show(threads) abort dict
-  call dapper#view#ThreadsBuffer#CheckType(l:self)
+""
+" @dict ThreadsBuffer
+" Show the given list of {threads}.
+function! dapper#view#ThreadsBuffer#Show(threads) abort dict
+  call s:CheckType(l:self)
 endfunction
 
-" BRIEF:  Notify this ThreadsBuffer that it should update its listed threads.
+""
+" @dict ThredsBuffer
+" Notify this ThreadsBuffer that it should update its listed threads from the
+" given {msg}.
+"
+" @throws WrongType if the given {msg} is not a dict.
 function! dapper#view#ThreadsBuffer#Receive(msg) abort dict
-  call dapper#view#ThreadsBuffer#CheckType(l:self)
+  call s:CheckType(l:self)
+  call maktaba#ensure#IsDict(a:msg)
   if a:msg['type'] ==# 'response' && !a:msg['success'] | return | endif
-  let l:model = l:self['_model']
+  let l:model = l:self._model
 
-  let l:body = a:msg['body']
-  let l:type = a:msg['vim_msg_typename']
+  let l:body = a:msg.body
+  let l:type = a:msg.vim_msg_typename
   if l:type ==# 'StoppedEvent'
     " update the full list
     let l:ids_to_threads = l:model.threads(1)  " all of them
-    call l:self._updateThreads(l:ids_to_threads) " TODO test
+    call l:self._UpdateThreads(l:ids_to_threads) " TODO test
   elseif l:type ==# 'ThreadEvent'
     let l:tid = l:body['threadId']
     let l:thread = l:model.thread(l:tid)
-    call l:self._updateThreads({l:tid: l:thread})
+    let l:ids_to_threads = {}
+    let l:ids_to_threads[l:tid] = l:thread
+    call l:self._UpdateThreads(l:ids_to_threads)
   elseif l:type ==# 'ThreadsResponse'
     " TODO update thread entries mentioned in response
     let l:dap_threads = a:msg['body']['threads']
@@ -84,63 +91,76 @@ function! dapper#view#ThreadsBuffer#Receive(msg) abort dict
     for l:dap_thread in l:dap_threads
       try
         let l:tid = l:dap_thread['id']
-        let l:thread = l:model.thread(l:tid)
+        let l:thread = l:model.Thread(l:tid)
         let l:to_update[l:tid] = l:thread
       catch
       endtry
     endfor
-    call l:self._updateThreads(l:to_update)
+    call l:self._UpdateThreads(l:to_update)
   endif
 
-  let l:self['_ids_to_threads'] = l:self['_model'].threads()
+  let l:self['_ids_to_threads'] = l:self['_model'].Threads()
 endfunction
 
-" BRIEF:  Get the line range of a particular Thread entry.
-function! dapper#view#ThreadsBuffer#getRange(thread_id) abort dict
-  call dapper#view#ThreadsBuffer#CheckType(l:self)
+""
+" @dict ThreadsBuffer
+" Get the line range of the entry for the thread with the given {thread_id}.
+"
+" @throws NotFound if the given entry can't be found.
+" @throws WrongType if {thread_id} isn't a number.
+function! dapper#view#ThreadsBuffer#GetRange(thread_id) abort dict
+  call s:CheckType(l:self)
+  call maktaba#ensure#IsNumber(a:thread_id)
   " TODO optimize this? (...it's surprisingly fast...)
   let l:entire_buffer = nvim_buf_get_lines(l:self['__bufnr'], 0, -1, 0)
   let l:idx = match(l:entire_buffer, s:thread_id_search_pat.a:thread_id)
   if l:idx ==# -1
-    throw '(dapper#view#ThreadsBuffer) EntryNotFound, thread_id:'.a:thread_id
+    throw maktaba#error#NotFound('Thread with id %s not found', a:thread_id)
   endif
   let l:idx += 1
   return [l:idx, l:idx]
 endfunction
 
-" BRIEF:  Set mappings to 'drill-down' into a Thread, expand info, etc.
-function! dapper#view#ThreadsBuffer#setMappings() abort dict
-  call dapper#view#ThreadsBuffer#CheckType(l:self)
+""
+" @dict ThreadsBuffer
+" Set mappings to 'drill-down' into a Thread, expand info, etc.
+function! dapper#view#ThreadsBuffer#SetMappings() abort dict
+  call s:CheckType(l:self)
   execute 'nnoremap <buffer> '.dapper#settings#DigDownMapping().' '
       \ . ':call b:dapper_buffer.digDown()<cr>'
 endfunction
 
-" BRIEF:  Add a new Thread to the buffer, or replace/update what's there.
-" PARAM:  thread  (dapper#model#Thread)
-" PARAM:  add_at_top  (v:t_bool?) `1` if a new entry should be added at
-"                                 the top of the buffer; `0` if it
-"                                 should be appended to the bottom.
-function! dapper#view#ThreadsBuffer#_addThreadEntry(thread, ...) abort dict
-  call dapper#view#ThreadsBuffer#CheckType(l:self)
-  let a:add_at_top = get(a:000, 0, 1)
+""
+" @dict ThreadsBuffer
+" Add a new {thread} to the buffer, or replace/update the entry that's already
+" there. If [add_at_top] is true, then if {thread} is a new entry, it will be
+" added at the top of the buffer; if it's false, new entries will be added at
+" the bottom.
+"
+" @default add_at_top=1
+" @throws WrongType if {thread} is not a @dict(Thread) or [add_at_top] is not a boolean.
+function! dapper#view#ThreadsBuffer#_AddThreadEntry(thread, ...) abort dict
+  call s:CheckType(l:self)
+  call typevim#ensure#IsType(a:thread, 'Thread')
+  let l:add_at_top = typevim#ensure#IsBool(get(a:000, 0, 1))
   let l:tid    = a:thread.id()
   let l:name   = a:thread.name()
   let l:status = a:thread.status()
-  let l:new_entry = l:self.makeEntry(a:thread)
+  let l:new_entry = l:self.MakeEntry(a:thread)
   try
     " replace existing entry
-    let [l:start, l:end] = l:self.getRange(l:tid)
-      call l:self.replaceLines(
+    let [l:start, l:end] = l:self.GetRange(l:tid)
+      call l:self.ReplaceLines(
         \ l:start-1,
         \ l:end,
         \ l:new_entry)
-    call l:self._log(
+    call l:self._Log(
         \ 'status',
         \ 'ThreadsBuffer updated thread ID:'.l:tid,
         \ l:new_entry)
   catch /EntryNotFound/
-    let l:insert_after = (a:add_at_top) ? 1 : -2
-    call l:self.insertLines(l:insert_after, l:new_entry)
+    let l:insert_after = (l:add_at_top) ? 1 : -2
+    call l:self.InsertLines(l:insert_after, l:new_entry)
     call l:self._log(
         \ 'status',
         \ 'ThreadsBuffer added new thread ID:'.l:tid,
@@ -148,20 +168,28 @@ function! dapper#view#ThreadsBuffer#_addThreadEntry(thread, ...) abort dict
   endtry
 endfunction
 
-" BRIEF:  Update the contents of the buffer with the given threads.
-function! dapper#view#ThreadsBuffer#_updateThreads(ids_to_threads) abort dict
-  call dapper#view#ThreadsBuffer#CheckType(l:self)
+""
+" @dict ThreadsBuffer
+" Update the contents of the buffer from the given {ids_to_threads}
+" dictionary, a mapping between thread IDs and their corresponding
+" @dict(Thread) objects.
+function! dapper#view#ThreadsBuffer#_UpdateThreads(ids_to_threads) abort dict
+  call s:CheckType(l:self)
   for [l:tid, l:thread] in items(a:ids_to_threads)
     let l:add_at_top = l:thread.status() !=# 'exited'
-    call l:self._addThreadEntry(l:thread, l:add_at_top)
+    call l:self._AddThreadEntry(l:thread, l:add_at_top)
   endfor
 endfunction
 
-" BRIEF:  Generate the text representing a Thread, using cached info.
-" RETURNS:  (v:t_list)  Line-by-line, the text representing the Thread.
-" PARAM:  thread  (dapper#model#Thread) The thread object.
+""
+" @dict ThreadsBuffer
+" Generate the text representing {thread}. Returns a list of strings: the text
+" representing the @dict(Thread).
+"
+" @throws WrongType if {thread} is not a @dict(Thread).
 function! dapper#view#ThreadsBuffer#makeEntry(thread) abort dict
-  call dapper#view#ThreadsBuffer#CheckType(l:self)
+  call s:CheckType(l:self)
+  call typevim#ensure#IsType(a:thread, 'Thread')
   let l:tid    = a:thread.id()
   let l:name   = a:thread.name()
   let l:status = a:thread.status()
@@ -169,18 +197,22 @@ function! dapper#view#ThreadsBuffer#makeEntry(thread) abort dict
 endfunction
 
 
-" BRIEF:  Do nothing!
-function! dapper#view#ThreadsBuffer#climbUp() abort dict
-  call dapper#view#ThreadsBuffer#CheckType(l:self)
+""
+" @dict ThreadsBuffer
+" Do nothing!
+function! dapper#view#ThreadsBuffer#ClimbUp() abort dict
+  call s:CheckType(l:self)
 endfunction
 
-" BRIEF:  Examine the stack trace of the selected thread.
-function! dapper#view#ThreadsBuffer#digDown() abort dict
-  call dapper#view#ThreadsBuffer#CheckType(l:self)
+""
+" @dict ThreadsBuffer
+" Examine the stack trace of the selected thread.
+function! dapper#view#ThreadsBuffer#DigDown() abort dict
+  call s:CheckType(l:self)
   let l:long_msg = ''
   try
-    let l:tid = l:self._getSelected()
-  catch /No thread ID found/
+    let l:tid = l:self._GetSelected()
+  catch /ERROR(NotFound)/
     return
   endtry
   call l:self._log(
@@ -188,21 +220,25 @@ function! dapper#view#ThreadsBuffer#digDown() abort dict
       \ 'Digging down from ThreadsBuffer to tid:'.l:tid,
       \ l:long_msg
       \ )
-  call l:self._digDownAndPush(l:self['_model'].thread(l:tid))
+  call l:self._DigDownAndPush(l:self['_model'].thread(l:tid))
 endfunction
 
-" BRIEF:  Make a 'StackTraceBuffer' and mark it as this `ThreadsBuffer`'s child.
-function! dapper#view#ThreadsBuffer#_makeChild() abort dict
-  call dapper#view#ThreadsBuffer#CheckType(l:self)
-  let l:child = dapper#view#StackTraceBuffer#new(l:self['_message_passer'])
-  call l:child.setParent(l:self)
+""
+" @dict ThreadsBuffer
+" Construct a @dict(StackTraceBuffer) and mark it as this
+" @dict(ThreadsBuffer)'s child.
+function! dapper#view#ThreadsBuffer#_MakeChild() abort dict
+  call s:CheckType(l:self)
+  let l:child = dapper#view#StackTraceBuffer#New(l:self['_message_passer'])
+  call l:child.SetParent(l:self)
   return l:child
 endfunction
 
-" RETURNS:  (v:t_number)  The thread ID of the thread currently selected by
-"                         the cursor.
-function! dapper#view#ThreadsBuffer#_getSelected() abort dict
-  call dapper#view#ThreadsBuffer#CheckType(l:self)
+""
+" @dict ThreadsBuffer
+" Returns the ID of the thread over which theuser's cursor is hovering.
+function! dapper#view#ThreadsBuffer#_GetSelected() abort dict
+  call s:CheckType(l:self)
   let l:cur_line = line('.')
   if     l:cur_line ==# 1         | normal! j
   elseif l:cur_line ==# line('$') | normal! k
