@@ -8,7 +8,7 @@ let s:typename = 'StartArgs'
 ""
 " @public
 " @dict StartArgs
-" @function dapper#config#StartArgs#new({adapter_config}, {debuggee_args}, {vscode_attr}, [locale])
+" @function dapper#config#StartArgs#New({adapter_config}, {debuggee_args}, {vscode_attr}, [locale])
 " Construct and return new StartArgs object.
 "
 " {adapter_config} is a @dict(DebugAdapterConfig) object, acting as
@@ -25,7 +25,7 @@ let s:typename = 'StartArgs'
 " e.g. `en_US`.
 "
 " @throws WrongType if any of the arguments mentioned above are not of the specified types.
-function! dapper#config#StartArgs#new(
+function! dapper#config#StartArgs#New(
     \ adapter_config, debuggee_args, vscode_attr, ...) abort
   call typevim#ensure#IsType(a:adapter_config, 'DebugAdapterConfig')
   call typevim#ensure#IsType(a:debuggee_args, 'DebuggeeArgs')

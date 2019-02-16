@@ -39,7 +39,7 @@ function! dapper#AddDapperConfig(
       \ || type(a:filetype) !=# v:t_string
       \ || (!empty(a:locale) && type(a:locale[0]) !=# v:t_string)
     throw 'ERROR(WrongType) (dapper#AddDapperConfig) All given arguments must '
-        \ 'be strings. Gave: '
+        \ . 'be strings. Gave: '
             \ . typevim#object#ShallowPrint(a:runtime_env)  . ', '
             \ . typevim#object#ShallowPrint(a:exe_filepath) . ', '
             \ . typevim#object#ShallowPrint(a:adapter_id)   . ', '
@@ -47,7 +47,7 @@ function! dapper#AddDapperConfig(
             \ . a:0 ? a:1 : ''
   endif
 
-  let l:new_cfg = call('dapper#config#DebugAdapterConfig#new', l:args)
+  let l:new_cfg = call('dapper#config#DebugAdapterConfig#New', l:args)
 
   let l:fts_to_cfgs = dapper#settings#FiletypesToConfigs()
   if !has_key(l:fts_to_cfgs, a:filetype)
@@ -81,15 +81,15 @@ function! dapper#AddDebugLogger(logger_type) abort
     let g:dapper_report_handlers = []
   endif
 
-  let l:ddl = dapper#log#DebugLogger#get()
+  let l:ddl = dapper#log#DebugLogger#Get()
   let l:drh = g:dapper_report_handlers
   let l:dmt = g:dapper_middletalker
   let l:i = 0 | while l:i <# len(l:types)
     let l:type = l:types[l:i]
     if l:type ==# 'status'
-      let l:to_add = dapper#log#StatusHandler#new(l:ddl, l:dmt)
+      let l:to_add = dapper#log#StatusHandler#New(l:ddl, l:dmt)
     elseif l:type ==# 'error'
-      let l:to_add = dapper#log#ErrorHandler#new(l:ddl, l:dmt)
+      let l:to_add = dapper#log#ErrorHandler#New(l:ddl, l:dmt)
     else
       throw '(dapper#AddDebugLogger) Unrecognized logger type: '.l:type
     endif
@@ -113,9 +113,9 @@ function! dapper#RemoveDebugLogger(logger_type) abort
     return
   endif
 
-  let l:ddl = dapper#log#DebugLogger#get()
+  let l:ddl = dapper#log#DebugLogger#Get()
   let l:drh = g:dapper_report_handlers
-  let l:dmt = dapper#MiddleTalker#get()
+  let l:dmt = dapper#MiddleTalker#Get()
 
   let l:i = 0 | while l:i <# len(l:drh)
     let l:logger = l:drh[l:i]
@@ -123,8 +123,8 @@ function! dapper#RemoveDebugLogger(logger_type) abort
     let l:j = 0 | while l:j <# len(l:types)
       let l:log_type = l:types[l:j]
       let l:typename = s:logger_types_to_typenames[l:log_type]
-      if has_key(l:logger['TYPE'], l:typename) || l:log_type ==# 'ALL'
-        call l:logger.destroy()
+      if l:log_type ==# 'ALL' || typevim#value#IsType(l:logger, l:typename)
+        call l:logger.CleanUp()
         unlet l:drh[l:i]
         break
       endif

@@ -7,7 +7,7 @@ let s:typename = 'DebuggeeArgs'
 ""
 " @public
 " @dict DebuggeeArgs
-" @function dapper#config#DebuggeeArgs#new({request} {name} {args})
+" @function dapper#config#DebuggeeArgs#New({request} {name} {args})
 " Construct a DebuggeeArgs object.
 "
 " {request} is either `"launch"` or `"attach"`.
@@ -20,7 +20,7 @@ let s:typename = 'DebuggeeArgs'
 " one.
 "
 " @throws WrongType if {request} or {name} aren't strings, or if {args} is not a dictionary.
-function! dapper#config#DebuggeeArgs#new(
+function! dapper#config#DebuggeeArgs#New(
     \ request,
     \ name,
     \ args) abort

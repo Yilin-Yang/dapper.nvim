@@ -6,7 +6,7 @@ let s:typename = 'InitialBreakpoints'
 
 ""
 " @dict InitialBreakpoints
-" @function dapper#config#InitialBreakpoints#new([bps], [function_bps], [exception_bps])
+" @function dapper#config#InitialBreakpoints#New([bps], [function_bps], [exception_bps])
 " Return a new InitialBreakpoints object.
 "
 " [bps] should be a @dict(SetBreakpointsArguments); [function_bps] should be a
@@ -15,7 +15,7 @@ let s:typename = 'InitialBreakpoints'
 " dictionary if omitted.
 "
 " @throws WrongType if [bps], [function_bps], or [exception_bps] are not dictionaries.
-function! dapper#config#InitialBreakpoints#new(...) abort
+function! dapper#config#InitialBreakpoints#New(...) abort
   let a:bps = maktaba#ensure#IsDict(get(a:000, 0, {}))
   let a:function_bps = maktaba#ensure#IsDict(get(a:000, 0, {}))
   let a:exception_bps = maktaba#ensure#IsDict(get(a:000, 0, {}))

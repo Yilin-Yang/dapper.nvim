@@ -1,17 +1,34 @@
 ""
+" @private
 " @dict DebugLogger
 " A global debug logger. Writes incoming @dict(Report)s to a log buffer and,
 " optionally, a logfile.
 
+let s:typename = 'DebugLogger'
+
+""
+" @dict DebugLogger
+" Returns the interface that DebugLogger implements.
+function! dapper#log#DebugLogger#Interface() abort
+  if !exists('s:interface')
+    let s:interface = {
+        \ 'Log': typevim#Func(),
+        \ 'NotifyReport': typevim#Func(),
+        \ }
+    call typevim#make#Interface(s:typename, s:interface)
+  endif
+  return s:interface
+endfunction
+
 " BRIEF:  Get a reference to the debug logger singleton.
-function! dapper#log#DebugLogger#get(...) abort
+function! dapper#log#DebugLogger#Get(...) abort
   if exists('g:dapper_debug_logger')
     try
       call dapper#log#DebugLogger#CheckType(g:dapper_debug_logger)
+      return g:dapper_debug_logger
     catch
       " invalid, okay to overwrite
     endtry
-    return g:dapper_debug_logger
   endif
 
   let l:writeback = dapper#settings#LogBufferWriteback()
@@ -24,21 +41,20 @@ function! dapper#log#DebugLogger#get(...) abort
     let l:bufset = s:writeback_to_bufsettings[l:writeback]
   endif
 
-  " create log buffer, set settings
-  let l:new = dapper#view#Buffer#new(l:bufset)
-  let l:new['TYPE']['DebugLogger'] = 1
-  let l:new['__writeback'] = l:writeback
-  let l:new['__settings'] = l:bufset
-  let l:new['__counter'] = -1
-  " set iniital 'last line written' to 1, so that we ignore the blank line
+  " set initial 'last line written' to 1, so that we ignore the blank line
   " at the top of the log buffer when writing back
-  let l:new['__last_line_written'] = 1
-  let l:new['__shouldWrite'] =
-      \ function('dapper#log#DebugLogger#__shouldWrite')
-  let l:new['__write'] = function('dapper#log#DebugLogger#__write')
-  let l:new['__onExit'] = function('dapper#log#DebugLogger#__onExit')
-  let l:new['log'] = function('dapper#log#DebugLogger#log')
-  let l:new['NotifyReport'] = function('dapper#log#DebugLogger#NotifyReport')
+  let l:new = {
+      \ '__writeback': l:writeback,
+      \ '__settings': l:bufset,
+      \ '__counter': -1,
+      \ '__last_line_written': 1,
+      \ '__ShouldWrite': typevim#make#Member('__ShouldWrite'),
+      \ '__Write': typevim#make#Member('__Write'),
+      \ 'Log': typevim#make#Member('Log'),
+      \ 'NotifyReport': typevim#make#Member('NotifyReport'),
+      \ }
+  call typevim#make#Derived(s:typename, typevim#Buffer#New(l:bufset), l:new,
+                          \ typevim#make#Member('CleanUp'))
 
   let g:dapper_debug_logger = l:new
 
@@ -49,20 +65,20 @@ function! dapper#log#DebugLogger#get(...) abort
     " continue' message when running test cases in the terminal (i.e. without
     " a GUI). The IS_DAPPER_DEBUG check exists *just* to prevent those tests
     " from hanging.
-    autocmd VimLeavePre * call g:dapper_debug_logger.__onExit()
+    autocmd VimLeavePre * call g:dapper_debug_logger.CleanUp()
   augroup end
   endif
 
-  return g:dapper_debug_logger
+  return typevim#ensure#Implements(
+      \ g:dapper_debug_logger, dapper#log#DebugLogger#Interface())
 endfunction
 
-" RETURNS:  A 'dummy' logger, with the same interface as the actual debug
-"     logger, but which does nothing when its functions are invoked.
-function! dapper#log#DebugLogger#dummy() abort
-  return {
-      \ 'log': funcref('<SID>DoNothing'),
-      \ 'NotifyReport': funcref('<SID>DoNothing'),
-      \ }
+""
+" @dict DebugLogger
+" Returns a dummy logger, with the same interface as the actual debug
+" logger, but which does nothing when its functions are invoked.
+function! dapper#log#DebugLogger#Dummy() abort
+  return typevim#make#Instance(dapper#log#DebugLogger#Interface())
 endfunction
 
 function! s:DoNothing(...) abort dict
@@ -76,21 +92,21 @@ endfunction
 "       Setting `nofile` prevents that.
 let s:writeback_to_bufsettings = {
     \ 'never': {
-        \ 'fname': dapper#settings#LogBufferName(),
+        \ 'bufname': dapper#settings#LogBufferName(),
         \ 'bufhidden': 'hide',
         \ 'buflisted': 0,
         \ 'buftype' : 'nofile',
         \ 'swapfile': 0,
         \ },
     \ 'onclose': {
-        \ 'fname': dapper#settings#Logfile(),
+        \ 'bufname': dapper#settings#Logfile(),
         \ 'bufhidden': 'hide',
         \ 'buflisted': 0,
         \ 'buftype' : 'nofile',
         \ 'swapfile': 0,
         \ },
     \ 'every': {
-        \ 'fname': dapper#settings#Logfile(),
+        \ 'bufname': dapper#settings#Logfile(),
         \ 'bufhidden': 'hide',
         \ 'buflisted': 0,
         \ 'buftype' : 'nofile',
@@ -98,7 +114,7 @@ let s:writeback_to_bufsettings = {
         \ 'interval': -1,
         \ },
     \ 'always': {
-        \ 'fname': dapper#settings#Logfile(),
+        \ 'bufname': dapper#settings#Logfile(),
         \ 'bufhidden': 'hide',
         \ 'buflisted': 0,
         \ 'buftype' : 'nofile',
@@ -106,61 +122,62 @@ let s:writeback_to_bufsettings = {
       \ }
     \ }
 
-function! dapper#log#DebugLogger#CheckType(object) abort
-  if type(a:object) !=# v:t_dict || !has_key(a:object, 'TYPE') || !has_key(a:object['TYPE'], 'DebugLogger')
-  try
-    let l:err = '(dapper#log#DebugLogger) Object is not of type DebugLogger: '.string(a:object)
-  catch
-    redir => l:object
-    silent! echo a:object
-    redir end
-    let l:err = '(dapper#log#DebugLogger) This object failed type check: '.l:object
-  endtry
-  throw l:err
-  endif
+function! s:CheckType(Obj) abort
+  call typevim#ensure#IsType(a:Obj, s:typename)
 endfunction
 
-" RETURNS:  `1` if the DebugLogger should write the next message it
-"           receives.
-function! dapper#log#DebugLogger#__shouldWrite() abort dict
-  call dapper#log#DebugLogger#CheckType(l:self)
-  let l:wb = l:self['__writeback']
+""
+" @dict DebugLogger
+" Returns 1 if the DebugLogger should write the next message it receives.
+function! dapper#log#DebugLogger#__ShouldWrite() abort dict
+  call s:CheckType(l:self)
+  let l:wb = l:self.__writeback
   if l:wb ==# 'always'
     return 1
   endif
   if l:wb !=# 'every' | return 0 | endif
-  let l:counter = l:self['__counter']
-  let l:interval = l:self['__settings']['interval']
+  let l:counter = l:self.__counter
+  let l:interval = l:self.__settings.interval
   return !float2nr(fmod(l:counter, l:interval))
 endfunction
 
-" BRIEF:  Write the contents of the debug logger to a file.
-function! dapper#log#DebugLogger#__write() abort dict
-  call dapper#log#DebugLogger#CheckType(l:self)
-  let l:from = l:self['__last_line_written']
-  let l:bufnr = l:self['__bufnr']
+""
+" @dict DebugLogger
+" Write the contents of the debug logger to a file.
+function! dapper#log#DebugLogger#__Write() abort dict
+  call s:CheckType(l:self)
+  let l:from = l:self.__last_line_written
+  let l:bufnr = l:self.__bufnr
   let l:to_writeback = nvim_buf_get_lines(l:bufnr, l:from, -1, 1)
-  let l:fname = l:self['__settings']['fname']
+  let l:bufname = l:self.__settings.bufname
   " asynchronously append to file
-  call writefile(l:to_writeback, l:fname, 'aS')
-  let l:self['__last_line_written'] += len(l:to_writeback)
+  call writefile(l:to_writeback, l:bufname, 'aS')
+  let l:self.__last_line_written += len(l:to_writeback)
 endfunction
 
-" BRIEF:  Perform last-minute cleanup, execute writebacks before closing vim.
-function! dapper#log#DebugLogger#__onExit() abort dict
-  call dapper#log#DebugLogger#CheckType(l:self)
-  let l:writeback = l:self['__writeback']
+""
+" @dict DebugLogger
+" Perform last-minute cleanup, execute writebacks before closing vim.
+function! dapper#log#DebugLogger#CleanUp() abort dict
+  call s:CheckType(l:self)
+  let l:writeback = l:self.__writeback
   if l:writeback ==# 'onclose' || l:writeback ==# 'always'
-    call l:self.__write()
+    call l:self.__Write()
   endif
 endfunction
 
-" BRIEF:  Append text to the debug log.
-" PARAMS: text  (v:t_string|v:t_list) A single line, or a list of lines to be
-"                                     appended to the log buffer.
-" PARAMS: type  (v:t_string)  The type of the message. Controls the prefix that
-"                             is prepended the message text, which affects the
-"                             message's syntax highlighting.
+""
+" @dict DebugLogger
+" Append {text}, either a single line, or a list of lines, to the end of the
+" log buffer.
+"
+" [type] is the type of the message, and its value controls the prefix
+" prepended to the message text, which affects the message's syntax
+" highlighting in the log buffer.
+"
+" @default type="status"
+" @throws BadValue if [type] is not a valid message type.
+" @throws WrongType if {text} is not a string or list, or if [type] is not a string.
 let s:types_to_prefixes = {
     \ 'error':  '[ERROR]',
     \ 'status': '[NORMAL]',
@@ -170,9 +187,11 @@ let s:types_to_term_prefixes = {
     \ 'status': '[/N]',
     \ }
 let s:body_indent = '  '
-function! dapper#log#DebugLogger#log(text, ...) abort dict
-  call dapper#log#DebugLogger#CheckType(l:self)
-  let a:type = get(a:000, 0, 'status')
+function! dapper#log#DebugLogger#Log(text, ...) abort dict
+  call s:CheckType(l:self)
+  call maktaba#ensure#TypeMatchesOneOf(a:text, ['', []])
+  let l:type = maktaba#ensure#IsString(get(a:000, 0, 'status'))
+  call maktaba#ensure#IsIn(l:type, keys(s:types_to_prefixes))
   if type(a:text) ==# v:t_list
     let l:to_insert = a:text
   elseif type(a:text) ==# v:t_string
@@ -181,8 +200,8 @@ function! dapper#log#DebugLogger#log(text, ...) abort dict
     let l:to_insert = [string(a:text)]
   endif
 
-  let l:prefix = s:types_to_prefixes[a:type]
-  let l:term_pfx = s:types_to_term_prefixes[a:type]
+  let l:prefix = s:types_to_prefixes[l:type]
+  let l:term_pfx = s:types_to_term_prefixes[l:type]
   try
     if exists('*strftime')
       let l:ts = strftime('%c')
@@ -198,22 +217,19 @@ function! dapper#log#DebugLogger#log(text, ...) abort dict
     let l:to_insert[l:i] = s:body_indent.l:to_insert[l:i]
   let l:i += 1 | endwhile
   let l:to_insert += [l:term_pfx]
-  call l:self.insertLines(-1, l:to_insert)
+  call l:self.InsertLines(-1, l:to_insert)
 
-  let l:self['__counter'] += 1  " received another message
-  if l:self.__shouldWrite()  " based on the current received count,
-    call l:self.__write()
+  let l:self.__counter += 1  " received another message
+  if l:self.__ShouldWrite()  " based on the current received count,
+    call l:self.__Write()
   endif
 endfunction
 
-" BRIEF:  Send a report, which might be logged by a handler.
-" PARAM:  kind  (v:t_string)
-" PARAM:  brief (v:t_string)
-" PARAM:  long  (v:t_string?)
-" PARAM:  alert (v:t_bool?)
-" PARAM:  other (any?)
+""
+" @dict DebugLogger
+" Send a report, which might be logged by a handler.
 function! dapper#log#DebugLogger#NotifyReport(kind, brief, ...) abort dict
-  call dapper#log#DebugLogger#CheckType(l:self)
+  call s:CheckType(l:self)
   let l:msg = call('dapper#dap#Report#new', [0, '', a:kind, a:brief] + a:000)
   call dapper#receive(l:msg)
 endfunction

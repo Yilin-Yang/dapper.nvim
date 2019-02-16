@@ -9,7 +9,7 @@ let s:typename = 'DebugAdapterConfig'
 ""
 " @public
 " @dict DebugAdapterConfig
-" @function dapper#config#DebugAdapterConfig#new({runtime_env} {exe_filepath} {adapter_id})
+" @function dapper#config#DebugAdapterConfig#New({runtime_env} {exe_filepath} {adapter_id})
 " Construct a new DebugAdapterConfig object.
 "
 " {runtime_env} is the environment in which to run the debug adapter, e.g.
@@ -20,7 +20,7 @@ let s:typename = 'DebugAdapterConfig'
 " {adapter_id} is equivalent to the `type` attribute of a `launch.json` file.
 "
 " @throws WrongType if any of the arguments above are not strings.
-function! dapper#config#DebugAdapterConfig#new(
+function! dapper#config#DebugAdapterConfig#New(
     \ runtime_env,
     \ exe_filepath,
     \ adapter_id) abort

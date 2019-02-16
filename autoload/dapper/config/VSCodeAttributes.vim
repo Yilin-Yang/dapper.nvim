@@ -9,9 +9,9 @@ let s:typename = 'VSCodeAttributes'
 ""
 " @public
 " @dict VSCodeAttributes
-" @function dapper#config#VSCodeAttributes#new()
+" @function dapper#config#VSCodeAttributes#New()
 " Construct and return a VSCodeAttributes object.
-function! dapper#config#VSCodeAttributes#new() abort
+function! dapper#config#VSCodeAttributes#New() abort
   let l:new = {
       \ 'preLaunchTask': '',
       \ 'postLaunchTask': '',
