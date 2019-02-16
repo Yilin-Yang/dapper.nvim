@@ -13,9 +13,8 @@ let s:typename = 'ReportHandler'
 " object.
 "
 " @throws WrongType if {logger} is not a dictionary.
-function! dapper#log#ReportHandler#new(logger) abort
+function! dapper#log#ReportHandler#New(logger) abort
   let l:new = {
-      \ 'TYPE': {'ReportHandler': 1},
       \ '___logger___': a:logger,
       \ 'Receive': typevim#make#Member('Receive'),
       \ '_echoMsg': typevim#make#Member('_echoMsg'),

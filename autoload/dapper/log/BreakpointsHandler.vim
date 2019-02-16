@@ -4,8 +4,8 @@
 
 let s:name_pattern='Set\%(Function\)\{-}BreakpointsResponse'
 
-function! dapper#log#BreakpointsHandler#new(logger, message_passer) abort
-  let l:new = dapper#log#ReportHandler#new(a:logger)
+function! dapper#log#BreakpointsHandler#New(logger, message_passer) abort
+  let l:new = dapper#log#ReportHandler#New(a:logger)
   let l:new['TYPE']['BreakpointsHandler'] = 1
   let l:new['DESTRUCTORS'] += [function('dapper#log#BreakpointsHandler#destroy', l:new)]
   let l:new['__message_passer'] = a:message_passer
