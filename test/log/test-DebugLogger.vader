@@ -2,24 +2,24 @@ Execute (DebugLogger: Setup):
   " EDITED TEST_VIMRC
   call dapper#RemoveDebugLogger(['ALL', 'DESTROY'])
   call writefile([], g:dapper_logfile, 's')
-  let g:db = dapper#log#DebugLogger#get()
+  let g:db = dapper#log#DebugLogger#Get()
 
 Execute (DebugLogger: Feed Message, Should Write):
-  call g:db.log('foobar')
+  call g:db.Log('foobar')
   let g:written_back = readfile(g:dapper_logfile)
 Then:
   Assert match(g:written_back[0], '\[NORMAL\]') != -1
   AssertEqual ['  foobar', '[/N]'], g:written_back[1:2]
-  
+
 Execute (DebugLogger: Feed Another, Shouldn't Write):
-  call g:db.log('foobar')
+  call g:db.Log('foobar')
   let g:written_back = readfile(g:dapper_logfile)
 Then:
   Assert match(g:written_back[0], '\[NORMAL\]') != -1
   AssertEqual ['  foobar', '[/N]'], g:written_back[1:2]
 
 Execute (DebugLogger: Feed Another, Should Write):
-  call g:db.log('foobar')
+  call g:db.Log('foobar')
   let g:written_back = readfile(g:dapper_logfile)
 Then:
   Assert match(g:written_back[0], '\[NORMAL\]') != -1
