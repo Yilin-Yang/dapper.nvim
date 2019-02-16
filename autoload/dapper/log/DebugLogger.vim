@@ -1,4 +1,7 @@
-" BRIEF:  Global singleton debug logger.
+""
+" @dict DebugLogger
+" A global debug logger. Writes incoming @dict(Report)s to a log buffer and,
+" optionally, a logfile.
 
 " BRIEF:  Get a reference to the debug logger singleton.
 function! dapper#log#DebugLogger#get(...) abort

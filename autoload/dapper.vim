@@ -5,9 +5,6 @@
 " effort to take the best features of Microsoft's VSCode test editor and
 " crudely staple them onto neovim.
 
-" NOTE: `@library` is specified to make all functions public by default, even
-" though dapper.nvim is not technically a library.
-
 ""
 " Receive a response or event from the TypeScript middle-end.
 function! dapper#receive(msg) abort

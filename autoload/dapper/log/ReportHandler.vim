@@ -3,64 +3,50 @@
 " An object that subscribes to incoming @dict(Report)s and logs them for
 " debugging purposes, sometimes displaying them to the user.
 
-" BRIEF:  Construct a new ReportHandler object.
-" PARAM:  logger  (dapper#DebugLogger)  The interface used to log reports.
-" PARAM:  message_passer  (dapper#MiddleTalker) The interface from which the
-"             ReportHandler should receive reports and other messages.
-" PARAM:  pattern (v:t_string)  A string-match regex pattern to match against
-"             the `vim_msg_typename` of incoming messages.
+let s:typename = 'ReportHandler'
+
+""
+" @public
+" Construct a new ReportHandler object.
+"
+" {logger} is the interface used to log reports, e.g. a @dict(DebugLogger)
+" object.
+"
+" @throws WrongType if {logger} is not a dictionary.
 function! dapper#log#ReportHandler#new(logger) abort
   let l:new = {
       \ 'TYPE': {'ReportHandler': 1},
-      \ 'DESTRUCTORS': [],
-      \ 'destroy': function('dapper#log#ReportHandler#destroy'),
       \ '___logger___': a:logger,
-      \ 'Receive': function('dapper#log#ReportHandler#Receive'),
-      \ '_echoMsg': function('dapper#log#ReportHandler#_echoMsg'),
-      \ '_formatAndLog': function('dapper#log#ReportHandler#_formatAndLog'),
-      \ '_logReport': function('dapper#log#ReportHandler#_logReport'),
+      \ 'Receive': typevim#make#Member('Receive'),
+      \ '_echoMsg': typevim#make#Member('_echoMsg'),
+      \ '_formatAndLog': typevim#make#Member('_formatAndLog'),
+      \ '_logReport': typevim#make#Member('_logReport'),
       \ }
-  return l:new
+  return typevim#make#Class(s:typename, l:new)
 endfunction
 
-function! dapper#log#ReportHandler#CheckType(object) abort
-  if type(a:object) !=# v:t_dict || !has_key(a:object, 'TYPE') || !has_key(a:object['TYPE'], 'ReportHandler')
-  try
-    let l:err = '(dapper#log#ReportHandler) Object is not of type ReportHandler: '.string(a:object)
-  catch
-    redir => l:object
-    silent! echo a:object
-    redir end
-    let l:err = '(dapper#log#ReportHandler) This object failed type check: '.l:object
-  endtry
-  throw l:err
-  endif
+function! s:CheckType(Obj) abort
+  call typevim#ensure#IsType(a:Obj, s:typename)
 endfunction
 
-function! dapper#log#ReportHandler#__noImpl(func_name, ...) abort dict
-  throw '(dapper#log#ReportHandler) Invoked pure virtual function: '.a:func_name
-endfunction
-
-function! dapper#log#ReportHandler#destroy() abort dict
-  call dapper#log#ReportHandler#CheckType(l:self)
-  let l:dtors = l:self['DESTRUCTORS']
-  let l:i = len(l:dtors) - 1 | while l:i >=# 0
-    let l:Dtor = l:dtors[l:i]
-    call function(l:Dtor, l:self)
-  let l:i -= 1 | endwhile
-endfunction
-
-" BRIEF:  Process an incoming message, potentially writing it to the log.
+""
+" @dict ReportHandler
+" @public
+" Process an incoming message, potentially writing it to the debug logger.
+" @throws WrongType if {msg} is not a dictionary.
 function! dapper#log#ReportHandler#Receive(msg) abort dict
-  call dapper#log#ReportHandler#CheckType(l:self)
+  call s:CheckType(l:self)
   call dapper#log#ReportHandler#__noImpl('receive')
 endfunction
 
-" BRIEF:  Echo a message to the user, if configured to do so.
-" PARAM:  msg   (DapperReport)
-" PARAM:  hl    (v:t_string)    The highlight group to apply to the message.
+""
+" Echo a {msg} to the user using highlight group {hl}, if configured to do so.
+"
+" @throws WrongType if {msg} is not a dictionary, or if {hl} is not a stirng.
 function! dapper#log#ReportHandler#_echoMsg(msg, hl) abort dict
-  call dapper#log#ReportHandler#CheckType(l:self)
+  call s:CheckType(l:self)
+  call maktaba#ensure#IsDict(a:msg)
+  call maktaba#ensure#IsString(a:hl)
   let l:verbosity = dapper#settings#EchoMessageVerbosity()
   if dapper#settings#RedrawOnEcho()
     redraw  " most recent echo will clobber those before
@@ -93,7 +79,7 @@ endfunction
 " BRIEF:  Convenience function; parse a Report and then call `_logReport`.
 " PARAM:  msg   (DapperReport)  The Report to log.
 function! dapper#log#ReportHandler#_formatAndLog(msg, type) abort dict
-  call dapper#log#ReportHandler#CheckType(l:self)
+  call s:CheckType(l:self)
   let l:lines = [
       \ 'BRIEF: '.typevim#object#ShallowPrint(a:msg['brief']),
       \ 'LONG:  '.typevim#object#ShallowPrint(a:msg['long']),
@@ -110,6 +96,6 @@ endfunction
 " BRIEF:  Write a report to the output log.
 " DETAILS:  Shall have the same function signature as `DebugLogger::log`.
 function! dapper#log#ReportHandler#_logReport(text, type) abort dict
-  call dapper#log#ReportHandler#CheckType(l:self)
+  call s:CheckType(l:self)
   call l:self['___logger___'].log(a:text, a:type)
 endfunction
