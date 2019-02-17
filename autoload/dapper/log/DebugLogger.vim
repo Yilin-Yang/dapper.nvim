@@ -31,15 +31,15 @@ function! dapper#log#DebugLogger#Get(...) abort
     endtry
   endif
 
+  let l:bufset = {
+      \ 'bufname': dapper#settings#Logfile(),
+      \ 'bufhidden': 'hide',
+      \ 'buflisted': 0,
+      \ 'buftype' : 'nofile',
+      \ 'swapfile': 1,
+      \ }
+
   let l:writeback = dapper#settings#LogBufferWriteback()
-  if match(l:writeback, 'every') !=# -1
-    let l:every = split(l:writeback, 'every')[0] + 0
-    let l:writeback = 'every'
-    let l:bufset = s:writeback_to_bufsettings[l:writeback]
-    let l:bufset['interval'] = l:every
-  else
-    let l:bufset = s:writeback_to_bufsettings[l:writeback]
-  endif
 
   " set initial 'last line written' to 1, so that we ignore the blank line
   " at the top of the log buffer when writing back
@@ -53,11 +53,10 @@ function! dapper#log#DebugLogger#Get(...) abort
       \ 'Log': typevim#make#Member('Log'),
       \ 'NotifyReport': typevim#make#Member('NotifyReport'),
       \ }
-  call typevim#make#Derived(s:typename, typevim#Buffer#New(l:bufset), l:new,
-                          \ typevim#make#Member('CleanUp'))
-
+  let l:base = typevim#Buffer#New(l:bufset)
+  call typevim#make#Derived(
+      \ s:typename, l:base, l:new, typevim#make#Member('CleanUp'))
   let g:dapper_debug_logger = l:new
-
   if !$IS_DAPPER_DEBUG
   augroup dapper_debug_logger
     au!
@@ -105,21 +104,6 @@ let s:writeback_to_bufsettings = {
         \ 'buftype' : 'nofile',
         \ 'swapfile': 0,
         \ },
-    \ 'every': {
-        \ 'bufname': dapper#settings#Logfile(),
-        \ 'bufhidden': 'hide',
-        \ 'buflisted': 0,
-        \ 'buftype' : 'nofile',
-        \ 'swapfile': 1,
-        \ 'interval': -1,
-        \ },
-    \ 'always': {
-        \ 'bufname': dapper#settings#Logfile(),
-        \ 'bufhidden': 'hide',
-        \ 'buflisted': 0,
-        \ 'buftype' : 'nofile',
-        \ 'swapfile': 1,
-      \ }
     \ }
 
 function! s:CheckType(Obj) abort
@@ -132,13 +116,7 @@ endfunction
 function! dapper#log#DebugLogger#__ShouldWrite() abort dict
   call s:CheckType(l:self)
   let l:wb = l:self.__writeback
-  if l:wb ==# 'always'
-    return 1
-  endif
-  if l:wb !=# 'every' | return 0 | endif
-  let l:counter = l:self.__counter
-  let l:interval = l:self.__settings.interval
-  return !float2nr(fmod(l:counter, l:interval))
+  return l:wb ==# 'always'
 endfunction
 
 ""
@@ -150,8 +128,8 @@ function! dapper#log#DebugLogger#__Write() abort dict
   let l:bufnr = l:self.__bufnr
   let l:to_writeback = nvim_buf_get_lines(l:bufnr, l:from, -1, 1)
   let l:bufname = l:self.__settings.bufname
-  " asynchronously append to file
-  call writefile(l:to_writeback, l:bufname, 'aS')
+  " synchronously append to file
+  call writefile(l:to_writeback, l:bufname, 'as')
   let l:self.__last_line_written += len(l:to_writeback)
 endfunction
 

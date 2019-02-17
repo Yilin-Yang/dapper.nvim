@@ -112,32 +112,17 @@ function! dapper#settings#Logfile() abort
   return g:dapper_logfile
 endfunction
 
-" RETURNS:  (v:t_string)  Whether or not to write the debug log buffer out to
-"                         a file.
-let s:dapper_log_buffer_writeback_values = [
-    \ 'never', 'onclose', 'every[N_MSGS]', 'always'
-    \ ]
+" RETURNS:  (v:t_bool)    Whether or not to write the debug log buffer out to a
+"                         file on exit.
 function! dapper#settings#LogBufferWriteback() abort
   if !exists('g:dapper_log_buffer_writeback')
-    let g:dapper_log_buffer_writeback = 'never'
+    let g:dapper_log_buffer_writeback = v:false
   endif
   call s:AssertType(
       \ g:dapper_log_buffer_writeback,
-      \ v:t_string,
+      \ v:t_bool,
       \ 'g:dapper_log_buffer_writeback'
       \ )
-  if g:dapper_log_buffer_writeback[0:4] ==# 'every'
-    let l:nr = split(g:dapper_log_buffer_writeback, 'every')[0] + 0
-    if !l:nr
-      throw '(dapper.nvim) "every" in g:dapper_log_buffer_writeback must be '
-          \ . 'followed by a number (given: '.g:dapper_log_buffer_writeback.')'
-    endif
-  elseif index(s:dapper_log_buffer_writeback_values,
-        \ g:dapper_log_buffer_writeback) ==# -1
-    throw '(dapper.nvim) Value '.g:dapper_log_buffer_writeback.' for '
-        \.'g:dapper_log_buffer_writeback not in list: '
-        \.string(s:dapper_log_buffer_writeback_values)
-  endif
   return g:dapper_log_buffer_writeback
 endfunction
 

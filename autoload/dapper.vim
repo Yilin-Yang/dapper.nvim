@@ -113,7 +113,8 @@ function! dapper#RemoveDebugLogger(logger_type) abort
     return
   endif
 
-  let l:ddl = dapper#log#DebugLogger#Get()
+  call dapper#log#DebugLogger#Get().CleanUp()
+  unlet dapper#log#DebugLogger#Get().CleanUp()
   let l:drh = g:dapper_report_handlers
   let l:dmt = dapper#MiddleTalker#Get()
 
