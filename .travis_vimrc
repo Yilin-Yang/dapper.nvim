@@ -23,10 +23,6 @@ let g:test_dir = g:project_root.'/test'
 let g:dapper_logfile = g:project_root.'/test/LOGFILE'
 let g:dapper_echo_messages = 'never'
 
-if $DAPPER_TEST_DEBUG_LOGGING
-  let g:dapper_log_buffer_writeback = 'every2'
-endif
-
 call dapper#AddDapperConfig(
   \ 'node',
   \ g:project_root.'/node_modules/vscode-mock-debug/out/debugAdapter.js',
