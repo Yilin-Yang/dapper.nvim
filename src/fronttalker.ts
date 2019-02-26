@@ -15,9 +15,7 @@ export interface FrontTalker {
   /**
    * Send a status update or error message to the VimL frontend.
    */
-  report(
-      kind: string, brief: string, long: string, alert?: boolean,
-      other?: any): Promise<void>;
+  report(kind: string, brief: string, long: string, other?: any): Promise<void>;
 
   /**
    * Subscribe to incoming requests from the VimL frontend.

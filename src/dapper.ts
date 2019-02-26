@@ -36,8 +36,7 @@ export function startAndConfigureUnpack(args: any[]): Promise<boolean> {
     }
     return startAndConfigure(config);
   } catch (e) {
-    middleman.report(
-        'error', 'Start/Configuration failed!', e.toString(), true);
+    middleman.report('error', 'Start/Configuration failed!', e.toString());
     return Promise.resolve<boolean>(true);
   }
 }
@@ -99,7 +98,7 @@ export function terminateUnpack(args: any[]): Promise<boolean> {
     }
     return terminate(restart);
   } catch (e) {
-    middleman.report('error', 'Terminate request failed!', e.toString(), true);
+    middleman.report('error', 'Terminate request failed!', e.toString());
     return Promise.resolve(false);
   }
 }
@@ -130,7 +129,7 @@ export function requestUnpack(args: any[]): Promise<DebugProtocol.Response> {
 
     return request(command, vimID, argDict);
   } catch (e) {
-    middleman.report('error', 'Request failed!', e.toString(), true);
+    middleman.report('error', 'Request failed!', e.toString());
     return Promise.resolve({} as DebugProtocol.Response);
   }
 }

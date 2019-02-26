@@ -108,8 +108,8 @@ export class Middleman {
         }
       } catch (e) {
         this.ft.report(
-            'error', 'Failed to terminate running debug adapter!', e.toString(),
-            true);
+            'error', 'Failed to terminate running debug adapter!',
+            e.toString());
       }
     }
 
@@ -140,8 +140,7 @@ export class Middleman {
       this.dc.emit = this.teeEmit.bind(this);
       return response;
     } catch (e) {
-      this.ft.report(
-          'error', 'Failed to start debug adapter!', e.toString(), true);
+      this.ft.report('error', 'Failed to start debug adapter!', e.toString());
       return {} as DebugProtocol.InitializeResponse;
     }
   }
@@ -192,7 +191,7 @@ export class Middleman {
       return exBpsResp;
     } catch (e) {
       this.ft.report(
-          'error', 'Failed to configure debug adapter!', e.toString(), true);
+          'error', 'Failed to configure debug adapter!', e.toString());
       return {} as DebugProtocol.Response;
     }
   }
@@ -225,7 +224,7 @@ export class Middleman {
         },
         () => {
           const msg = 'Terminate request timed out. Forcing disconnect.';
-          this.ft.report('status', msg, '');
+          this.ft.report('info', msg, '');
           return this.disconnect();
         });
   }
@@ -243,7 +242,7 @@ export class Middleman {
       this.dc = Middleman.EMPTY_DC;
       return response;
     } catch (e) {
-      this.ft.report('error', 'Disconnect failed!', e.toString(), true);
+      this.ft.report('error', 'Disconnect failed!', e.toString());
       return {} as DebugProtocol.DisconnectResponse;
     }
   }
@@ -251,9 +250,9 @@ export class Middleman {
   /**
    * Wrapper around the `report()` function provided by the FrontTalker.
    */
-  report(kind: string, brief: string, long: string, alert = false, other?: any):
+  report(kind: string, brief: string, long: string, other?: any):
       Promise<void> {
-    return this.ft.report(kind, brief, long, alert, other);
+    return this.ft.report(kind, brief, long, other);
   }
 
   /**

@@ -33,11 +33,11 @@ export class NvimFrontTalker extends BasicFrontTalker {
       }
       this.report(
           'error', 'Sending ' + msg.vim_msg_typename + ' failed!', e.toString(),
-          false, JSON.stringify(msg));
+          JSON.stringify(msg));
     }
   }
 
-  report(kind: string, brief: string, long: string, alert = false, other?: any):
+  report(kind: string, brief: string, long: string, other?: any):
       Promise<void> {
     const msg: DapperReport = {
       seq: 0,
@@ -47,7 +47,6 @@ export class NvimFrontTalker extends BasicFrontTalker {
       kind,
       brief,
       long,
-      alert,
       other
     };
     msg.vim_msg_typename = typenameOf(msg);

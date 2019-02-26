@@ -35,7 +35,7 @@ export interface DapperMessage {
 export interface Report extends DebugProtocol.ProtocolMessage {
   /**
    * The "kind" of report this message represents.
-   * Values: 'status', 'error', etc.
+   * Values: 'debug', 'info', 'warn', 'error', etc.
    */
   kind: string;
 
@@ -48,12 +48,6 @@ export interface Report extends DebugProtocol.ProtocolMessage {
    * A verbose, detailed summary of the report.
    */
   long: string;
-
-  /**
-   * Non-binding hint on whether to echo the report directly to the user.
-   * When false, the report will (generally) just be silently logged.
-   */
-  alert: boolean;
 
   /**
    * Any other miscellaneous information about this report.
