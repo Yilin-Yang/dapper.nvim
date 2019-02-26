@@ -6,6 +6,7 @@
 "
 " Is a wrapper around dapper.nvim's maktaba-provided plugin-wide debug logger.
 
+let s:plugin = maktaba#plugin#Get('dapper.nvim')
 let s:typename = 'DebugLogger'
 
 ""
@@ -42,7 +43,7 @@ function! dapper#log#DebugLogger#Get() abort
   let l:base = typevim#Buffer#New({
         \ 'bufhidden': 'hide',
         \ 'buflisted': 0,
-        \ 'bufname': dapper#settings#LogBufferName(),
+        \ 'bufname': s:plugin.flags.log_buffer_name.Get(),
         \ 'buftype': 'nofile',
         \ 'swapfile': 0,
       \ })
@@ -72,18 +73,18 @@ endfunction
 ""
 " @dict DebugLogger
 " Write the debug log to an output file, if configured to do so.
-function! dapper#log#CleanUp() dict abort
+function! dapper#log#DebugLogger#CleanUp() dict abort
   call s:CheckType(l:self)
-  if dapper#settings#LogBufferWriteback()
+  if s:plugin.flags.log_buffer_writeback.Get()
     let l:buf_contents = l:self.GetLines(1, -1)
     " synchronously write to the logfile
-    call writefile(l:buf_contents, dapper#settings#Logfile(), 's')
+    call writefile(l:buf_contents, s:plugin.flags.logfile.Get(), 's')
   endif
 endfunction
 
 ""
 " Append text to the debug log buffer.
-function! dapper#log#Log() dict abort
+function! dapper#log#DebugLogger#Log() dict abort
   " TODO what function signature?
 endfunction
 
@@ -105,7 +106,7 @@ endfunction
 " original type.
 "
 " @throws WrongType if {kind} or {brief} are not strings.
-function! dapper#log#NotifyReport(kind, brief, ...) dict abort
+function! dapper#log#DebugLogger#NotifyReport(kind, brief, ...) dict abort
   call s:CheckType(l:self)
   call maktaba#ensure#IsString(a:kind)
   call maktaba#ensure#IsString(a:brief)
