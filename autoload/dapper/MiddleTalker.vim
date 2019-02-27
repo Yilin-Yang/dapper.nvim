@@ -201,8 +201,7 @@ endfunction
 ""
 " @dict MiddleTalker
 " @usage {kind} {brief} [long] [alert] [other]
-" Broadcast a @dict(Report) constructed using the given arguments, which might
-" be logged by a subscribed @dict(ReportHandler).
+" TODO
 "
 " @throws WrongType if {kind} or {brief} are not strings. The remaining arguments may be of any type.
 function! dapper#MiddleTalker#NotifyReport(kind, brief, ...) abort dict

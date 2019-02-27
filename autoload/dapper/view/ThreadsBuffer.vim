@@ -1,5 +1,4 @@
 ""
-" @private
 " @dict ThreadsBuffer
 " Shows active threads in the debuggee; 'digs down' into callstacks.
 

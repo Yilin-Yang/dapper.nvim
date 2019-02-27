@@ -1,10 +1,14 @@
 let s:MsgTypenameToInterface = {}
 
 ""
-" @private
 " @dict DapperMessage
-" A dictionary, annotated with a human-readable (and @dict(MiddleTalker)-parsable)
-" typename, and possibly the ID of a frontend object.
+" A Debug Adapter Protocol message, annotated with a human-readable (and
+" @dict(MiddleTalker)-parsable) typename, and possibly the ID of a frontend
+" object.
+
+""
+" @dict DapperMessage
+" @private
 function! dapper#dap#DapperMessage() abort
   let l:vim_msg_typename = 'DapperMessage'
   if !has_key(s:MsgTypenameToInterface, l:vim_msg_typename)
@@ -14,6 +18,30 @@ function! dapper#dap#DapperMessage() abort
       \ }
     let s:MsgTypenameToInterface[l:vim_msg_typename] =
         \ typevim#make#Interface(l:vim_msg_typename, l:prototype)
+  endif
+  return s:MsgTypenameToInterface[l:vim_msg_typename]
+endfunction
+
+""
+" @dict DapperReport
+" A "custom" message type used by dapper.nvim, patterned off of the messages
+" of the Debug Adapter Protocol. Used for sending information, updates, error
+" messages, etc. to the frontend.
+
+""
+" @dict DapperReport
+" @private
+function! dapper#dap#DapperReport() abort
+  let l:vim_msg_typename = 'Report'
+  if !has_key(s:MsgTypenameToInterface, l:vim_msg_typename)
+    let l:prototype = {
+      \ 'kind': typevim#String(),
+      \ 'brief': typevim#String(),
+      \ 'long': typevim#String(),
+      \ 'other?': typevim#String(),
+      \ }
+    let s:MsgTypenameToInterface[l:vim_msg_typename] =
+        \ typevim#make#Extension(l:vim_msg_typename, dapper#dap#ProtocolMessage(), l:prototype)
   endif
   return s:MsgTypenameToInterface[l:vim_msg_typename]
 endfunction

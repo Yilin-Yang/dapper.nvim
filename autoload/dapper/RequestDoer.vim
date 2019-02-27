@@ -1,7 +1,6 @@
 let s:typename = 'RequestDoer'
 
 ""
-" @private
 " @dict RequestDoer
 " Sends the given {command} with the given {request_args} and resolves with
 " the results.

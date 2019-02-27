@@ -1,5 +1,4 @@
 ""
-" @private
 " @dict Thread
 " Stores information about a running (or stopped) thread.
 

@@ -1,5 +1,4 @@
 ""
-" @private
 " @dict DapperBuffer
 " A Buffer, with additional methods for use in the dapper UI.
 "
@@ -15,13 +14,13 @@ let s:typename = 'DapperBuffer'
 
 ""
 " @dict DapperBuffer
-" @function dapper#view#DapperBuffer#New()
+" @function dapper#view#DapperBuffer#New({message_passer}, [bufparams])
 " Construct a DapperBuffer.
 "
 " {message_passer} is the message-passing interface that DapperBuffer will
 " use, which shall have the same interface as @dict(MiddleTalker).
 "
-" For {bufparams}, see @function(typevim#Buffer#New).
+" For [bufparams], see @function(typevim#Buffer#New).
 function! dapper#view#DapperBuffer#new(message_passer, ...) abort
   let l:bufparams = get(a:000, 0, {})
   let l:base = typevim#Buffer#New(l:bufparams)

@@ -1,5 +1,4 @@
 ""
-" @private
 " @dict Model
 " Encapsulates the state of the debugging process.
 "
