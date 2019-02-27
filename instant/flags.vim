@@ -25,8 +25,9 @@ function! s:GlobalSettingOrDefault(setting_name, default)
   try
     call maktaba#ensure#TypeMatches(l:set_val, a:default)
   catch /ERROR(WrongType)/
-    throw maktaba#error#WrongType('Given setting %s has the wrong type!',
-        \ a:setting_name, v:exception)
+    throw maktaba#error#WrongType(
+        \ 'Given setting %s has the wrong type! (val: %s)',
+        \ a:setting_name, l:set_val)
   endtry
   return l:set_val
 endfunction
