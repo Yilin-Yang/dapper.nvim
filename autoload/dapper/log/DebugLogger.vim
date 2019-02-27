@@ -1,16 +1,19 @@
 ""
-" @private
 " @dict DebugLogger
-" A global debug logger. Writes incoming @dict(Report)s to a log buffer and,
-" optionally, a logfile just before vim exits.
+" A global debug logger. Writes incoming @dict(DapperReport)s to a log buffer
+" and, optionally, a logfile just before vim exits.
 "
 " Is a wrapper around dapper.nvim's maktaba-provided plugin-wide debug logger.
 
 let s:plugin = maktaba#plugin#Get('dapper.nvim')
 let s:typename = 'DebugLogger'
 
+let s:report_interface = dapper#dap#DapperReport()
+
 ""
+" @public
 " @dict DebugLogger
+" @function dapper#log#DebugLogger#Interface()
 " Returns the interface that DebugLogger implements.
 function! dapper#log#DebugLogger#Interface() abort
   if !exists('s:interface')
@@ -25,6 +28,7 @@ endfunction
 call dapper#log#DebugLogger#Interface()
 
 ""
+" @public
 " @dict DebugLogger
 " Return a reference to the DebugLogger singleton.
 function! dapper#log#DebugLogger#Get() abort
@@ -50,6 +54,7 @@ function! dapper#log#DebugLogger#Get() abort
   let l:new = {
       \ '__logger': g:dapper_plugin.logger,
       \ 'Log': typevim#make#Member('Log'),
+      \ 'ListifyReport': typevim#make#Member('ListifyReport'),
       \ 'NotifyReport': typevim#make#Member('NotifyReport'),
       \ }
 
@@ -71,6 +76,7 @@ function! s:CheckType(Obj) abort
 endfunction
 
 ""
+" @public
 " @dict DebugLogger
 " Write the debug log to an output file, if configured to do so.
 function! dapper#log#DebugLogger#CleanUp() dict abort
@@ -83,17 +89,77 @@ function! dapper#log#DebugLogger#CleanUp() dict abort
 endfunction
 
 ""
-" Append text to the debug log buffer.
-function! dapper#log#DebugLogger#Log() dict abort
-  " TODO what function signature?
+" @public
+" @dict DebugLogger
+" Append a {report} to the dapper-specific debug log.
+"
+" Does not log to dapper.nvim's maktaba debugger interface. For that, see
+" @function(DebugLogger.NotifyReport).
+"
+" @throws BadValue if the given {report} is not a dict.
+" @throws WrongType if the given {report} is not a @dict(DapperReport).
+function! dapper#log#DebugLogger#Log(report) dict abort
+  if exists('*strftime')
+    let l:timestamp = strftime('%F %T (%a, %e %B)')
+  else
+    let l:timestamp = localtime()
+  endif
+  let l:lines_to_append = [
+      \ l:timestamp,
+      \ ]
+  let l:report = l:self.ListifyReport(a:report)
+
+  call append(l:lines_to_append, l:report)
+  call l:self.InsertLines('$', l:lines_to_append)
 endfunction
 
 ""
+" @public
 " @dict DebugLogger
-" Send a report, which which might be logged by a handler.
+" Convert the given {report} instance into a list printable through
+" functions like |append()| and return it.
+"
+" @throws BadValue if {report} is not a dict.
+" @throws WrongType if {report} is not a @dict(DapperReport) object.
+function! dapper#log#DebugLogger#ListifyReport(report) dict abort
+  call typevim#ensure#Implements(a:report, s:report_interface)
+
+  let l:lines_to_append = [
+      \ 'report: { '.a:report.kind.', '.a:report,
+      \ ]
+
+  " convert 'raw' strings into an indented, listified format
+  let l:indent_block = '  '
+  if empty(a:report.long)
+    let l:long = []
+  else
+    let l:long = typevim#string#IndentList(
+        \ typevim#string#Listify(a:report.long), l:indent_block)
+    let l:long[0] = l:indent_block.'long: '.l:long[0]
+  endif
+  if empty(a:report.other)
+    let l:long = []
+  else
+    let l:other = typevim#string#IndentList(
+        \ typevim#string#Listify(a:report.other), l:indent_block)
+    let l:other[0] = l:indent_block.'other:  '.l:other[0]
+  endif
+
+  call add(l:lines_to_append, l:long)
+  call add(l:lines_to_append, l:other)
+  call add(l:lines_to_append, '}')
+
+  return l:lines_to_append
+endfunction
+
+""
+" @public
+" @dict DebugLogger
+" Make a report. Log it to dapper.nvim's maktaba logger interface, which might
+" shout the message at the user. Also append it to the debug log.
 "
 " {kind} is the type of report. These correspond one-to-one with the
-" |maktaba.Logger| log levels.
+" |maktaba.Logger| log levels. This is not case sensitive.
 "
 " {brief} is a short (50 characters or less) summary of the report. If this is
 " longer than 50 characters, it will be truncated automatically.
@@ -105,18 +171,32 @@ endfunction
 " All optional arguments are pretty-printed into strings, regardless of their
 " original type.
 "
+" @throws BadValue if {kind} is not a |maktaba.Logger| level.
 " @throws WrongType if {kind} or {brief} are not strings.
 function! dapper#log#DebugLogger#NotifyReport(kind, brief, ...) dict abort
   call s:CheckType(l:self)
-  call maktaba#ensure#IsString(a:kind)
-  call maktaba#ensure#IsString(a:brief)
+
+  let l:kind = tolower(maktaba#ensure#IsString(a:kind))
+  let l:kind = toupper(l:kind[0:0]).l:kind[1:]
+  call maktaba#ensure#IsIn(l:kind, s:log_levels)
+
+  let l:brief = maktaba#ensure#IsString(a:brief)[:49]
+
   let l:long = ''
   let l:other = ''
   if a:0 >=# 2
     let l:other = typevim#object#PrettyPrint(get(a:000, 1))
   elseif a:0 ==# 1
-    let l:long = typevim#object#PrettyPrint(get(a:000, 0))
+    let l:long  = typevim#object#PrettyPrint(get(a:000, 0))
   endif
+  let l:report = dapper#dap#DapperReport#New(l:kind, l:brief, l:long, l:other)
 
-  " TODO
+  " log to dapper.nvim's internal debug log
+  call l:self.Log(l:report)
+
+  " log to the maktaba logger interface
+  " note that the log levels are also the names of dict functions inside the
+  " maktaba logger object (see `:help maktaba.Logger`)
+  call l:self.__logger[l:kind](l:brief)
 endfunction
+let s:log_levels = ['Debug', 'Info', 'Warn', 'Error', 'Severe']
