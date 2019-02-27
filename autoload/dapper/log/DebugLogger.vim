@@ -4,6 +4,9 @@
 " and, optionally, a logfile just before vim exits.
 "
 " Is a wrapper around dapper.nvim's maktaba-provided plugin-wide debug logger.
+" Inherits from the |TypeVim.Buffer| datatype; the buffer object that it
+" wraps is its log buffer, which can be accessed and modified using Buffer
+" member functions, like |Buffer.Open()| and |Buffer.InsertLines()|.
 
 let s:plugin = maktaba#plugin#Get('dapper.nvim')
 let s:typename = 'DebugLogger'
