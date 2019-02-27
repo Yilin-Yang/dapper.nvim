@@ -175,28 +175,16 @@ endfunction
 " @throws WrongType if {kind} or {brief} are not strings.
 function! dapper#log#DebugLogger#NotifyReport(kind, brief, ...) dict abort
   call s:CheckType(l:self)
-
-  let l:kind = tolower(maktaba#ensure#IsString(a:kind))
-  let l:kind = toupper(l:kind[0:0]).l:kind[1:]
-  call maktaba#ensure#IsIn(l:kind, s:log_levels)
-
   let l:brief = maktaba#ensure#IsString(a:brief)[:49]
-
-  let l:long = ''
-  let l:other = ''
-  if a:0 >=# 2
-    let l:other = typevim#object#PrettyPrint(get(a:000, 1))
-  elseif a:0 ==# 1
-    let l:long  = typevim#object#PrettyPrint(get(a:000, 0))
-  endif
-  let l:report = dapper#dap#DapperReport#New(l:kind, l:brief, l:long, l:other)
+  let l:kind_lower = tolower(maktaba#ensure#IsString(a:kind))
+  let l:kind_func = toupper(l:kind_lower[0:0]).l:kind_lower[1:]
 
   " log to dapper.nvim's internal debug log
+  let l:report = call('dapper#dap#DapperReport', [a:kind, a:brief] + a:000)
   call l:self.Log(l:report)
 
   " log to the maktaba logger interface
   " note that the log levels are also the names of dict functions inside the
   " maktaba logger object (see `:help maktaba.Logger`)
-  call l:self.__logger[l:kind](l:brief)
+  call l:self.__logger[l:kind_func](l:brief)
 endfunction
-let s:log_levels = ['Debug', 'Info', 'Warn', 'Error', 'Severe']
