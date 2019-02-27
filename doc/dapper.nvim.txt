@@ -80,9 +80,9 @@ A global debug logger. Writes incoming |dapper.nvim.DapperReport|s to a log
 buffer and, optionally, a logfile just before vim exits.
 
 Is a wrapper around dapper.nvim's maktaba-provided plugin-wide debug logger.
-Inherits from the |TypeVim.Buffer| datatype; the buffer object that it wraps
-is its log buffer, which can be accessed and modified using Buffer member
-functions, like |Buffer.Open()| and |Buffer.InsertLines()|.
+
+Public member variables include `buffer`, which is the |TypeVim.Buffer| object
+wrapping the DebugLogger's log buffer.
 
 dapper#log#DebugLogger#Interface()                   *DebugLogger.Interface()*
   Returns the interface that DebugLogger implements.

@@ -4,9 +4,9 @@
 " and, optionally, a logfile just before vim exits.
 "
 " Is a wrapper around dapper.nvim's maktaba-provided plugin-wide debug logger.
-" Inherits from the |TypeVim.Buffer| datatype; the buffer object that it
-" wraps is its log buffer, which can be accessed and modified using Buffer
-" member functions, like |Buffer.Open()| and |Buffer.InsertLines()|.
+"
+" Public member variables include `buffer`, which is the |TypeVim.Buffer|
+" object wrapping the DebugLogger's log buffer.
 
 let s:plugin = maktaba#plugin#Get('dapper.nvim')
 let s:typename = 'DebugLogger'
@@ -47,7 +47,7 @@ function! dapper#log#DebugLogger#Get() abort
     endtry
   endif
 
-  let l:base = typevim#Buffer#New({
+  let l:buffer = typevim#Buffer#New({
         \ 'bufhidden': 'hide',
         \ 'buflisted': 0,
         \ 'bufname': s:plugin.flags.log_buffer_name.Get(),
@@ -55,14 +55,14 @@ function! dapper#log#DebugLogger#Get() abort
         \ 'swapfile': 0,
       \ })
   let l:new = {
+      \ 'buffer': l:buffer,
       \ '__logger': g:dapper_plugin.logger,
       \ 'Log': typevim#make#Member('Log'),
       \ 'ListifyReport': typevim#make#Member('ListifyReport'),
       \ 'NotifyReport': typevim#make#Member('NotifyReport'),
       \ }
 
-  call typevim#make#Derived(
-      \ s:typename, l:base, l:new, typevim#make#Member('CleanUp'))
+  call typevim#make#Class(s:typename, l:new, typevim#make#Member('CleanUp'))
 
   let g:dapper_debug_logger = l:new
 
@@ -85,7 +85,7 @@ endfunction
 function! dapper#log#DebugLogger#CleanUp() dict abort
   call s:CheckType(l:self)
   if s:plugin.flags.log_buffer_writeback.Get()
-    let l:buf_contents = l:self.GetLines(1, -1)
+    let l:buf_contents = l:self.buffer.GetLines(1, -1)
     " synchronously write to the logfile
     call writefile(l:buf_contents, s:plugin.flags.logfile.Get(), 's')
   endif
@@ -113,7 +113,7 @@ function! dapper#log#DebugLogger#Log(report) dict abort
   let l:report = l:self.ListifyReport(a:report)
 
   call append(l:lines_to_append, l:report)
-  call l:self.InsertLines('$', l:lines_to_append)
+  call l:self.buffer.InsertLines('$', l:lines_to_append)
 endfunction
 
 ""
