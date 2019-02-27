@@ -8,8 +8,8 @@
 " [Long] and [Other] may both be non-string objects; if they are, then they
 " will be pretty-printed to strings on construction.
 function! dapper#dap#DapperReport#New(...) abort
-  let l:kind  = tolower(maktaba#ensure#IsString(get(a:000, 0, ''))[:49])
-  let l:brief = maktaba#ensure#IsString(get(a:000, 1, ''))
+  let l:kind  = tolower(maktaba#ensure#IsString(get(a:000, 0, '')))
+  let l:brief = maktaba#ensure#IsString(get(a:000, 1, '')[0:49])
   call maktaba#ensure#IsIn(l:kind, s:log_levels)
 
   let l:interface = dapper#dap#DapperReport()
@@ -17,13 +17,16 @@ function! dapper#dap#DapperReport#New(...) abort
   let l:new.kind = l:kind
   let l:new.brief = l:brief
 
-  let l:long = get(a:000, 0, '')
+  let l:long = get(a:000, 2, '')
   let l:new.long = maktaba#value#IsString(l:long) ?
       \ l:long : typevim#object#PrettyPrint(l:long)
 
-  let l:other = get(a:000, 1, '')
+  let l:other = get(a:000, 3, '')
   let l:new.other = maktaba#value#IsString(l:other) ?
       \ l:other : typevim#object#PrettyPrint(l:other)
+
+  " autopopulate vim_msg_typename
+  let l:new.vim_msg_typename = toupper(l:kind[0:0]).l:kind[1:].'Report'
 
   return typevim#ensure#Implements(l:new, l:interface)
 endfunction

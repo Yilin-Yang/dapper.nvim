@@ -1,0 +1,63 @@
+Execute (dapper#log#DebugLogger: Set Up):
+  let g:logger = dapper#log#DebugLogger#Get()
+  silent execute '!rm -f '.g:dapper_logfile
+
+Execute (dapper#log#DebugLogger: Basic Logging):
+  call g:logger.NotifyReport(
+      \ 'info',
+      \ '01234567890123456789012345678901234567890123456789excess',
+      \ {'foo':'bar'},
+      \ {'bar':'foo'})
+  call g:logger.buffer.Open()
+  AssertEqual 2, search('TIME: '), 'No timestamp was printed in the log buffer'
+  g:TIME:d  " remove the timestamp
+Expect:
+  
+  report: { info, 01234567890123456789012345678901234567890123456789
+    long:  {
+      "foo": "bar"
+    }
+    other:  {
+      "bar": "foo"
+    }
+  }
+
+Execute (dapper#log#DebugLogger: Logging Through MiddleTalker):
+  let g:obj = {}
+  function! GetReport(msg) abort
+    let g:obj = a:msg
+  endfunction
+  call g:dapper_middletalker.Subscribe('DebugReport', function('GetReport'))
+  call g:dapper_middletalker.NotifyReport('debug', 'foobar')
+  call g:logger.buffer.Open()
+  g:TIME:d  " remove the timestamp
+Then:
+  Assert !empty(g:obj), 'No report was broadcast by MiddleTalker'
+  AssertEqual 'debug', g:obj.kind
+  AssertEqual 'foobar', g:obj.brief
+Expect:
+  
+  report: { info, 01234567890123456789012345678901234567890123456789
+    long:  {
+      "foo": "bar"
+    }
+    other:  {
+      "bar": "foo"
+    }
+  }
+  report: { debug, foobar }
+
+Execute (dapper#log#DebugLogger: Printing to the Output File):
+  call g:logger.CleanUp()
+  execute 'edit '.g:dapper_logfile
+Expect:
+  
+  report: { info, 01234567890123456789012345678901234567890123456789
+    long:  {
+      "foo": "bar"
+    }
+    other:  {
+      "bar": "foo"
+    }
+  }
+  report: { debug, foobar }

@@ -37,11 +37,11 @@ call dapper#log#DebugLogger#Interface()
 function! dapper#log#DebugLogger#Get() abort
   if exists('g:dapper_debug_logger')
     try
-      call typevim#ensure#IsType(g:dapper_debug_logger)
+      call typevim#ensure#IsType(g:dapper_debug_logger, s:typename)
       call typevim#ensure#Implements(g:dapper_debug_logger, s:interface)
       " is valid object
       return g:dapper_debug_logger
-    catch
+    catch /ERROR(WrongType)/
       " fall through
       unlet g:dapper_debug_logger
     endtry
@@ -108,11 +108,11 @@ function! dapper#log#DebugLogger#Log(report) dict abort
     let l:timestamp = localtime()
   endif
   let l:lines_to_append = [
-      \ l:timestamp,
+      \ 'TIME: '.l:timestamp,
       \ ]
   let l:report = l:self.ListifyReport(a:report)
 
-  call append(l:lines_to_append, l:report)
+  call extend(l:lines_to_append, l:report)
   call l:self.buffer.InsertLines('$', l:lines_to_append)
 endfunction
 
@@ -128,7 +128,7 @@ function! dapper#log#DebugLogger#ListifyReport(report) dict abort
   call typevim#ensure#Implements(a:report, s:report_interface)
 
   let l:lines_to_append = [
-      \ 'report: { '.a:report.kind.', '.a:report,
+      \ 'report: { '.a:report.kind.', '.a:report.brief,
       \ ]
 
   " convert 'raw' strings into an indented, listified format
@@ -138,19 +138,23 @@ function! dapper#log#DebugLogger#ListifyReport(report) dict abort
   else
     let l:long = typevim#string#IndentList(
         \ typevim#string#Listify(a:report.long), l:indent_block)
-    let l:long[0] = l:indent_block.'long: '.l:long[0]
+    let l:long[0] = l:indent_block.'long:'.l:long[0]
   endif
   if empty(a:report.other)
-    let l:long = []
+    let l:other = []
   else
     let l:other = typevim#string#IndentList(
         \ typevim#string#Listify(a:report.other), l:indent_block)
-    let l:other[0] = l:indent_block.'other:  '.l:other[0]
+    let l:other[0] = l:indent_block.'other:'.l:other[0]
   endif
 
-  call add(l:lines_to_append, l:long)
-  call add(l:lines_to_append, l:other)
-  call add(l:lines_to_append, '}')
+  call extend(l:lines_to_append, l:long)
+  call extend(l:lines_to_append, l:other)
+  if empty(l:long) && empty(l:other)
+    let l:lines_to_append[-1] = l:lines_to_append[-1].' }'
+  else
+    call add(l:lines_to_append, '}')
+  endif
 
   return l:lines_to_append
 endfunction
@@ -183,7 +187,7 @@ function! dapper#log#DebugLogger#NotifyReport(kind, brief, ...) dict abort
   let l:kind_func = toupper(l:kind_lower[0:0]).l:kind_lower[1:]
 
   " log to dapper.nvim's internal debug log
-  let l:report = call('dapper#dap#DapperReport', [a:kind, a:brief] + a:000)
+  let l:report = call('dapper#dap#DapperReport#New', [a:kind, a:brief] + a:000)
   call l:self.Log(l:report)
 
   " log to the maktaba logger interface

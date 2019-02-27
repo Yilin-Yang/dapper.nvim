@@ -21,6 +21,7 @@ call maktaba#plugin#Detect()
 let g:project_root = split(getcwd(), '/test')[0]
 let g:test_dir = g:project_root.'/test'
 let g:dapper_logfile = g:project_root.'/test/LOGFILE'
+let g:dapper_log_buffer_writeback = 1
 
 " call dapper#AddDapperConfig(
 "   \ 'node',

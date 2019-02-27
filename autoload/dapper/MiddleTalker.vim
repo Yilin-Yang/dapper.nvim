@@ -55,6 +55,7 @@ function! dapper#MiddleTalker#Get() abort
     \ '__next_id': 0,
     \ '__patterns_to_callbacks': {},
     \ '__ids_to_callbacks': {},
+    \ '__logger': dapper#log#DebugLogger#Get(),
     \ '__GetID': typevim#make#Member('__GetID'),
     \ 'Receive': typevim#make#Member('Receive'),
     \ 'Request': typevim#make#Member('Request'),
@@ -199,15 +200,17 @@ function! dapper#MiddleTalker#Unsubscribe(name_pattern, Callback) abort dict
 endfunction
 
 ""
+" @public
 " @dict MiddleTalker
 " @usage {kind} {brief} [long] [alert] [other]
-" TODO
-"
-" @throws WrongType if {kind} or {brief} are not strings. The remaining arguments may be of any type.
+" Pass a @dict(DapperReport) to the attached @dict(DebugLogger), while also
+" sending it to the appropriate subscribers.
 function! dapper#MiddleTalker#NotifyReport(kind, brief, ...) abort dict
   call s:CheckType(l:self)
-  call maktaba#ensure#IsString(a:kind)
-  call maktaba#ensure#IsString(a:brief)
-  let l:msg = call('dapper#dap#Report#new', [0, '', a:kind, a:brief] + a:000)
+  " log the message
+  call call(l:self.__logger.NotifyReport, [a:kind, a:brief] + a:000)
+
+  " pass it to subscribers
+  let l:msg = call('dapper#dap#DapperReport#New', [a:kind, a:brief] + a:000)
   call l:self.Receive(l:msg)
 endfunction

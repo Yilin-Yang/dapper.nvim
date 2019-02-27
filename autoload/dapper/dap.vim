@@ -35,11 +35,14 @@ function! dapper#dap#DapperReport() abort
   let l:vim_msg_typename = 'Report'
   if !has_key(s:MsgTypenameToInterface, l:vim_msg_typename)
     let l:prototype = {
+      \ 'vim_msg_typename': typevim#String(),
+      \ 'vim_id': typevim#Number(),
       \ 'kind': typevim#String(),
       \ 'brief': typevim#String(),
       \ 'long': typevim#String(),
       \ 'other?': typevim#String(),
       \ }
+    " TODO support extensions of multiple interfaces
     let s:MsgTypenameToInterface[l:vim_msg_typename] =
         \ typevim#make#Extension(l:vim_msg_typename, dapper#dap#ProtocolMessage(), l:prototype)
   endif
