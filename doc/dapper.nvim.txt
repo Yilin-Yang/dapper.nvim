@@ -166,6 +166,64 @@ MiddleTalker is a singleton. Because MiddleTalker encapsulates neovim's
 program-wide RPC, it does not make sense to have multiple MiddleTalker
 instances at a given time.
 
+dapper#MiddleTalker#Interface()                     *MiddleTalker.Interface()*
+  Returns the interface that MiddleTalker implements.
+
+dapper#MiddleTalker#get()                                 *MiddleTalker.Get()*
+  Get the MiddleTalker singleton, or make one if it doesn't yet exist.
+
+MiddleTalker.__GetID()                                *MiddleTalker.__GetID()*
+  Return a request ID number, guaranteed to be distinct from those of all
+  existing requests.
+
+MiddleTalker.Receive({msg})                           *MiddleTalker.Receive()*
+  Receive a response or event {msg}, passing it to subscribers.
+  Throws ERROR(WrongType) if {msg} is not a dictionary, or if {msg} is not a
+  |dapper.nvim.DapperMessage|.
+
+MiddleTalker.Request({command}, {request_args}, {Callback})
+                                                      *MiddleTalker.Request()*
+  Make a request of the debug adapter. {command} is the `"command"` property
+  of a DAP Request; {request_args} is the `"[blank]RequestArguments"` object
+  associated with that request type; and {Callback} is the function that the
+  MiddleTalker should call after receiving a response to this request.
+
+  Throws ERROR(WrongType) if {command} is not a string, {request_args} is not
+  a dict, or if {Callback} is not a |Funcref|.
+
+MiddleTalker.Subscribe({name_pattern}, {Callback})  *MiddleTalker.Subscribe()*
+  Register a subscription to messages whose typenames match a {name_pattern},
+  a regular expression used to |string-match| against the `"vim_msg_typename"`
+  of an incoming message. `"vim_msg_typename"` is a construct of dapper.nvim,
+  not of the DAP itself: the middle-end annotates front-going DAP messages
+  with a straightforward "human-readable" typename (e.g. a
+  LaunchRequestArgument has the `"vim_msg_typename"`:
+  `"LaunchRequestArgument"`).
+
+  When {name_pattern} matches against an incoming messages
+  `"vim_msg_typename"`, the MiddleTalker will call {Callback}.
+
+  Throws ERROR(WrongType) if {name_pattern} is not a string, or if {Callback}
+  is not a |Funcref|.
+
+MiddleTalker.Unsubscribe({name_pattern}, {Callback})
+                                                  *MiddleTalker.Unsubscribe()*
+  Cancel a subscription, returning 1 when a matching subscription was
+  successfully removed, and 0 otherwise.
+
+  {name_pattern} and {Callback} are exactly the same as in
+  |MiddleTalker.Subscribe()|; in fact, they should be exactly the same as the
+  original arguments (i.e. should compare equal by |expr-==#|) provided when
+  the subscription was originally registered.
+
+  Throws ERROR(WrongType) if {name_pattern} is not a string, or if {Callback}
+  is not a |Funcref|.
+
+MiddleTalker.NotifyReport({kind}, {brief}, [long], [alert], [other])
+                                                 *MiddleTalker.NotifyReport()*
+  Pass a |dapper.nvim.DapperReport| to the attached |dapper.nvim.DebugLogger|,
+  while also sending it to the appropriate subscribers.
+
                                                            *dapper.nvim.Model*
 Encapsulates the state of the debugging process.
 
@@ -177,6 +235,36 @@ Adapter Protocol specification overview.
 Only objects in the `dapper#model` namespace should directly modify the model
 state. (`dapper#view` objects can modify the model state indirectly, by
 sending DebugProtocol.Request messages.)
+
+dapper#model#Model#Interface()                             *Model.Interface()*
+  Returns the interface that Model implements.
+
+Model.Update()                                                *Model.Update()*
+  Prompt the Model to update its contents.
+
+Model.thread({tid})                                           *Model.thread()*
+  Returns a Thread model object with the requested numerical {tid}.
+  Throws ERROR(NotFound) if a matching thread can't be found.
+  Throws ERROR(WrongType) if {tid} isn't a number.
+
+Model.threads([include_exited])                              *Model.threads()*
+  Returns a dictionary of numerical thread IDs to all stored threads. If
+  [include_exited] is true, the returned dictionary will also include stopped
+  threads.
+
+  [include_exited] is 0 if omitted.
+  Throws ERROR(WrongType) if [include_exited] is not a bool.
+
+Model.capabilities()                                    *Model.capabilities()*
+  Returns the capabilities of the running debug adapter.
+
+  Throws ERROR(NotFound) if capabilities have not yet been received.
+
+Model.Receive({msg})                                         *Model.Receive()*
+  Update from incoming Debug Adapter Protocol messages.
+
+  Throws ERROR(WrongType) if {msg} is not a dict, or if it is not a
+  |dapper.nvim.DapperMessage|.
 
                                                      *dapper.nvim.RequestDoer*
 Sends the given {command} with the given {request_args} and resolves with the
@@ -205,9 +293,6 @@ dapper#config#StartArgs#New({adapter_config}, {debuggee_args}, {vscode_attr},
 
   Throws ERROR(WrongType) if any of the arguments mentioned above are not of
   the specified types.
-
-                                                          *dapper.nvim.Thread*
-Stores information about a running (or stopped) thread.
 
                                                    *dapper.nvim.ThreadsBuffer*
 Shows active threads in the debuggee; 'digs down' into callstacks.

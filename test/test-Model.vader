@@ -1,27 +1,22 @@
 Include: MockMiddleTalker.vader
 
 Execute (Model: Initialize):
-  let g:model = dapper#model#Model#new(g:mock_mt)
+  let g:model = dapper#model#Model#New(g:mock_mt)
 
 Execute (Model: ...updates with started Threads from a ThreadEvent):
-  let g:started_1 = {
-      \ 'event': 'thread',
-      \ 'vim_msg_typename': 'ThreadEvent',
-      \ 'vim_id': 0,
-      \ 'body': {
-        \ 'threadId': 1,
-        \ 'reason': 'started'
-        \ },
+  let g:started_1 = typevim#make#Instance(dapper#dap#ThreadEvent())
+  let g:started_1.vim_msg_typename = 'ThreadEvent'
+  let g:started_1.body = {
+      \ 'threadId': 1,
+      \ 'reason': 'started'
       \ }
   call g:model.Receive(g:started_1)
-  let g:started_2 = {
-      \ 'event': 'thread',
+  let g:started_2 = typevim#make#Instance(dapper#dap#ThreadEvent())
+  let g:started_2.vim_msg_typename = 'ThreadEvent'
+  let g:started_2.body = {
       \ 'vim_msg_typename': 'ThreadEvent',
-      \ 'vim_id': 0,
-      \ 'body': {
-        \ 'threadId': 2,
-        \ 'reason': 'started'
-        \ },
+      \ 'threadId': 2,
+      \ 'reason': 'started'
       \ }
   call g:model.Receive(g:started_2)
 Then:
@@ -39,14 +34,11 @@ Execute (Model: ...throws when asked for nonexistent threads):
   AssertThrows call g:model.thread(3)
 
 Execute (Model: ...updates with exited Threads from a ThreadEvent):
-  let g:started_1 = {
-      \ 'event': 'thread',
-      \ 'vim_msg_typename': 'ThreadEvent',
-      \ 'vim_id': 0,
-      \ 'body': {
-        \ 'threadId': 1,
-        \ 'reason': 'exited'
-        \ },
+  let g:started_1 = typevim#make#Instance(dapper#dap#ThreadEvent())
+  let g:started_1.vim_msg_typename = 'ThreadEvent'
+  let g:started_1.body = {
+      \ 'threadId': 1,
+      \ 'reason': 'exited'
       \ }
   call g:model.Receive(g:started_1)
 Then:
@@ -55,18 +47,15 @@ Then:
   AssertEqual 'exited', g:thread_1.status()
 
 Execute (Model: ...updates all Threads from a ThreadsResponse):
-  let g:response = {
-      \ 'vim_msg_typename': 'ThreadsResponse',
-      \ 'vim_id': 0,
-      \ 'success': 1,
-      \ 'command': 'threads',
-      \ 'body': {
+  let g:response = typevim#make#Instance(dapper#dap#ThreadsResponse())
+  let g:response.vim_msg_typename = 'ThreadsResponse'
+  let g:response.success = 1
+  let g:response.body = {
         \ 'threads': [
             \ {'id': 1, 'name': 'foo'},
             \ {'id': 2, 'name': 'bar'},
           \ ]
-        \ },
-      \ }
+        \ }
   call g:model.Receive(g:response)
 Then:
   let g:thread_1 = g:model.thread(1)
@@ -77,14 +66,10 @@ Then:
   AssertEqual 'started', g:thread_2.status()
 
 Execute (Model: ...gracefully handles ThreadsRequest failure):
-  let g:response = {
-      \ 'vim_msg_typename': 'ThreadsResponse',
-      \ 'vim_id': 0,
-      \ 'success': 0,
-      \ 'command': 'threads',
-      \ 'message': 'all is foobar',
-      \ 'body': {},
-      \ }
+  let g:response = typevim#make#Instance(dapper#dap#ThreadsResponse())
+  let g:response.vim_msg_typename = 'ThreadsResponse'
+  let g:response.success = 0
+  let g:response.message = 'all is foobar'
   call g:model.Receive(g:response)  " shouldn't throw
 
 Execute (Model: Test Cleanup):

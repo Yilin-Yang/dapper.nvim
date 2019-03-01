@@ -17,8 +17,10 @@
 " instances at a given time.
 
 let s:typename = 'MiddleTalker'
+let s:message_interface = dapper#dap#DapperMessage()
 
 ""
+" @public
 " @function dapper#MiddleTalker#Interface()
 " @dict MiddleTalker
 " Returns the interface that MiddleTalker implements.
@@ -30,13 +32,14 @@ function! dapper#MiddleTalker#Interface() abort
         \ 'Unsubscribe': typevim#Func(),
         \ 'NotifyReport': typevim#Func(),
         \ }
-    call typevim#make#Interface('MiddleTalker', s:interface)
+    call typevim#make#Interface(s:typename, s:interface)
   endif
   return s:interface
 endfunction
 call dapper#MiddleTalker#Interface()  " initialize interface
 
 ""
+" @public
 " @function dapper#MiddleTalker#get()
 " @dict MiddleTalker
 " Get the MiddleTalker singleton, or make one if it doesn't yet exist.
@@ -73,6 +76,7 @@ function s:CheckType(Obj) abort
 endfunction
 
 ""
+" @public
 " @dict MiddleTalker
 " Return a request ID number, guaranteed to be distinct from those of all
 " existing requests.
@@ -83,12 +87,14 @@ function! dapper#MiddleTalker#__GetID() abort dict
 endfunction
 
 ""
+" @public
 " @dict MiddleTalker
 " Receive a response or event {msg}, passing it to subscribers.
-" @throws WrongType if {msg} is not a dictionary.
+" @throws WrongType if {msg} is not a dictionary, or if {msg} is not a @dict(DapperMessage).
 function! dapper#MiddleTalker#Receive(msg) abort dict
   call s:CheckType(l:self)
   call maktaba#ensure#IsDict(a:msg)
+  call typevim#ensure#Implements(a:msg, s:message_interface)
   let l:id = a:msg['vim_id']
   if l:id ># 0 " msg is a response to a request
     call  l:self['__ids_to_callbacks'][l:id](a:msg)
@@ -109,6 +115,7 @@ function! dapper#MiddleTalker#Receive(msg) abort dict
 endfunction
 
 ""
+" @public
 " @dict MiddleTalker
 " Make a request of the debug adapter. {command} is the `"command"` property
 " of a DAP Request; {request_args} is the `"[blank]RequestArguments"` object
@@ -127,7 +134,7 @@ function! dapper#MiddleTalker#Request(command, request_args, Callback) abort dic
   let l:vim_id = l:self.__GetID()
   let l:self['__ids_to_callbacks'][l:vim_id] = a:Callback
   call l:self.NotifyReport(
-      \ 'status',
+      \ 'info',
       \ 'Sending request: '.typevim#object#ShallowPrint(a:command),
       \ 'Given callback: '.typevim#object#ShallowPrint(a:Callback)
         \ . ', given args: '.typevim#object#ShallowPrint(a:request_args)
@@ -136,6 +143,7 @@ function! dapper#MiddleTalker#Request(command, request_args, Callback) abort dic
 endfunction
 
 ""
+" @public
 " @dict MiddleTalker
 " Register a subscription to messages whose typenames match a {name_pattern},
 " a regular expression used to |string-match| against the `"vim_msg_typename"`
@@ -167,6 +175,7 @@ function! dapper#MiddleTalker#Subscribe(name_pattern, Callback) abort dict
 endfunction
 
 ""
+" @public
 " @dict MiddleTalker
 " Cancel a subscription, returning 1 when a matching subscription was
 " successfully removed, and 0 otherwise.

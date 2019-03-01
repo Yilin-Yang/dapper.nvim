@@ -53,9 +53,12 @@ function! dapper#dap#ProtocolMessage() abort
   let l:vim_msg_typename = 'ProtocolMessage'
   if !has_key(s:MsgTypenameToInterface, l:vim_msg_typename)
     let l:prototype = {
+      \ 'vim_msg_typename': typevim#String(),
+      \ 'vim_id': typevim#Number(),
       \ 'seq': typevim#Number(),
       \ 'type': typevim#String(),
       \ }
+    " TODO support extensions of multiple interfaces and extend DapperMessage
     let s:MsgTypenameToInterface[l:vim_msg_typename] =
         \ typevim#make#Interface(l:vim_msg_typename, l:prototype)
   endif
@@ -102,24 +105,6 @@ function! dapper#dap#Response() abort
       \ 'command': typevim#String(),
       \ 'message?': typevim#String(),
       \ 'body?': typevim#Any(),
-      \ }
-    let s:MsgTypenameToInterface[l:vim_msg_typename] =
-        \ typevim#make#Extension(l:vim_msg_typename, dapper#dap#ProtocolMessage(), l:prototype)
-  endif
-  return s:MsgTypenameToInterface[l:vim_msg_typename]
-endfunction
-
-
-function! dapper#dap#Response() abort
-  let l:vim_msg_typename = 'Response'
-  if !has_key(s:MsgTypenameToInterface, l:vim_msg_typename)
-    let l:prototype = {
-      \ 'type': ['report'],
-      \ 'kind': typevim#String(),
-      \ 'brief': typevim#String(),
-      \ 'long': typevim#String(),
-      \ 'alert': typevim#Bool(),
-      \ 'other?': typevim#Any(),
       \ }
     let s:MsgTypenameToInterface[l:vim_msg_typename] =
         \ typevim#make#Extension(l:vim_msg_typename, dapper#dap#ProtocolMessage(), l:prototype)
