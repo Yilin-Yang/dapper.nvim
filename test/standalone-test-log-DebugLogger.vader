@@ -22,6 +22,31 @@ Expect:
     }
   }
 
+Execute (dapper#log#DebugLogger: Logging of Strings with Newlines):
+  call g:logger.NotifyReport(
+      \ 'info',
+      \ '01234567890123456789012345678901234567890123456789excess',
+      \ "1\n2\n3\n4")
+  call g:logger.buffer.Open()
+  AssertNotEqual 0, search('TIME: '), 'No timestamp was printed in the log buffer'
+  g:TIME:d  " remove the timestamp
+Expect:
+  
+  report: { info, 01234567890123456789012345678901234567890123456789
+    long:  {
+      "foo": "bar"
+    }
+    other:  {
+      "bar": "foo"
+    }
+  }
+  report: { info, 01234567890123456789012345678901234567890123456789
+    long:  1
+    2
+    3
+    4
+  }
+
 Execute (dapper#log#DebugLogger: Logging Through MiddleTalker):
   let g:obj = {}
   function! GetReport(msg) abort
@@ -45,6 +70,12 @@ Expect:
       "bar": "foo"
     }
   }
+  report: { info, 01234567890123456789012345678901234567890123456789
+    long:  1
+    2
+    3
+    4
+  }
   report: { debug, foobar }
 
 Execute (dapper#log#DebugLogger: Printing to the Output File):
@@ -59,5 +90,11 @@ Expect:
     other:  {
       "bar": "foo"
     }
+  }
+  report: { info, 01234567890123456789012345678901234567890123456789
+    long:  1
+    2
+    3
+    4
   }
   report: { debug, foobar }
