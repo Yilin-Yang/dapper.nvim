@@ -170,11 +170,13 @@ function! dapper#MiddleTalker#Receive(msg) abort dict
         \ )
     call dapper#MiddleTalker#VimifyMessage(a:msg)
   endif
-  call l:self.__Log(
-      \ 'debug',
-      \ 'MiddleTalker received a: '.a:msg.type,
-      \ a:msg
-      \ )
+  if a:msg.type !=# 'report'
+    call l:self.__Log(
+        \ 'debug',
+        \ 'MiddleTalker received a: '.a:msg.type,
+        \ a:msg
+        \ )
+  endif
   let l:id = a:msg['vim_id']
   if l:id ># 0 " msg is a response to a request
     call  l:self.__ids_to_callbacks[l:id](a:msg)
