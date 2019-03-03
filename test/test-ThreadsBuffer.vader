@@ -1,62 +1,50 @@
 Include: MockMiddleTalker.vader
 
-Execute (ThreadsBuffer: Construct, Initialize; Test Subscription):
-  let g:model = dapper#model#Model#new(g:mock_mt)
-  let g:tb = dapper#view#ThreadsBuffer#new(g:model, g:mock_mt)
-Then:
-  AssertEqual function(g:tb.Receive), g:last_sub[1]
-  " TODO check other subscriptions?
-  AssertNotEqual -1, match(g:last_sub[0], 'Thread')
+Execute (ThreadsBuffer: Construct, Initialize):
+  let g:model = dapper#model#Model#New(g:mock_mt)
+  let g:tb = dapper#view#ThreadsBuffer#New(g:model, g:mock_mt)
 
 Execute (ThreadsBuffer: Receive ThreadEvent, started):
-  let g:msg = dapper#dap#Event#new(0, 'ThreadEvent')
-  let g:msg['event'] = 'ThreadEvent'
-  let g:msg['body'] = {'threadId': 123, 'reason': 'started'}
+  let g:msg = dapper#dap#Event#New('thread', {'threadId': 123, 'reason': 'started'})
   call g:model.Receive(g:msg)
-  call g:tb.Receive(g:msg)
-  call g:tb.open()
+  call g:tb.Push(g:model.threads(1))
+  call g:tb.Open()
 Expect:
   <threads>
   thread id: 123	name: unnamed		status: started
   </threads>
 
 Execute (ThreadsBuffer: New Thread Started):
-  let g:msg = dapper#dap#Event#new(0, 'ThreadEvent')
-  let g:msg['event'] = 'ThreadEvent'
-  let g:msg['body'] = {'threadId': 789, 'reason': 'started'}
+  let g:msg = dapper#dap#Event#New('thread', {'threadId': 789, 'reason': 'started'})
   call g:model.Receive(g:msg)
-  call g:tb.Receive(g:msg)
-  call g:tb.open()
+  call g:tb.Push(g:model.threads(1))
+  call g:tb.Open()
 Expect:
   <threads>
-  thread id: 789	name: unnamed		status: started
   thread id: 123	name: unnamed		status: started
+  thread id: 789	name: unnamed		status: started
   </threads>
 
 Execute (ThreadsBuffer: Thread Exited):
-  let g:msg = dapper#dap#Event#new(0, 'ThreadEvent')
-  let g:msg['event'] = 'ThreadEvent'
-  let g:msg['body'] = {'threadId': 789, 'reason': 'exited'}
+  let g:msg = dapper#dap#Event#New('thread', {'threadId': 789, 'reason': 'exited'})
   call g:model.Receive(g:msg)
-  call g:tb.Receive(g:msg)
-  call g:tb.open()
+  call g:tb.Push(g:model.threads(1))
+  call g:tb.Open()
 Expect:
   <threads>
-  thread id: 789	name: unnamed		status: exited
   thread id: 123	name: unnamed		status: started
+  thread id: 789	name: unnamed		status: exited
   </threads>
 
 Execute (ThreadsBuffer: Update With ThreadsResponse):
-  let g:msg = dapper#dap#Response#new(0, 'ThreadsResponse')
-  let g:msg['command'] = 'threads'
-  let g:msg['success'] = 1
-  let g:msg['body'] = {'threads': [
-    \ {'id': 123, 'name': 'foo'},
-    \ {'id': 789, 'name': 'bar'},
-  \ ]}
+  let g:msg = dapper#dap#Response#New(
+      \ 1, 'threads', {'threads': [
+      \ {'id': 123, 'name': 'foo'},
+      \ {'id': 789, 'name': 'bar'},
+      \ ]})
   call g:model.Receive(g:msg)
-  call g:tb.Receive(g:msg)
-  call g:tb.open()
+  call g:tb.Open()
+  " note: exited thread should be highlighted
 Expect:
   <threads>
   thread id: 789	name: bar		status: exited
@@ -64,7 +52,7 @@ Expect:
   </threads>
 
 Execute (ThreadsBuffer: Cleanup):
-  call g:tb.open()
+  call g:tb.Open()
   call MockCleanUp()
   normal! ggVGd
   unlet g:tb

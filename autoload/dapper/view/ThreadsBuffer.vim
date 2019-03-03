@@ -98,16 +98,23 @@ function! dapper#view#ThreadsBuffer#Push(threads, ...) dict abort
 
   call l:self._ResetBuffer()
 
-  if l:to_highlight isnot v:null
-    call l:self._PrependEntry(l:to_highlight)
-  endif
-
   let l:ids_and_threads = sort(items(a:threads))
   let l:ids_and_exited  = []
+  if l:to_highlight isnot v:null
+    call l:self._PrependEntry(l:to_highlight)
+    " remove from the list of threads so that we don't double-print
+    let l:id = l:to_highlight.id()
+    let l:i = 0 | while l:i <# len(l:ids_and_threads)
+      if l:ids_and_threads[l:i][0] ==# l:id
+        unlet l:ids_and_threads[l:i]
+      endif
+    let l:i += 1 | endwhile
+  endif
+
 
   for [l:tid, l:thread] in l:ids_and_threads
     if l:thread.status() ==# 'exited'
-      call add(l:ids_and_exited, l:thread)
+      call add(l:ids_and_exited, [l:tid, l:thread])
       continue
     endif
     call l:self._AppendEntry(l:thread)
