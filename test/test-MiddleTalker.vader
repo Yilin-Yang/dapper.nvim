@@ -1,5 +1,5 @@
 Execute (MiddleTalker: Set Up):
-  let g:middletalker = dapper#MiddleTalker#get()
+  let g:middletalker = dapper#MiddleTalker#Get()
   function! TestCbSingle(msg)
     let g:received = a:msg
     return 1
@@ -21,9 +21,82 @@ Execute (MiddleTalker: Set Up):
     return 1
   endfunction
 
+  ""
+  " Construct a new DAP message. {type} is the "type" property;
+  " ditto [vim_msg_typename] and [vim_id].
+  " @default vim_msg_typename={type}
+  " @default [vim_id]=0
+  function! NewMessage(type, ...) abort
+    let l:vim_msg_typename = get(a:000, 0, a:type)
+    let l:vim_id = get(a:000, 1, 0)
+    let l:new_msg = typevim#make#Instance(dapper#dap#ProtocolMessage())
+    let l:new_msg.type = a:type
+    let l:new_msg.vim_msg_typename = l:vim_msg_typename
+    let l:new_msg.vim_id = l:vim_id
+    return l:new_msg
+  endfunction
+
+Execute (MiddleTalker: Test VimifyMessage):
+  let g:message = {
+      \ 'seq': 0,
+      \ 'type': 'event',
+      \ 'event': ''
+      \ }
+  call g:middletalker.VimifyMessage(g:message)
+  AssertEqual 'Event', g:message.vim_msg_typename,
+      \ 'Failed on event vim_msg_typename'
+  AssertEqual 0, g:message.vim_id,
+      \ 'Failed on event vim_id'
+
+  let g:message = {
+      \ 'seq': 123,
+      \ 'type': 'request',
+      \ 'command': ''
+      \ }
+  call g:middletalker.VimifyMessage(g:message)
+  AssertEqual 'Request', g:message.vim_msg_typename,
+      \ 'Failed on request vim_msg_typename'
+  AssertEqual 0, g:message.vim_id,
+      \ 'Failed on request vim_id'
+
+  let g:message = {
+      \ 'seq': 123,
+      \ 'type': 'response',
+      \ 'command': ''
+      \ }
+  call g:middletalker.VimifyMessage(g:message)
+  AssertEqual 'Response', g:message.vim_msg_typename,
+      \ 'Failed on response vim_msg_typename'
+  AssertEqual 0, g:message.vim_id,
+      \ 'Failed on response vim_id'
+
+  let g:message = {
+      \ 'seq': 123,
+      \ 'type': 'event',
+      \ 'event': 'thread'
+      \ }
+  call g:middletalker.VimifyMessage(g:message)
+  AssertEqual 'ThreadEvent', g:message.vim_msg_typename,
+      \ 'Failed on ThreadEvent vim_msg_typename'
+  AssertEqual 0, g:message.vim_id,
+      \ 'Failed on ThreadEvent vim_id'
+
+  let g:message = {
+      \ 'seq': 0,
+      \ 'type': 'response',
+      \ 'command': 'terminateThreads',
+      \ 'success': 1,
+      \ 'vim_id': 123
+      \ }
+  call g:middletalker.VimifyMessage(g:message)
+  AssertEqual 'TerminateThreadsResponse', g:message.vim_msg_typename,
+      \ 'Failed on TerminateThreadsResponse vim_msg_typename'
+  AssertEqual 123, g:message.vim_id,
+      \ 'Failed on TerminateThreadsResponse vim_id'
+
 Execute (MiddleTalker: Test Subscribe to Incoming):
   call g:middletalker.Subscribe('foo', function('TestCbSingle'))
-  let g:will_match = dapper#dap#ProtocolMessage#new(0, 'foobar')
+  let g:will_match = NewMessage('foobar')
   call g:middletalker.Receive(g:will_match)
 Then:
   AssertEqual g:will_match, g:received
@@ -38,8 +111,8 @@ Then:
 Execute (MiddleTalker: Test Regex Subscription, Unsubscribe):
   let g:received = []
   call g:middletalker.Subscribe('.*', function('TestCbList'))
-  let g:alphabet = dapper#dap#ProtocolMessage#new(0, 'ABCDEFGH')
-  let g:will_match = dapper#dap#ProtocolMessage#new(0, 'foobar')
+  let g:alphabet = NewMessage('ABCDEFGH')
+  let g:will_match = NewMessage('foobar')
   call g:middletalker.Receive(g:will_match)
   call g:middletalker.Receive(g:alphabet)
 Then:
@@ -49,7 +122,7 @@ Then:
   unlet g:received
 
 Execute (MiddleTalker: Test Won't Match):
-  let g:wont_match = dapper#dap#ProtocolMessage#new(0, 'justbar')
+  let g:wont_match = NewMessage('justbar')
   call g:middletalker.Receive(g:wont_match)
 Then:
   Assert !exists('g:received')
@@ -73,11 +146,11 @@ Execute (MiddleTalker: Test Multiple Subscriptions):
   call g:middletalker.Subscribe('foob', function('TestAltCbList'))
   call g:middletalker.Subscribe('foo', function('TestCbList'))
   call g:middletalker.Subscribe('foo', function('TestCbList'))
-  let g:will_match_first = dapper#dap#ProtocolMessage#new(0, 'foo')
+  let g:will_match_first = NewMessage('foo')
   call g:middletalker.Receive(g:will_match)
   call g:middletalker.Receive(g:will_match_first)
   call g:middletalker.Receive(g:wont_match)
 Then:
-  AssertEqual [g:will_match, g:will_match, 
+  AssertEqual [g:will_match, g:will_match,
       \ g:will_match_first, g:will_match_first], g:received
   AssertEqual [g:will_match], g:alt_received
