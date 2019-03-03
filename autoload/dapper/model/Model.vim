@@ -236,7 +236,7 @@ function! dapper#model#Model#_RecvEvent(event) abort dict
   " make Thread object
   let l:body = a:event.body
   let l:reason = l:body.reason
-  let l:long_msg = typevim#object#ShallowPrint(l:body)
+  let l:long_msg = typevim#object#PrettyPrint(l:body)
   if l:reason ==# 'started'
     call l:self._ThreadFromEvent(l:body)
   elseif l:reason ==# 'exited'
@@ -249,7 +249,7 @@ function! dapper#model#Model#_RecvEvent(event) abort dict
     endtry
       let l:long_msg = 'Unrecognized reason: '.l:reason."\n".l:long_msg
   endif
-  call l:self['_message_passer'].NotifyReport(
+  call l:self._message_passer.NotifyReport(
       \ 'info',
       \ 'model#Model received ThreadEvent',
       \ l:long_msg
@@ -269,7 +269,7 @@ function! dapper#model#Model#_ReceiveThreadsResponse(response) abort dict
     call l:self._message_passer.NotifyReport(
         \ 'error',
         \ '(model#Model) ThreadsRequest failed outright!',
-        \ typevim#object#PrettyPrint(a:response))
+        \ a:response)
     return
   endif
   let l:thread_interface = dapper#dap#Thread()
@@ -281,7 +281,7 @@ function! dapper#model#Model#_ReceiveThreadsResponse(response) abort dict
       call l:self._message_passer.NotifyReport(
           \ 'warn',
           \ '(model#Model) Received malformed thread object',
-          \ typevim#object#PrettyPrint(l:thread))
+          \ l:thread)
       continue
     endif
     let l:tid  = l:thread.id
@@ -298,7 +298,7 @@ function! dapper#model#Model#_ReceiveThreadsResponse(response) abort dict
       call l:self._message_passer.NotifyReport(
           \ 'debug',
           \ '(model#Model) got/updating unknown Thread:'.l:tid,
-          \ typevim#object#PrettyPrint(l:new_thread))
+          \ l:new_thread)
     endif
   let l:i += 1 | endwhile
 endfunction
@@ -318,7 +318,7 @@ function! dapper#model#Model#_ThreadFromEvent(body) abort dict
   call l:self['_message_passer'].NotifyReport(
       \ 'info',
       \ 'model#Model constructed new Thread object.',
-      \ typevim#object#ShallowPrint(l:thread) )
+      \ l:thread)
 endfunction
 
 " BRIEF:  Process an exited Thread.
