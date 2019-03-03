@@ -24,7 +24,7 @@ export interface VSCodeAttributes {
   preLaunchTask?: string;
   postLaunchTask?: string;
   internalConsoleOptions?: string;
-  debugServer?: string;
+  debugServer?: number;
 }
 
 export interface StartArgs {
