@@ -25,6 +25,9 @@ let g:dapper_log_buffer_writeback = 1
 " TODO: make it possible to change settings after calls to Detect?
 call maktaba#plugin#Detect()
 
+let g:mock_adapter_exepath =
+    \ g:project_root.'/node_modules/vscode-mock-debug/out/debugAdapter.js'
+
 " call dapper#AddDapperConfig(
 "   \ 'node',
 "   \ g:project_root.'/node_modules/vscode-mock-debug/out/debugAdapter.js',
