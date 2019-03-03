@@ -17,13 +17,13 @@ function! dapper#dap#DapperReport#New(...) abort
   let l:new.kind = l:kind
   let l:new.brief = l:brief
 
-  let l:long = get(a:000, 2, '')
-  let l:new.long = maktaba#value#IsString(l:long) ?
-      \ l:long : typevim#object#PrettyPrint(l:long)
+  let l:Long = get(a:000, 2, '')
+  let l:new.long = maktaba#value#IsString(l:Long) ?
+      \ l:Long : typevim#object#PrettyPrint(l:Long)
 
-  let l:other = get(a:000, 3, '')
-  let l:new.other = maktaba#value#IsString(l:other) ?
-      \ l:other : typevim#object#PrettyPrint(l:other)
+  let l:Other = get(a:000, 3, '')
+  let l:new.other = maktaba#value#IsString(l:Other) ?
+      \ l:Other : typevim#object#PrettyPrint(l:Other)
 
   " autopopulate vim_msg_typename
   let l:new.vim_msg_typename = toupper(l:kind[0:0]).l:kind[1:].'Report'
