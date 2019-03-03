@@ -5,15 +5,22 @@ Execute (Start Mock Debug Adapter, Store Incoming Messages):
   call g:dapper_middletalker.Subscribe('.*', function('StoreMessage'))
 
   " start mock debug adapter
-  let g:debuggee_args = dapper#config#DebuggeeArgs#new(
-      \ 'launch',
-      \ 'mock',
-      \ {'stopOnEntry': 1}
+  let g:debug_adapter_config = dapper#config#DebugAdapterConfig#New(
+      \ 'node',
+      \ g:mock_adapter_exepath,
+      \ 'mock'
       \ )
-  let g:vscode_attr = dapper#config#VSCodeAttributes#new()
-  let g:start_args = dapper#config#StartArgs#new(
-      \ g:dapper_filetypes_to_configs['markdown']['mock'],
+  let g:debuggee_args = dapper#config#DebuggeeArgs#New(
+      \ 'launch',
+      \ 'basic_mock_debug',
+      \ { 'stopOnEntry': 1,
+        \ 'program': g:project_root.'/test/TEST_README.md' }
+      \ )
+  let g:vscode_attr = dapper#config#VSCodeAttributes#New()
+  let g:start_args = dapper#config#StartArgs#New(
+      \ g:debug_adapter_config,
       \ g:debuggee_args,
-      \ g:vscode_attr)
+      \ g:vscode_attr,
+      \ )
   call DapperStart(g:start_args)
   call AwaitTimeout({ -> ReceivedMessage('InitializedEvent')}, 3000, 1)
