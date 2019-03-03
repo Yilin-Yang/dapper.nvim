@@ -22,15 +22,22 @@ let s:typename = 'DapperBuffer'
 " use, which shall have the same interface as @dict(MiddleTalker).
 "
 " For [bufparams], see @function(typevim#Buffer#New).
+"
+" Implements @function(dapper#interface#UpdatePusher).
+"
+" @throws BadValue if {message_passer} is not a dict.
+" @throws WrongType if {message_passer} does not implement a @dict(MiddleTalker) interface, or if [bufparams] is not a dict.
 function! dapper#view#DapperBuffer#new(message_passer, ...) abort
-  let l:bufparams = get(a:000, 0, {})
+  call typevim#ensure#Implements(
+      \ a:message_passer, dapper#MiddleTalker#Interface())
+  let l:bufparams = maktaba#ensure#IsDict(get(a:000, 0, {}))
   let l:base = typevim#Buffer#New(l:bufparams)
 
   let l:new = {
       \ '_message_passer': a:message_passer,
       \ '_parent': 0,
       \ '_children': [],
-      \ 'Show': typevim#make#AbstractFunc(s:typename, 'Show', []),
+      \ 'Push': typevim#make#AbstractFunc(s:typename, 'Push', []),
       \ 'GetRange': typevim#make#AbstractFunc(s:typename, 'GetRange', []),
       \ 'SetMappings': typevim#make#AbstractFunc(s:typename, 'SetMappings', []),
       \ 'ConfigureBuffer': typevim#make#Member('ConfigureBuffer'),
@@ -40,12 +47,14 @@ function! dapper#view#DapperBuffer#new(message_passer, ...) abort
       \ 'SetParent': typevim#make#Member('SetParent'),
       \ 'GetParent': typevim#make#Member('GetParent'),
       \ 'AddChild': typevim#make#Member('AddChild'),
+      \ 'RemoveChild': typevim#make#Member('RemoveChild'),
       \ 'GetChildren': typevim#make#Member('GetChildren'),
       \ '_MakeChild': typevim#make#AbstractFunc(s:typename, '_MakeChild', []),
       \ '_Log': typevim#make#Member('_Log'),
       \ '_GetOpenInTab': typevim#make#Member('_GetOpenInTab'),
       \ }
   call typevim#make#Derived(s:typename, l:base, l:new)
+  call typevim#ensure#Implements(l:new, dapper#interface#UpdatePusher())
 
   " set 'self' as a buffer-local variable
   call setbufvar(l:new.bufnr(), 'dapper_buffer', l:new)
@@ -169,10 +178,10 @@ endfunction
 ""
 " @public
 " @dict DapperBuffer
-" Set the parent DapperBuffer of this DapperBuffer.
+" Set the parent of this DapperBuffer.
 function! dapper#view#DapperBuffer#SetParent(new_parent) dict abort
   call s:CheckType(l:self)
-  call dapper#view#DapperBuffer#CheckType(a:new_parent)
+  call typevim#ensure#Implements(a:new_parent, dapper#interface#UpdatePusher())
   let l:self._parent = a:new_parent
 endfunction
 
@@ -188,20 +197,45 @@ endfunction
 ""
 " @public
 " @dict DapperBuffer
-" Mark a DapperBuffer as this buffer's child.
+" Mark {new_child} as this buffer's child.
+"
+" @throws BadValue if {child} is not a dict.
+" @throws WrongType if {child} does not implement @function(dapper#interface#UpdatePusher()).
 function! dapper#view#DapperBuffer#AddChild(new_child) dict abort
   call s:CheckType(l:self)
-  call s:CheckType(a:new_child)
-  let l:self._children += [a:new_child]
+  call typevim#ensure#Implements(a:new_child, dapper#interface#UpdatePusher())
+  call add(l:self._children, a:new_child)
 endfunction
 
 ""
 " @public
 " @dict DapperBuffer
-" Returns a list of all of this buffer's children, in no particular order.
+" Remove a child {to_remove} from this buffer's children. Returns 1 if a child
+" was removed, 0 if not.
+"
+" @throws BadValue if {child} is not a dict.
+" @throws WrongType if {child} does not implement @function(dapper#interface#UpdatePusher()).
+function! dapper#view#DapperBuffer#RemoveChild(to_remove) dict abort
+  call s:CheckType(l:self)
+  call typevim#ensure#Implements(a:to_remove, dapper#interface#UpdatePusher())
+  let l:i = 0 | while l:i <# len(l:self._children)
+    let l:child = l:self._children[l:i]
+    if l:child is a:to_remove
+      unlet l:self._children[l:i]
+      return 1
+    endif
+  let l:i += 1 | endwhile
+  return 0
+endfunction
+
+""
+" @public
+" @dict DapperBuffer
+" Returns a copied list of all of this buffer's children, in no particular
+" order.
 function! dapper#view#DapperBuffer#GetChildren() dict abort
   call s:CheckType(l:self)
-  return l:self._children
+  return copy(l:self._children)
 endfunction
 
 ""
