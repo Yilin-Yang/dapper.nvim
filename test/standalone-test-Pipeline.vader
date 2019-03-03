@@ -3,17 +3,15 @@ Include: StartMockDebugAdapter.vader
 Include: SubscriptionHelpers.vader
 
 Execute (Pipeline: Setup Model, ThreadsBuffer; Subscribe; Initialize Mock Debug Adapter):
-  let g:model = dapper#model#Model#New(g:dapper_middletalker)
-
   " setup ThreadsBuffer, which should (itself) subscribe
   if exists('g:tb') | unlet g:tb | endif
-  let g:tb = dapper#view#ThreadsBuffer#New(g:model, g:dapper_middletalker)
+  let g:tb = dapper#view#ThreadsBuffer#New(g:dapper_model, g:dapper_middletalker)
 
 Execute (Pipeline: Launch Debuggee):
   call AwaitTimeout({ -> ReceivedMessage('LaunchResponse')}, 4000, 1)
 
 Execute (Pipeline: Request Threads):
-  call g:model.Update()
+  call g:dapper_model.Update()
   call g:tb.Open()
   call AwaitTimeout({ -> ReceivedMessage('ThreadsResponse')}, 3000, 1)
 Expect:
@@ -49,5 +47,5 @@ Execute(Pipeline: Check That Only the Child StackTraceBuffer Was Modified):
 
 Execute (Pipeline: Cleanup):
   call g:tb.Open()
-  normal!ggVGd
-  unlet g:tb
+  " normal!ggVGd
+  " unlet g:tb
