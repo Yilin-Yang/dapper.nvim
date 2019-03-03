@@ -70,7 +70,7 @@ endfunction
 function! dapper#view#ThreadsBuffer#Receive(msg) abort dict
   call s:CheckType(l:self)
   call maktaba#ensure#IsDict(a:msg)
-  if a:msg['type'] ==# 'response' && !a:msg['success'] | return | endif
+  if a:msg.type ==# 'response' && !a:msg.success | return | endif
   let l:model = l:self._model
 
   let l:body = a:msg.body
@@ -80,18 +80,18 @@ function! dapper#view#ThreadsBuffer#Receive(msg) abort dict
     let l:ids_to_threads = l:model.threads(1)  " all of them
     call l:self._UpdateThreads(l:ids_to_threads) " TODO test
   elseif l:type ==# 'ThreadEvent'
-    let l:tid = l:body['threadId']
+    let l:tid = l:body.threadId
     let l:thread = l:model.thread(l:tid)
     let l:ids_to_threads = {}
     let l:ids_to_threads[l:tid] = l:thread
     call l:self._UpdateThreads(l:ids_to_threads)
   elseif l:type ==# 'ThreadsResponse'
     " TODO update thread entries mentioned in response
-    let l:dap_threads = a:msg['body']['threads']
+    let l:dap_threads = a:msg.body.threads
     let l:to_update = {}
     for l:dap_thread in l:dap_threads
       try
-        let l:tid = l:dap_thread['id']
+        let l:tid = l:dap_thread.id
         let l:thread = l:model.Thread(l:tid)
         let l:to_update[l:tid] = l:thread
       catch
@@ -100,7 +100,7 @@ function! dapper#view#ThreadsBuffer#Receive(msg) abort dict
     call l:self._UpdateThreads(l:to_update)
   endif
 
-  let l:self['_ids_to_threads'] = l:self['_model'].Threads()
+  let l:self._ids_to_threads = l:self._model.Threads()
 endfunction
 
 ""
@@ -112,8 +112,7 @@ endfunction
 function! dapper#view#ThreadsBuffer#GetRange(thread_id) abort dict
   call s:CheckType(l:self)
   call maktaba#ensure#IsNumber(a:thread_id)
-  " TODO optimize this? (...it's surprisingly fast...)
-  let l:entire_buffer = nvim_buf_get_lines(l:self['__bufnr'], 0, -1, 0)
+  let l:entire_buffer = l:self.GetLines(1, -1)
   let l:idx = match(l:entire_buffer, s:thread_id_search_pat.a:thread_id)
   if l:idx ==# -1
     throw maktaba#error#NotFound('Thread with id %s not found', a:thread_id)
@@ -162,7 +161,7 @@ function! dapper#view#ThreadsBuffer#_AddThreadEntry(thread, ...) abort dict
   catch /EntryNotFound/
     let l:insert_after = (l:add_at_top) ? 1 : -2
     call l:self.InsertLines(l:insert_after, l:new_entry)
-    call l:self._log(
+    call l:self._Log(
         \ 'status',
         \ 'ThreadsBuffer added new thread ID:'.l:tid,
         \ l:new_entry)
@@ -216,7 +215,7 @@ function! dapper#view#ThreadsBuffer#DigDown() abort dict
   catch /ERROR(NotFound)/
     return
   endtry
-  call l:self._log(
+  call l:self._Log(
       \ 'status',
       \ 'Digging down from ThreadsBuffer to tid:'.l:tid,
       \ l:long_msg
@@ -246,7 +245,7 @@ function! dapper#view#ThreadsBuffer#_GetSelected() abort dict
   endif
   let l:tid_line = search(s:thread_id_search_pat, 'bncW')
   if !l:tid_line
-    call l:self._log('error', 'Couldn''t find a selected thread ID',
+    call l:self._Log('error', 'Couldn''t find a selected thread ID',
         \ 'curpos: '.string(getcurpos())."\nbuffer contents:\n".getline(1,'$'))
     throw '(dapper#view#ThreadsBuffer) No thread ID found'
   endif
