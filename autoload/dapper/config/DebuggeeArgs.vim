@@ -53,7 +53,6 @@ function! dapper#config#DebuggeeArgs#New(
   endif
   let l:initial_bps = maktaba#ensure#IsDict(get(a:000, 0, {}))
 
-  " TODO
   let l:new = {
       \ 'request': a:request,
       \ 'name': a:name,
