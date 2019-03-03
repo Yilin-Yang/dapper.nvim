@@ -14,6 +14,7 @@ function! dapper#dap#DapperReport#New(...) abort
 
   let l:interface = dapper#dap#DapperReport()
   let l:new = typevim#make#Instance(l:interface)
+  let l:new.type = 'report'
   let l:new.kind = l:kind
   let l:new.brief = l:brief
 
