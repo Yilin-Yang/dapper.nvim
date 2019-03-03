@@ -315,7 +315,7 @@ function! dapper#model#Model#_ThreadFromEvent(body) abort dict
       \ l:self._message_passer)
   let l:self._ids_to_running[l:thread.id()] = l:thread
 
-  call l:self['_message_passer'].NotifyReport(
+  call l:self._message_passer.NotifyReport(
       \ 'info',
       \ 'model#Model constructed new Thread object.',
       \ l:thread)
