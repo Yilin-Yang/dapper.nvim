@@ -7,8 +7,8 @@ let s:MsgTypenameToInterface = {}
 " object.
 
 ""
-" @dict DapperMessage
 " @private
+" @dict DapperMessage
 function! dapper#dap#DapperMessage() abort
   let l:vim_msg_typename = 'DapperMessage'
   if !has_key(s:MsgTypenameToInterface, l:vim_msg_typename)
@@ -29,8 +29,8 @@ endfunction
 " messages, etc. to the frontend.
 
 ""
-" @dict DapperReport
 " @private
+" @dict DapperReport
 function! dapper#dap#DapperReport() abort
   let l:vim_msg_typename = 'Report'
   if !has_key(s:MsgTypenameToInterface, l:vim_msg_typename)
@@ -79,7 +79,13 @@ function! dapper#dap#Request() abort
   return s:MsgTypenameToInterface[l:vim_msg_typename]
 endfunction
 
+""
+" @dict Event
+" A DebugProtocol.Event message.
 
+""
+" @private
+" @dict Event
 function! dapper#dap#Event() abort
   let l:vim_msg_typename = 'Event'
   if !has_key(s:MsgTypenameToInterface, l:vim_msg_typename)
@@ -94,7 +100,13 @@ function! dapper#dap#Event() abort
   return s:MsgTypenameToInterface[l:vim_msg_typename]
 endfunction
 
+""
+" @dict Response
+" A DebugProtocol.Response message.
 
+""
+" @private
+" @dict Response
 function! dapper#dap#Response() abort
   let l:vim_msg_typename = 'Response'
   if !has_key(s:MsgTypenameToInterface, l:vim_msg_typename)

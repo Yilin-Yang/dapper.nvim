@@ -1,7 +1,7 @@
 ""
 " @public
 " @dict DapperReport
-" @usage [kind] [brief] [Long] [Other]
+" @function dapper#dap#DapperReport#New([kind] [brief] [Long] [Other])
 "
 " Construct a DapperReport object.
 "
