@@ -13,6 +13,7 @@
 let s:typename = 'DapperBuffer'
 
 ""
+" @public
 " @dict DapperBuffer
 " @function dapper#view#DapperBuffer#New({message_passer}, [bufparams])
 " Construct a DapperBuffer.
@@ -33,7 +34,7 @@ function! dapper#view#DapperBuffer#new(message_passer, ...) abort
       \ 'GetRange': typevim#make#AbstractFunc(s:typename, 'GetRange', []),
       \ 'SetMappings': typevim#make#AbstractFunc(s:typename, 'SetMappings', []),
       \ 'ConfigureBuffer': typevim#make#Member('ConfigureBuffer'),
-      \ 'ClimbUp': typevim#make#member('ClimbUp'),
+      \ 'ClimbUp': typevim#make#Member('ClimbUp'),
       \ 'DigDown': typevim#make#AbstractFunc(s:typename, 'DigDown', []),
       \ '_DigDownAndPush': typevim#make#Member('_DigDownAndPush'),
       \ 'SetParent': typevim#make#Member('SetParent'),
@@ -61,6 +62,7 @@ function! s:CheckType(Obj) abort
 endfunction
 
 ""
+" @public
 " @dict DapperBuffer
 " Log a report.
 function! dapper#view#DapperBuffer#_Log(kind, brief, ...) dict abort
@@ -71,6 +73,7 @@ function! dapper#view#DapperBuffer#_Log(kind, brief, ...) dict abort
 endfunction
 
 ""
+" @public
 " @dict DapperBuffer
 " Get the line range of an "entry" inside the buffer itself as a two-element
 " list of numbers, which are the first and last line that make up the 'entry',
@@ -83,6 +86,7 @@ function! dapper#view#DapperBuffer#getRange(...) dict abort
 endfunction
 
 ""
+" @public
 " @dict DapperBuffer
 " Set buffer-local settings for a DapperBuffer.
 function! dapper#view#DapperBuffer#ConfigureBuffer() dict abort
@@ -94,6 +98,7 @@ function! dapper#view#DapperBuffer#ConfigureBuffer() dict abort
 endfunction
 
 ""
+" @public
 " @dict DapperBuffer
 " Step up one level to this buffer's parent. If [fail_silently] is false, this
 " will throw an ERROR(NotFound) if no parent has been set.
@@ -121,6 +126,7 @@ function! dapper#view#DapperBuffer#ClimbUp(...) dict abort
 endfunction
 
 ""
+" @public
 " @dict DapperBuffer
 " Push the given item {to_show} to all children, and switch to one. Meant to
 " be called after determining what {to_show} during a call to
@@ -150,6 +156,7 @@ function! dapper#view#DapperBuffer#_DigDownAndPush(to_show) dict abort
 endfunction
 
 ""
+" @public
 " @dict DapperBuffer
 " Open this buffer, and trigger setup/buffer-local mappings.
 function! dapper#view#DapperBuffer#Open() dict abort
@@ -160,6 +167,7 @@ function! dapper#view#DapperBuffer#Open() dict abort
 endfunction
 
 ""
+" @public
 " @dict DapperBuffer
 " Set the parent DapperBuffer of this DapperBuffer.
 function! dapper#view#DapperBuffer#SetParent(new_parent) dict abort
@@ -169,6 +177,7 @@ function! dapper#view#DapperBuffer#SetParent(new_parent) dict abort
 endfunction
 
 ""
+" @public
 " @dict DapperBuffer
 " Get the parent DapperBuffer of this DapperBuffer.
 function! dapper#view#DapperBuffer#GetParent() dict abort
@@ -177,6 +186,7 @@ function! dapper#view#DapperBuffer#GetParent() dict abort
 endfunction
 
 ""
+" @public
 " @dict DapperBuffer
 " Mark a DapperBuffer as this buffer's child.
 function! dapper#view#DapperBuffer#AddChild(new_child) dict abort
@@ -186,6 +196,7 @@ function! dapper#view#DapperBuffer#AddChild(new_child) dict abort
 endfunction
 
 ""
+" @public
 " @dict DapperBuffer
 " Returns a list of all of this buffer's children, in no particular order.
 function! dapper#view#DapperBuffer#GetChildren() dict abort
@@ -194,6 +205,7 @@ function! dapper#view#DapperBuffer#GetChildren() dict abort
 endfunction
 
 ""
+" @public
 " @dict DapperBuffer
 " Returns the the first DapperBuffer in the given list of {buffers} that is
 " open in the tabpage having [tabnr], or the number 0, if none could be found.

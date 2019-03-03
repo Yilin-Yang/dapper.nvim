@@ -2,6 +2,8 @@
 " @dict ThreadsBuffer
 " Shows active threads in the debuggee; 'digs down' into callstacks.
 
+let s:plugin = maktaba#plugin#Get('dapper.nvim')
+
 let s:typename = 'ThreadsBuffer'
 let s:thread_id_search_pat = '^thread id: '
 
@@ -43,7 +45,7 @@ function! dapper#view#ThreadsBuffer#New(model, message_passer) abort
   call a:message_passer.Subscribe('ThreadEvent', l:new.Receive)
   call a:message_passer.Subscribe('ThreadsResponse', l:new.Receive)
 
-  call l:new.replaceLines(0, -1, ['<threads>', '</threads>'])
+  call l:new.ReplaceLines(1, -1, ['<threads>', '</threads>'])
 
   return l:new
 endfunction
@@ -125,7 +127,7 @@ endfunction
 " Set mappings to 'drill-down' into a Thread, expand info, etc.
 function! dapper#view#ThreadsBuffer#SetMappings() abort dict
   call s:CheckType(l:self)
-  execute 'nnoremap <buffer> '.dapper#settings#DigDownMapping().' '
+  execute 'nnoremap <buffer> '.s:plugin.flags.dig_down_mapping.Get().' '
       \ . ':call b:dapper_buffer.digDown()<cr>'
 endfunction
 
