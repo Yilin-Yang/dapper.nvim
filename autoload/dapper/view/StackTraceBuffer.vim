@@ -179,14 +179,17 @@ function! dapper#view#StackTraceBuffer#_ShowCallstack(response) dict abort
         \ 'Was told to show the callstack of a failed StackTraceResponse? %s',
         \ typevim#object#ShallowPrint(a:response))
   endif
-  let l:frames = a:response.body.stackFrames()
+  let l:frames = a:response.body.stackFrames
   let l:lines = []
   " TODO dynamically-adjustable format string
   let l:format_str = "(%d)\t[%.2s]\t(l:%d, c:%d)\t%s"
   let l:i = 0 | while l:i <# len(l:frames)
     let l:frame = l:frames[l:i]
-    let l:info = l:frame.about()
-    let l:type = l:info['presentationHint']
+    let l:info = l:frame.name
+    let l:type = 'normal'
+    if has_key(l:frame, 'presentationHint')
+      let l:type = l:info.presentationHint
+    endif
 
     if     l:type ==# 'normal' | let l:prefix = 'NO'
     elseif l:type ==# 'label'  | let l:prefix = 'LA'
@@ -195,7 +198,7 @@ function! dapper#view#StackTraceBuffer#_ShowCallstack(response) dict abort
 
     let l:stack_frame_str = printf(
             \ l:format_str,
-            \ l:i, l:prefix, l:info.line, l:info.column, l:info.name)
+            \ l:i, l:prefix, l:frame.line, l:frame.column, l:frame.name)
     call add(l:lines, l:stack_frame_str)
   let l:i += 1 | endwhile
 
