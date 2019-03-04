@@ -179,6 +179,10 @@ function! dapper#MiddleTalker#Receive(msg) abort dict
   endif
   let l:id = a:msg['vim_id']
   if l:id ># 0 " msg is a response to a request
+    let l:Cb = l:self.__ids_to_callbacks[l:id]
+    call l:self.__Log(
+        \ 'debug', 'MiddleTalker calling back: '.get(l:Cb, 'name'),
+        \ l:Cb, a:msg)
     call  l:self.__ids_to_callbacks[l:id](a:msg)
     unlet l:self.__ids_to_callbacks[l:id]
   endif
@@ -188,21 +192,15 @@ function! dapper#MiddleTalker#Receive(msg) abort dict
     if match(l:typename, l:pat) ==# -1 | continue | endif
     if maktaba#value#IsFuncref(l:Cbs)
       call l:self.__Log(
-          \ 'debug',
-          \ 'MiddleTalker calling back: '.get(l:Cbs, 'name'),
-          \ l:Cbs,
-          \ a:msg
-          \ )
+          \ 'debug', 'MiddleTalker calling back: '.get(l:Cbs, 'name'),
+          \ l:Cbs, a:msg)
       call l:Cbs(a:msg)
       continue
     endif
     for l:Cb in l:Cbs
       call l:self.__Log(
-          \ 'debug',
-          \ 'MiddleTalker calling back: '.get(l:Cb, 'name'),
-          \ l:Cb,
-          \ a:msg
-          \ )
+          \ 'debug', 'MiddleTalker calling back: '.get(l:Cb, 'name'),
+          \ l:Cb, a:msg)
       call l:Cb(a:msg)
     endfor
   endfor

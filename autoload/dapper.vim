@@ -6,9 +6,20 @@
 " crudely staple them onto neovim.
 
 ""
+" @public
 " Receive a response or event from the TypeScript middle-end.
 function! dapper#receive(msg) abort
-  call g:dapper_middletalker.Receive(a:msg)
+  try
+    call g:dapper_middletalker.Receive(a:msg)
+  catch
+    call g:dapper_middletalker.NotifyReport(
+        \ 'error',
+        \ 'Receiving message from middle-end threw exception!',
+        \ 'Threw: "'.v:exception.'" from throwpoint: '.v:throwpoint,
+        \ a:msg
+        \ )
+    throw v:exception.', from '.v:throwpoint
+  endtry
 endfunction
 
 " BRIEF:  Add a configuration for a particular debug adapter.
