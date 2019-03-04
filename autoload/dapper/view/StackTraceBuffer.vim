@@ -1,107 +1,190 @@
-" BRIEF:  Show a thread's stack trace. 'Drill down' into stackframes.
+""
+" @dict StackTraceBuffer
+" Shows a thread's stack trace. Allows the user to "drill down" into
+" particular stackframes, or back out into the parent @dict(ThreadsBuffer).
 
+let s:plugin = maktaba#plugin#Get('dapper.nvim')
 
-" BRIEF:  Construct a StackTraceBuffer.
-" PARAM:  thread  (dapper#model#Thread?)  Display the thread of this callstack.
-function! dapper#view#StackTraceBuffer#new(message_passer, ...) abort
-  let a:thread = get(a:000, 0, {'TYPE': {'Thread': 1}})
-  call dapper#model#Thread#CheckType(a:thread)
-  let l:new =
-      \ dapper#view#DapperBuffer#new(
-          \ a:message_passer, {'fname': '[dapper.nvim] Stack Trace, '})
-  let l:new['TYPE']['StackTraceBuffer'] = 1
+let s:typename = 'StackTraceBuffer'
+let s:counter = 0
 
-  let l:new['_thread'] = a:thread
-  let l:new['thread'] = function('dapper#view#StackTraceBuffer#thread')
+""
+" @public
+" @dict StackTraceBuffer
+" @function dapper#view#StackTraceBuffer#New({message_passer}, [thread])
+" Construct a StackTraceBuffer from a {message_passer} and, optionally, the
+" @dict(Thread) object [thread]. If provided, StackTraceBuffer will associate
+" with the given [thread] and display its stack trace.
+"
+" @default thread={}
+"
+" @throws BadValue if {message_passer} or [thread] are not dicts.
+" @throws WrongType if {message_passer} does not implement a @dict(MiddleTalker) interface, or if [thread] is nonempty and is not a @dict(Thread).
+function! dapper#view#StackTraceBuffer#New(message_passer, ...) abort
+  call typevim#ensure#Implements(
+      \ a:message_passer, dapper#MiddleTalker#Interface())
+  let l:thread = get(a:000, 0, {})
+  if !empty(l:thread) | call typevim#ensure#IsType(l:thread, 'Thread') | endif
 
-  let l:new['show']        = function('dapper#view#StackTraceBuffer#show')
-  let l:new['getRange']    = function('dapper#view#StackTraceBuffer#getRange')
-  let l:new['setMappings'] = function('dapper#view#StackTraceBuffer#setMappings')
+  let l:base = dapper#view#DapperBuffer#new(
+          \ a:message_passer,
+          \ {'bufname': '[dapper.nvim] Stack Trace, '.s:counter})
+  let s:counter += 1
 
-  let l:new['digDown'] = function('dapper#view#StackTraceBuffer#digDown')
-  let l:new['_makeChild'] = function('dapper#view#StackTraceBuffer#_makeChild')
-
-  let l:new['_showCallstack'] =
-      \ function('dapper#view#StackTraceBuffer#_showCallstack')
-
+  let l:new = {
+      \ '_thread': l:thread,
+      \ '_pending_stacktraces': [],
+      \ '_ResetBuffer': typevim#make#Member('_ResetBuffer'),
+      \ 'thread': typevim#make#Member('thread'),
+      \ 'Push': typevim#make#Member('Push'),
+      \ '_PrintFailedResponse': typevim#make#Member('_PrintFailedResponse'),
+      \ 'GetRange': typevim#make#Member('GetRange'),
+      \ 'SetMappings': typevim#make#Member('SetMappings'),
+      \ 'ClimbUp': typevim#make#Member('ClimbUp'),
+      \ 'DigDown': typevim#make#Member('DigDown'),
+      \ '_MakeChild': typevim#make#Member('_MakeChild'),
+      \ '_GetSelected': typevim#make#Member('_GetSelected'),
+      \ '_ShowCallstack': typevim#make#Member('_ShowCallstack'),
+      \ }
+  call typevim#make#Derived(s:typename, l:base, l:new)
+  let l:new._PrintFailedResponse =
+      \ typevim#object#Bind(l:new._PrintFailedResponse, l:new)
+  let l:new._ShowCallstack =
+      \ typevim#object#Bind(l:new._ShowCallstack, l:new)
   return l:new
 endfunction
 
-function! dapper#view#StackTraceBuffer#CheckType(object) abort
-  if type(a:object) !=# v:t_dict || !has_key(a:object, 'TYPE') || !has_key(a:object['TYPE'], 'StackTraceBuffer')
-  try
-    let l:err = '(dapper#view#StackTraceBuffer) Object is not of type StackTraceBuffer: '.string(a:object)
-  catch
-    redir => l:object
-    silent! echo a:object
-    redir end
-    let l:err = '(dapper#view#StackTraceBuffer) This object failed type check: '.l:object
-  endtry
-  throw l:err
-  endif
+function! s:CheckType(Obj) abort
+  call typevim#ensure#IsType(a:Obj, s:typename)
 endfunction
 
-" RETURNS:  (dapper#model#Thread) The thread whose callstack this buffer shows.
-function! dapper#view#StackTraceBuffer#thread() abort dict
-  call dapper#view#StackTraceBuffer#CheckType(l:self)
-  return l:self['_thread']
+""
+" @dict StackTraceBuffer
+" Clear the contents of this buffer, leaving only a pair of opening and
+" closing `"<stacktrace>"` tags.
+function! dapper#view#StackTraceBuffer#_ResetBuffer() dict abort
+  call s:CheckType(l:self)
+  call l:self.ReplaceLines(1, -1, ['<stacktrace>', '</stacktrace>'])
+endfunction
+
+""
+" @public
+" @dict StackTraceBuffer
+" Return the thread object whose callstack this buffer shows.
+function! dapper#view#StackTraceBuffer#thread() dict abort
+  call s:CheckType(l:self)
+  return l:self._thread
 endfunction
 
 " BRIEF:  Display the stack trace of the given thread.
 " DETAILS:  The buffer (and its `ScopeBuffer` children) will update when the
 "     `StackTraceResponse` arrives from the debug adapter.
 " PARAM:  thread  (dapper#model#Thread)
-function! dapper#view#StackTraceBuffer#show(thread) abort dict
-  call dapper#view#StackTraceBuffer#CheckType(l:self)
-  call dapper#model#Thread#CheckType(a:thread)
-  let l:self['_thread'] = a:thread
-  let l:stack_trace = a:thread.stackTrace()
-  " TODO display stack trace
-  call l:stack_trace.Subscribe(
-      \ function('dapper#view#StackTraceBuffer#_showCallstack', l:self))
+
+""
+" @dict StackTraceBuffer
+" Report the failure of a StackTraceRequest to the user.
+function! dapper#view#StackTraceBuffer#_PrintFailedResponse(response) dict abort
+  call s:CheckType(l:self)
+  call l:self._Log(
+      \ 'error',
+      \ 'StackTraceRequest failed!',
+      \ a:response,
+      \ l:self)
 endfunction
 
-" RETURNS:  (v:t_number)  The index of the selected stack frame.
-function! dapper#view#StackTraceBuffer#getRange() abort dict
-  call dapper#view#StackTraceBuffer#CheckType(l:self)
-  while 1  " grab a valid stack frame
-    let l:line = getline('.')
-    let l:tokens = matchlist(l:line, '(\([0-9]\{-}\)) \[\(..\)\]')
-    if !empty(l:tokens) || len(l:tokens) <# 3
-      throw 'ERROR(NotFound) (dapper#view#StackTraceBuffer) '
-          \ . 'Could not get selected stackframe!'
+""
+" @public
+" @dict StackTraceBuffer
+" Display the stack trace of the given thread. The buffer will update when the
+" StackTraceResponse arrives from the debug adapter, or throw an appropriate
+" error message if the request fails entirely.
+"
+" @throws BadValue if {thread} is not a dict.
+" @throws WrongType if {thread} is not a @dict(Thread).
+function! dapper#view#StackTraceBuffer#Push(thread) dict abort
+  call s:CheckType(l:self)
+  call typevim#ensure#IsType(a:thread, 'Thread')
+  let l:self._thread = a:thread
+  let l:stack_trace_promise = a:thread.stackTrace()
+  call l:stack_trace_promise.Then(
+      \ l:self._ShowCallstack,
+      \ l:self._PrintFailedResponse)
+  call l:self._Log(
+      \ 'info',
+      \ 'Will print StackTraceResponse in this buffer',
+      \ l:stack_trace_promise,
+      \ l:self
+      \ )
+  if l:stack_trace_promise.State() !=# 'fulfilled'
+    call add(l:self._pending_stacktraces, l:stack_trace_promise)
+  endif
+  " clean out fulfilled Promises
+  let l:i = 0 | while l:i <# len(l:self._pending_stacktraces)
+    let l:promise = l:self._pending_stacktraces[l:i]
+    if l:promise.State() ==# 'fulfilled'
+      unlet l:self._pending_stacktraces[l:i]
     endif
-    if l:tokens[2] ==# 'LA'  " is label, i.e. not a real stack frame
-      if getpos('.')[1] ==# 1
-        return  " invalid selection, do nothing
-      endif
-      normal! k
-    endif
-  endwhile
-  let l:frame_idx = l:tokens[1]
-  return l:frame_idx
+  let l:i += 1 | endwhile
 endfunction
 
-function! dapper#view#StackTraceBuffer#setMappings() abort dict
-  call dapper#view#StackTraceBuffer#CheckType(l:self)
-  execute 'nnoremap <buffer> '.dapper#settings#ClimbUpMapping().' '
-      \ . ':call b:dapper_buffer.climbUp()<cr>'
-  execute 'nnoremap <buffer> '.dapper#settings#DigDownMapping().' '
-      \ . ':call b:dapper_buffer.digDown()<cr>'
+""
+" @public
+" Return the line range of the stack frame with the given index.
+"
+" @throws BadValue if given a negative {index}.
+" @throws NotFound if the given entry can't be found.
+" @throws WrongType if {index} isn't a number.
+function! dapper#view#StackTraceBuffer#GetRange(index) dict abort
+  call s:CheckType(l:self)
+  call maktaba#ensure#IsNumber(a:index)
+  if a:index <# 0
+    throw maktaba#error#BadValue(
+        \ 'Gave a negative stackframe index: %d', a:index)
+  endif
+  let l:line = 2 + a:index
+  let l:num_lines = l:self.NumLines()
+  if l:line >=# l:num_lines
+    throw maktaba#error#NotFound('Stackframe with index %d not found', a:index)
+  endif
+  return [l:line, l:line]
 endfunction
 
-" BRIEF:  Show the contents of the stack trace in this buffer.
-" PARAM:  stack_trace (dapper#model#StackTrace) The stack trace to display. *It
-"     is assumed that this is already populated.*
-function! dapper#view#StackTraceBuffer#_showCallstack(stack_trace) abort dict
-  call dapper#view#StackTraceBuffer#CheckType(l:self)
-  let l:frames = a:stack_trace.frames()
+function! dapper#view#StackTraceBuffer#SetMappings() dict abort
+  call s:CheckType(l:self)
+  call setbufvar(l:self.bufnr(), 'dapper_buffer', l:self)
+  execute 'nnoremap <buffer> '.s:plugin.flags.climb_up_mapping.Get().' '
+      \ . ':call b:dapper_buffer.ClimbUp()<cr>'
+  execute 'nnoremap <buffer> '.s:plugin.flags.dig_down_mapping.Get().' '
+      \ . ':call b:dapper_buffer.DigDown()<cr>'
+endfunction
+
+""
+" @dict StackTraceBuffer
+" Show the contents of the {stack_trace} in this buffer.
+"
+" @throws BadValue if {stack_trace} is not a dict.
+" @throws WrongType if {stack_trace} is not a StackTraceResponse.
+function! dapper#view#StackTraceBuffer#_ShowCallstack(response) dict abort
+  call s:CheckType(l:self)
+  call typevim#ensure#Implements(a:response, dapper#dap#StackTraceResponse())
+  if !a:response.success
+    call l:self._Log(
+        \ 'severe',
+        \ 'Tried to print a failed StackTraceResponse!',
+        \ a:response,
+        \ l:self
+        \ )
+    throw maktaba#error#Failure(
+        \ 'Was told to show the callstack of a failed StackTraceResponse? %s',
+        \ typevim#object#ShallowPrint(a:response))
+  endif
+  let l:frames = a:response.body.stackFrames()
   let l:lines = []
   " TODO dynamically-adjustable format string
   let l:format_str = "(%d)\t[%.2s]\t(l:%d, c:%d)\t%s"
-
-  let l:i = 0
-  for l:frame in l:frames
+  let l:i = 0 | while l:i <# len(l:frames)
+    let l:frame = l:frames[l:i]
     let l:info = l:frame.about()
     let l:type = l:info['presentationHint']
 
@@ -110,28 +193,102 @@ function! dapper#view#StackTraceBuffer#_showCallstack(stack_trace) abort dict
     elseif l:type ==# 'subtle' | let l:prefix = 'SU'
     endif
 
-    call add(
-        \ l:lines,
-        \ printf(
+    let l:stack_frame_str = printf(
             \ l:format_str,
-            \ l:i, l:prefix, l:info['line'], l:info['column'], l:info['name']))
-    let l:i += 1
-  endfor
+            \ l:i, l:prefix, l:info.line, l:info.column, l:info.name)
+    call add(l:lines, l:stack_frame_str)
+  let l:i += 1 | endwhile
 
-  call l:self.insertLines(0, ['<stacktrace>'])
-  call l:self.replaceLines(1, -1, l:lines)
-  call l:self.insertLines(-1, ['</stacktrace>'])
+  call l:self._ResetBuffer()
+  call l:self.InsertLines(1, l:lines)
 endfunction
 
-" BRIEF:  Open the given stack frame.
-function! dapper#view#StackTraceBuffer#digDown() abort dict
-  call dapper#view#StackTraceBuffer#CheckType(l:self)
-  let l:callstack = l:self['_thread'].stackTrace()
-  call l:self._digDownAndPush(l:callstack[l:self.getRange()])
+""
+" @public
+" @dict StackTraceBuffer
+" Climb back up to a list of all threads.
+function! dapper#view#StackTraceBuffer#ClimbUp() dict abort
+  call s:CheckType(l:self)
+  if empty(l:self._parent)
+    call l:self._Log(
+        \ 'warn',
+        \ 'No parent ThreadsBuffer for this StackTraceBuffer!',
+        \ l:self
+        \ )
+    return
+  endif
+  call l:self._parent.Switch()
 endfunction
 
-" RETURNS:  (dapper#view#VariablesBuffer)
-function! dapper#view#StackTraceBuffer#_makeChild() abort dict
-  call dapper#view#StackTraceBuffer#CheckType(l:self)
-  " return dapper#view#VariablesBuffer#new()
+""
+" @public
+" @dict StackTraceBuffer
+" Open the given stack frame.
+function! dapper#view#StackTraceBuffer#DigDown() dict abort
+  call s:CheckType(l:self)
+  let l:callstack = l:self._thread.stackTrace()
+  call l:self._DigDownAndPush(l:callstack[l:self.GetRange()])
+endfunction
+
+""
+" @dict StackTraceBuffer
+" Make a VariablesBuffer representing a stack frame in this StackTraceBuffer.
+function! dapper#view#StackTraceBuffer#_MakeChild() dict abort
+  call s:CheckType(l:self)
+  let l:child = dapper#view#VariablesBuffer#New()
+  call l:child.SetParent(l:self)
+  return l:child
+endfunction
+
+""
+" @dict StackTraceBuffer
+" Get the numerical index corresponding to the selected stack frame.
+"
+" @throws NotFound if the numerical index could not be determined.
+function! dapper#view#StackTraceBuffer#_GetSelected() dict abort
+  call s:CheckType(l:self)
+
+  function! s:ReportNotFound() abort
+    call l:self._Log(
+        \ 'warn',
+        \ 'Could not determine currently selected stackframe!',
+        \ extend(['buffer contents:'], l:self.GetLines(1, -1)),
+        \ string(getcurpos())
+        \ )
+  endfunction
+
+  let l:buf_contents = l:self.GetLines(1, -1)
+  let l:lineno = line('.')
+
+  if len(l:buf_contents ==# 2)  " only tags, no actual stack frames
+    call s:ReportNotFound()
+    return
+  endif
+
+  let l:found = 0
+  while !l:found
+    let l:lineno = line('.')
+    let l:line = l:buf_contents[l:lineno]
+    let l:tokens = matchlist(l:line, '(\([0-9]\{-}\)) \[\(..\)\]')
+    if l:lineno ==# 1
+      normal! j
+    elseif l:lineno ==# len(l:buf_contents)
+      normal! k
+    elseif len(l:tokens) <# 3
+      throw maktaba#error#Failure(
+          \ 'StackTraceBuffer failed to parse stackframe entry: %s, '
+          \ . 'parsed into tokens: %s', l:line, string(l:tokens))
+    elseif l:tokens[2] ==# 'LA'  " is label, i.e. not a real stack frame
+      if l:lineno <=# 2  " nothing above this stack frame?
+        call s:ReportNotFound()
+        return
+      endif
+      " move cursor up by one line
+      normal! k
+    else
+      let l:found = 1
+    endif
+  endwhile
+
+  return l:tokens[1]
 endfunction
