@@ -220,7 +220,11 @@ function! dapper#view#StackTraceBuffer#ClimbUp() dict abort
         \ )
     return
   endif
-  call l:self._parent.Switch()
+  try
+    call l:self._parent.Switch()
+  catch /ERROR(NotFound)/
+    call l:self._parent.Open()
+  endtry
 endfunction
 
 ""

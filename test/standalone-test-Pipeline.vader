@@ -23,26 +23,15 @@ Execute (Pipeline: Dig Down into StackTraceBuffer):
   call g:tb.Open()
   normal! gg
   execute "normal \<cr>"
+  call AwaitTimeout({ -> ReceivedMessage('StackTraceResponse')}, 4000, 1)
 Expect:
   <stacktrace>
-  (0)	[NO]	(l:8, c:0)	The(0)
-  (1)	[NO]	(l:8, c:0)	word(1)
-  (2)	[NO]	(l:8, c:0)	`exception`(2)
-  (3)	[NO]	(l:8, c:0)	causes(3)
-  (4)	[NO]	(l:8, c:0)	the(4)
-  (5)	[NO]	(l:8, c:0)	mock(5)
-  (6)	[NO]	(l:8, c:0)	debugger(6)
-  (7)	[NO]	(l:8, c:0)	to(7)
-  (8)	[NO]	(l:8, c:0)	stop,(8)
-  (9)	[NO]	(l:8, c:0)	due(9)
-  (10)	[NO]	(l:8, c:0)	to(10)
-  (11)	[NO]	(l:8, c:0)	an(11)
-  (12)	[NO]	(l:8, c:0)	"exception".(12)
+  (0)	[NO]	(l:1, c:0)	#(0)
+  (1)	[NO]	(l:1, c:0)	Mock(1)
+  (2)	[NO]	(l:1, c:0)	Debugger(2)
+  (3)	[NO]	(l:1, c:0)	Source(3)
+  (4)	[NO]	(l:1, c:0)	File(4)
   </stacktrace>
-
-Execute(Pipeline: Check That Only the Child StackTraceBuffer Was Modified):
-  let g:stb = g:tb.GetChildren()[0]
-  AssertEqual 0, len(g:stb.GetLines(1, -1))
 
 Execute (Pipeline: Cleanup):
   " call g:tb.CleanUp()
