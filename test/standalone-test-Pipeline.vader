@@ -19,8 +19,6 @@ Expect:
   thread id: 1	name: thread 1		status: (N/A)
   </threads>
 
-Execute (Pipeline: Create A Free, Unattached StackTraceBuffer):
-  let g:stb = dapper#view#StackTraceBuffer#new(g:dapper_middletalker)
 Execute (Pipeline: Dig Down into StackTraceBuffer):
   call g:tb.Open()
   normal! gg
@@ -43,9 +41,9 @@ Expect:
   </stacktrace>
 
 Execute(Pipeline: Check That Only the Child StackTraceBuffer Was Modified):
-  AssertEqual 0, len(g:stb.getLines(0, -1))
+  let g:stb = g:tb.GetChildren()[0]
+  AssertEqual 0, len(g:stb.GetLines(1, -1))
 
 Execute (Pipeline: Cleanup):
-  call g:tb.Open()
-  " normal!ggVGd
+  " call g:tb.CleanUp()
   " unlet g:tb
