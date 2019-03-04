@@ -2,13 +2,12 @@
 " @dict DapperBuffer
 " A Buffer, with additional methods for use in the dapper UI.
 "
-" In addition to encapsulating a buffer, a `DapperBuffer` also:
-"
-" - Acts as a parent or child to other `DapperBuffer`s, allowing
-"   `DapperBuffer`s to organize as a tree: UI updates and information about
-"   for 'digging down' from one level of information to another (e.g. from a
-"   list of all running threads to a stack trace for a particular thread), and
-"   for 'climbing up' from that deeper level back to the parent level.
+" In addition to encapsulating a buffer, a DapperBuffer also acts as a
+" parent or child to other DapperBuffers, allowing DapperBuffers to
+" organize as a tree: UI updates and information about for "digging down" from
+" one level of information to another (e.g. from a list of all running threads
+" to a stack trace for a particular thread), and for "climbing up" from that
+" deeper level back to the parent level.
 
 let s:typename = 'DapperBuffer'
 
@@ -37,6 +36,7 @@ function! dapper#view#DapperBuffer#new(message_passer, ...) abort
       \ '_message_passer': a:message_passer,
       \ '_parent': 0,
       \ '_children': [],
+      \ '_MessagePasser': typevim#make#Member('_MessagePasser'),
       \ 'Push': typevim#make#AbstractFunc(s:typename, 'Push', []),
       \ 'GetRange': typevim#make#AbstractFunc(s:typename, 'GetRange', []),
       \ 'SetMappings': typevim#make#AbstractFunc(s:typename, 'SetMappings', []),
@@ -53,13 +53,11 @@ function! dapper#view#DapperBuffer#new(message_passer, ...) abort
       \ '_Log': typevim#make#Member('_Log'),
       \ '_GetOpenInTab': typevim#make#Member('_GetOpenInTab'),
       \ }
-  call typevim#make#Derived(s:typename, l:base, l:new)
+  call typevim#make#Derived(
+      \ s:typename, l:base, l:new, typevim#make#Member('CleanUp'))
   call typevim#ensure#Implements(l:new, dapper#interface#UpdatePusher())
 
-  " set 'self' as a buffer-local variable
-  call setbufvar(l:new.bufnr(), 'dapper_buffer', l:new)
-
-  " monkey-patch the `open` method; invoke `setMappings` after opening
+  " monkey-patch the `open` method; invoke `SetMappings` after opening
   let l:new['Buffer#Open'] = l:new.Open
   let l:new.Open = typevim#make#Member('Open')
 
@@ -73,12 +71,30 @@ endfunction
 ""
 " @public
 " @dict DapperBuffer
+" Remove this DapperBuffer from the list of its parent's children.
+function! dapper#view#DapperBuffer#CleanUp() dict abort
+  call s:CheckType(l:self)
+  if empty(l:self._parent) | return | endif
+  call l:self._parent.RemoveChild(l:self)
+endfunction
+
+""
+" @dict DapperBuffer
+" Return a reference to this DapperBuffer's MiddleTalker object.
+function! dapper#view#DapperBuffer#_MessagePasser() dict abort
+  call s:CheckType(l:self)
+  return l:self._message_passer
+endfunction
+
+""
+" @public
+" @dict DapperBuffer
 " Log a report.
 function! dapper#view#DapperBuffer#_Log(kind, brief, ...) dict abort
   call s:CheckType(l:self)
   call maktaba#ensure#IsString(a:kind)
   call maktaba#ensure#IsString(a:brief)
-  call call(l:self['_message_passer'].NotifyReport, [a:kind, a:brief] + a:000)
+  call call(l:self._message_passer.NotifyReport, [a:kind, a:brief] + a:000)
 endfunction
 
 ""
@@ -89,7 +105,7 @@ endfunction
 " inclusive.
 "
 " @throws NotFound if the given "entry" could not be found.
-function! dapper#view#DapperBuffer#getRange(...) dict abort
+function! dapper#view#DapperBuffer#GetRange(...) dict abort
   throw maktaba#error#NotFound('Could not find entry: %s',
       \ typevim#object#ShallowPrint(a:000))
 endfunction
@@ -148,7 +164,7 @@ function! dapper#view#DapperBuffer#_DigDownAndPush(to_show) dict abort
   endif
   let l:open_in_same = 0
   for l:child in l:children
-    call l:child.Show(a:to_show)
+    call l:child.Push(a:to_show)
     if !empty(l:open_in_same) | continue | endif
     if l:child.IsOpenInTab() | let l:open_in_same = l:child | endif
   endfor
