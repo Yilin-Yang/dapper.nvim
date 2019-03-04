@@ -219,14 +219,14 @@ function! dapper#model#Model#Receive(msg) dict abort
     if has_key(l:capabilities, 'exceptionBreakpointFilters')
       let l:filters = l:capabilities.exceptionBreakpointFilters
     endif
-    let l:self._exception_bps =
-        \ dapper#model#ExceptionBreakpoints#new(
-            \ l:filters, l:self._message_passer)
+    " let l:self._exception_bps =
+    "     \ dapper#model#ExceptionBreakpoints#New(
+    "         \ l:filters, l:self._message_passer)
 
     " initialize DebugSources object
-    let l:self._sources =
-        \ dapper#model#DebugSources#new(
-            \ l:self._message_passer, l:capabilities)
+    " let l:self._sources =
+    "     \ dapper#model#DebugSources#new(
+    "         \ l:self._message_passer, l:capabilities)
   else
     call l:self._message_passer.NotifyReport(
         \ 'info',
