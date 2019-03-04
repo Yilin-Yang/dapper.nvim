@@ -148,8 +148,9 @@ endfunction
 " Set mappings to 'drill-down' into a Thread, expand info, etc.
 function! dapper#view#ThreadsBuffer#SetMappings() dict abort
   call s:CheckType(l:self)
+  call setbufvar(l:self.bufnr(), 'dapper_buffer', l:self)
   execute 'nnoremap <buffer> '.s:plugin.flags.dig_down_mapping.Get().' '
-      \ . ':call b:dapper_buffer.digDown()<cr>'
+      \ . ':call b:dapper_buffer.DigDown()<cr>'
 endfunction
 
 ""
@@ -238,7 +239,7 @@ function! dapper#view#ThreadsBuffer#DigDown() dict abort
     return
   endtry
   call l:self._Log(
-      \ 'status',
+      \ 'debug',
       \ 'Digging down from ThreadsBuffer to tid:'.l:tid,
       \ l:long_msg
       \ )
@@ -247,18 +248,17 @@ endfunction
 
 ""
 " @dict ThreadsBuffer
-" Construct a @dict(StackTraceBuffer) and mark it as this
-" @dict(ThreadsBuffer)'s child.
+" Construct a @dict(StackTraceBuffer) and mark it as this object's child.
 function! dapper#view#ThreadsBuffer#_MakeChild() dict abort
   call s:CheckType(l:self)
-  let l:child = dapper#view#StackTraceBuffer#New(l:self._message_passer)
+  let l:child = dapper#view#StackTraceBuffer#New(l:self._MessagePasser())
   call l:child.SetParent(l:self)
   return l:child
 endfunction
 
 ""
 " @dict ThreadsBuffer
-" Returns the ID of the thread over which theuser's cursor is hovering.
+" Returns the ID of the thread over which the user's cursor is hovering.
 function! dapper#view#ThreadsBuffer#_GetSelected() dict abort
   call s:CheckType(l:self)
   let l:cur_line = line('.')
@@ -267,9 +267,12 @@ function! dapper#view#ThreadsBuffer#_GetSelected() dict abort
   endif
   let l:tid_line = search(s:thread_id_search_pat, 'bncW')
   if !l:tid_line
-    call l:self._Log('error', 'Couldn''t find a selected thread ID',
-        \ 'curpos: '.string(getcurpos())."\nbuffer contents:\n".getline(1,'$'))
-    throw '(dapper#view#ThreadsBuffer) No thread ID found'
+    call l:self._Log(
+        \ 'warn',
+        \ 'Could not determine currently selected thread!',
+        \ extend(['buffer contents:'], l:self.GetLines(1, -1)),
+        \ 'curpos: '.string(getcurpos())
+        \ )
   endif
   let l:tid = matchstr(getline(l:tid_line), '[0-9]*\(\tname\)\@=') + 0
   return l:tid
