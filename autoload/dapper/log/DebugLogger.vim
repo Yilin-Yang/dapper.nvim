@@ -163,7 +163,8 @@ endfunction
 " @public
 " @dict DebugLogger
 " Make a report. Log it to dapper.nvim's maktaba logger interface, which might
-" shout the message at the user. Also append it to the debug log.
+" shout the message at the user. If {kind} is equal to @setting(min_log_level)
+" or greater, the FULL message will be appended to the debug log.
 "
 " {kind} is the type of report. These correspond one-to-one with the
 " |maktaba.Logger| log levels. This is not case sensitive.
@@ -187,8 +188,11 @@ function! dapper#log#DebugLogger#NotifyReport(kind, brief, ...) dict abort
   let l:kind_func = toupper(l:kind_lower[0:0]).l:kind_lower[1:]
 
   " log to dapper.nvim's internal debug log
-  let l:report = call('dapper#dap#DapperReport#New', [a:kind, a:brief] + a:000)
-  call l:self.Log(l:report)
+  if dapper#helpers#LevelToNum(a:kind)
+      \ >=# dapper#helpers#LevelToNum(s:plugin.flags.min_log_level.Get())
+    let l:report = call('dapper#dap#DapperReport#New', [a:kind, a:brief] + a:000)
+    call l:self.Log(l:report)
+  endif
 
   " log to the maktaba logger interface
   " note that the log levels are also the names of dict functions inside the

@@ -52,25 +52,50 @@ call s:plugin.Flag('toggle_breakpoint_mapping',
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
+""
 " Mapping between a filetype and all debug adapter configurations for that
 " filetype.
 call s:plugin.Flag('filetypes_to_configs',
     \ s:GlobalSettingOrDefault('g:dapper_filetypes_to_configs', {}))
 
-" The |bufname| of the debug log buffer. Defaults
+""
+" The |bufname| of the debug log buffer.
 call s:plugin.Flag('log_buffer_name',
     \ s:GlobalSettingOrDefault('g:dapper_log_buffer_name', '[dapper] Debug Log'))
 
+""
 " The output file to which the debug log will be written, if log writing is
 " enabled.
 call s:plugin.Flag('logfile',
     \ s:GlobalSettingOrDefault('g:dapper_logfile', $HOME.'/dapper_debug_log.vim.dp'))
 
+""
 " Whether or not to write the debug log buffer out to a file on exit.
 call s:plugin.Flag('log_buffer_writeback',
     \ s:GlobalSettingOrDefault('g:dapper_log_buffer_writeback', 0))
 
-" TODO
-" call s:plugin.Flag('echo_message_verbosity'
+""
+" The "lowest" notification level to be written to the debug log buffer.
+" Messages below this level are ignored, while messages at this level or
+" higher are printed in their entirety to dapper.nvim's log. This does
+" not affect log output to maktaba.
 "
-" call s:plugin.Flag('redraw_on_echo'
+" May be set to, in order from lowest to highest severity,
+" - "debug"
+" - "info"
+" - "warn"
+" - "error"
+" - "severe"
+" - "no_logging"
+"
+" Setting this to "no_logging" disables dapper.nvim's debug logging.
+"
+" Note that setting this to "low" values, particularly "debug", may incur a
+" significant performance penalty, as dapper.nvim's debug log output is
+" extremely verbose. It's recommended to set this no lower than "warn" in
+" ordinary use.
+call s:plugin.Flag('min_log_level',
+    \ s:GlobalSettingOrDefault('g:dapper_min_log_level', 'error'))
+
+call s:plugin.flags.min_log_level.AddTranslator(
+    \ function('dapper#ensure#IsValidLogLevel'))
