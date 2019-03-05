@@ -33,7 +33,6 @@ function! dapper#view#StackTraceBuffer#New(message_passer, ...) abort
 
   let l:new = {
       \ '_thread': l:thread,
-      \ '_pending_stacktraces': [],
       \ '_ResetBuffer': typevim#make#Member('_ResetBuffer'),
       \ 'thread': typevim#make#Member('thread'),
       \ 'Push': typevim#make#Member('Push'),
@@ -76,20 +75,15 @@ function! dapper#view#StackTraceBuffer#thread() dict abort
   return l:self._thread
 endfunction
 
-" BRIEF:  Display the stack trace of the given thread.
-" DETAILS:  The buffer (and its `ScopeBuffer` children) will update when the
-"     `StackTraceResponse` arrives from the debug adapter.
-" PARAM:  thread  (dapper#model#Thread)
-
 ""
 " @dict StackTraceBuffer
-" Report the failure of a StackTraceRequest to the user.
-function! dapper#view#StackTraceBuffer#_PrintFailedResponse(response) dict abort
+" Report that an attempt to retrieve a @dict(StackTrace) object failed.
+function! dapper#view#StackTraceBuffer#_PrintFailedResponse(error) dict abort
   call s:CheckType(l:self)
   call l:self._Log(
       \ 'error',
-      \ 'StackTraceRequest failed!',
-      \ a:response,
+      \ 'StackTrace object retrieval failed!',
+      \ a:error,
       \ l:self)
 endfunction
 
@@ -116,16 +110,6 @@ function! dapper#view#StackTraceBuffer#Push(thread) dict abort
       \ l:stack_trace_promise,
       \ l:self
       \ )
-  if l:stack_trace_promise.State() !=# 'fulfilled'
-    call add(l:self._pending_stacktraces, l:stack_trace_promise)
-  endif
-  " clean out fulfilled Promises
-  let l:i = 0 | while l:i <# len(l:self._pending_stacktraces)
-    let l:promise = l:self._pending_stacktraces[l:i]
-    if l:promise.State() ==# 'fulfilled'
-      unlet l:self._pending_stacktraces[l:i]
-    endif
-  let l:i += 1 | endwhile
 endfunction
 
 ""
@@ -164,22 +148,11 @@ endfunction
 " Show the contents of the {stack_trace} in this buffer.
 "
 " @throws BadValue if {stack_trace} is not a dict.
-" @throws WrongType if {stack_trace} is not a StackTraceResponse.
-function! dapper#view#StackTraceBuffer#_ShowCallstack(response) dict abort
+" @throws WrongType if {stack_trace} is not a @dict(StackTrace).
+function! dapper#view#StackTraceBuffer#_ShowCallstack(stack_trace) dict abort
   call s:CheckType(l:self)
-  call typevim#ensure#Implements(a:response, dapper#dap#StackTraceResponse())
-  if !a:response.success
-    call l:self._Log(
-        \ 'severe',
-        \ 'Tried to print a failed StackTraceResponse!',
-        \ a:response,
-        \ l:self
-        \ )
-    throw maktaba#error#Failure(
-        \ 'Was told to show the callstack of a failed StackTraceResponse? %s',
-        \ typevim#object#ShallowPrint(a:response))
-  endif
-  let l:frames = a:response.body.stackFrames
+  call typevim#ensure#IsType(a:stack_trace, 'StackTrace')
+  let l:frames = a:stack_trace.stackFrames()
   let l:lines = []
   " TODO dynamically-adjustable format string
   let l:format_str = "(%d)\t[%.2s]\t(l:%d, c:%d)\t%s"

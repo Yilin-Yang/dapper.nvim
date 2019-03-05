@@ -464,6 +464,15 @@ Model.Push()                                                    *Model.Push()*
 Sends the given {command} with the given {request_args} and resolves with the
 results.
 
+dapper#RequestDoer#New({message_passer}, {command}, {request_args})
+                                                           *RequestDoer.New()*
+  Construct a RequestDoer. {command} is the value of the "command" field of a
+  DebugProtocol.Request, while {request_args} is the value of the "arguments"
+  field of the same.
+
+  Throws ERROR(WrongType) if {message_passer} doesn't implement a MiddleTalker
+  interface, {command} is not a string, {request_args} is not a dict.
+
                                                         *dapper.nvim.Response*
 A DebugProtocol.Response message.
 
@@ -476,6 +485,39 @@ dapper#dap#Response#New([success] [command] [msg_or_body])    *Response.New()*
   Throws ERROR(WrongType) if [success] is not a bool, [command] is not a
   string, or if: [success] is true and [msg_or_body] is not a dict; or
   [success] is false and [msg_or_body] is not a string.
+
+                                                      *dapper.nvim.StackFrame*
+Stores the scopes for a particular stack frame in a thread's callstack.
+
+                                                      *dapper.nvim.StackTrace*
+Stores a thread's callstack. Provides an interface to retrieve information
+about particular stack frames.
+
+dapper#model#StackTrace#New({stack_trace_response}, {message_passer})
+                                                            *StackTrace.New()*
+  Construct a new StackTrace object.
+
+  Throws ERROR(BadValue) if {stack_trace_response} or {message_passer} are not
+  dicts.
+  Throws ERROR(WrongType) if {stack_trace_response} is not a
+  StackTraceResponse, or if {message_passer} does not implement a
+  |dapper.nvim.MiddleTalker| interface.
+
+StackTrace.totalFrames()                            *StackTrace.totalFrames()*
+  Returns the `totalFrames` value provided by the last-received
+  StackTraceResponse.
+
+StackTrace.stackFrames()                            *StackTrace.stackFrames()*
+  Returns the list of stack frames provided by the last-received
+  StackTraceResponse.
+
+StackTrace.frame({index})                                 *StackTrace.frame()*
+  Returns a |TypeVim.Promise| that resolves to a |dapper.nvim.StackFrame|
+  object constructed from the stack frame at {index} in the callstack.
+
+  Throws ERROR(BadValue) if {index} corresponds to an artificial "label"
+  frame.
+  Throws ERROR(NotFound) if {index} is out of range.
 
                                                 *dapper.nvim.StackTraceBuffer*
 Shows a thread's stack trace. Allows the user to "drill down" into particular
@@ -536,7 +578,8 @@ dapper#config#StartArgs#New({adapter_config}, {debuggee_args}, {vscode_attr},
   the specified types.
 
                                                           *dapper.nvim.Thread*
-Stores information about a running (or stopped) thread.
+Stores information about a running (or stopped) thread: metadata, and the
+thread's callstack.
 
 dapper#model#Thread#New({props} {message_passer})               *Thread.New()*
   Construct a new Thread object. Will automatically request its own stack
@@ -561,23 +604,28 @@ Thread.status()                                              *Thread.status()*
   Returns the status of this thread.
 
 Thread.stackTrace()                                      *Thread.stackTrace()*
-  Returns a Promise that, when resolved, returns the thread's StackTrace.
+  Returns a Promise that, when resolved, returns the thread's
+  |dapper.nvim.StackTrace|.
 
-Thread.Update({props}, [update_stack_trace])                 *Thread.Update()*
+Thread.Receive({msg})                                       *Thread.Receive()*
+  Update this Thread object's stored stack trace from the given {msg}.
+
+  Throws ERROR(BadValue) if {msg} is not a dict.
+  Throws ERROR(WrongType) if {msg} is not a ProtocolMessage.
+
+Thread.Update({props})                                       *Thread.Update()*
   Update the properties of this Thread from {props}, which is the body of a
   ThreadEvent. {props} may contain the following optional properties:
   "id" or "threadId"
   "name"
   "reason"
 
-  If [update_stack_trace] is true, calling this function will prompt the
-  Thread to update its cached stack trace.
-
-  [update_stack_trace] is 1 if omitted.
+  Calling this function will prompt the Thread to update its cached stack
+  trace.
 
   Throws ERROR(BadValue) if {props} is not a dict.
   Throws ERROR(WrongType) if {props} contains the properties above, but with
-  the wrong types, or if [update_stack_trace] is not a bool.
+  the wrong types.
 
                                                    *dapper.nvim.ThreadsBuffer*
 Shows active threads in the debuggee; 'digs down' into callstacks.

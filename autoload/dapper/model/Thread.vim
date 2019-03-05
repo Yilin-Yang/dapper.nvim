@@ -1,6 +1,7 @@
 ""
 " @dict Thread
-" Stores information about a running (or stopped) thread.
+" Stores information about a running (or stopped) thread: metadata, and the
+" thread's callstack.
 
 let s:typename = 'Thread'
 
@@ -35,10 +36,10 @@ function! dapper#model#Thread#New(props, message_passer) abort
       \ '_tid': l:tid,
       \ '_name': get(a:props, 'name', 'unnamed'),
       \ '_status': get(a:props, 'reason', '(N/A)'),
-      \ '_last_thread_update': localtime(),
-      \ '_last_callstack_update': -1,
-      \ '_callstack': {},
+      \ '_stack_trace_promise': v:null,
+      \ '_stack_trace': v:null,
       \ '_message_passer': a:message_passer,
+      \ '_RefreshStackTrace': typevim#make#Member('_RefreshStackTrace'),
       \ 'id': typevim#make#Member('id'),
       \ 'name': typevim#make#Member('name'),
       \ 'status': typevim#make#Member('status'),
@@ -48,11 +49,25 @@ function! dapper#model#Thread#New(props, message_passer) abort
       \ }
   call typevim#make#Class(s:typename, l:new)
   let l:new.Receive = typevim#object#Bind(l:new.Receive, l:new)
+  call l:new._RefreshStackTrace()
   return l:new
 endfunction
 
 function! s:CheckType(Obj) abort
   call typevim#ensure#IsType(a:Obj, s:typename)
+endfunction
+
+function! dapper#model#Thread#_RefreshStackTrace() dict abort
+  call s:CheckType(l:self)
+  " release the old StackTrace object
+  let l:self._stack_trace = v:null
+
+  " request a new one
+  let l:doer = dapper#RequestDoer#New(
+      \ l:self._message_passer, 'stackTrace', {'threadId': l:self.id()})
+  let l:promise = typevim#Promise#New(l:doer)
+  let l:self._stack_trace_promise = l:promise
+  call l:promise.Then(l:self.Receive)
 endfunction
 
 ""
@@ -83,23 +98,30 @@ function! dapper#model#Thread#status() dict abort
 endfunction
 
 ""
+" @dict Thread
+" Callback function. When called back, returns the {Thread} object's
+" @dict(StackTrace).
+function! dapper#model#Thread#ReturnOnReceive(Thread, ...) abort
+  call s:CheckType(a:Thread)
+  return a:Thread._stack_trace
+endfunction
+
+""
 " @public
 " @dict Thread
-" Returns a Promise that, when resolved, returns the thread's StackTrace.
+" Returns a Promise that, when resolved, returns the thread's @dict(StackTrace).
 function! dapper#model#Thread#stackTrace() dict abort
   call s:CheckType(l:self)
-  let l:callstack = l:self._callstack
-  if empty(l:callstack)
-      \ || l:self._last_thread_update >=# l:self._last_callstack_update
-    let l:doer = dapper#RequestDoer#New(
-        \ l:self._message_passer, 'stackTrace', {'threadId': l:self.id()})
-    let l:to_return = typevim#Promise#New(l:doer)
-    call l:to_return.Then(l:self.Receive)
+  if empty(l:self._stack_trace)
+    " when the StackTraceResponse arrives, first, the StackTrace will be
+    " constructed; afterwards, return the constructed StackTrace object
+    return l:self._stack_trace_promise.Then(
+        \ function('dapper#model#Thread#ReturnOnReceive', [l:self]))
   else
-    let l:to_return = typevim#Promise#New()
-    call l:to_return.Resolve(l:callstack)
+    let l:promise = typevim#Promise#New()
+    call l:promise.Resolve(l:self._stack_trace)
+    return l:promise
   endif
-  return l:to_return
 endfunction
 
 ""
@@ -129,8 +151,8 @@ function! dapper#model#Thread#Receive(msg) dict abort
         \ )
     return
   endif
-  let l:self._callstack = a:msg
-  let l:self._last_callstack_update = localtime()
+  let l:self._stack_trace =
+      \ dapper#model#StackTrace#New(a:msg, l:self._message_passer)
 endfunction
 
 ""
@@ -142,17 +164,12 @@ endfunction
 " - "name"
 " - "reason"
 "
-" If [update_stack_trace] is true, calling this function will prompt the
-" Thread to update its cached stack trace.
-"
-" @default update_stack_trace=1
+" Calling this function will prompt the Thread to update its cached stack trace.
 "
 " @throws BadValue if {props} is not a dict.
-" @throws WrongType if {props} contains the properties above, but with the wrong types, or if [update_stack_trace] is not a bool.
-function! dapper#model#Thread#Update(props, ...) dict abort
+" @throws WrongType if {props} contains the properties above, but with the wrong types.
+function! dapper#model#Thread#Update(props) dict abort
   call s:CheckType(l:self)
-  let l:self._last_thread_update = localtime()
-  let a:update_stack_trace = typevim#ensure#IsBool(get(a:000, 0, 1))
   if has_key(a:props, 'id')
     let l:self._id = a:props.id
   elseif has_key(a:props, 'threadId')
@@ -164,9 +181,5 @@ function! dapper#model#Thread#Update(props, ...) dict abort
   if has_key(a:props, 'reason')
     let l:self._status = a:props.reason
   endif
-  if a:update_stack_trace
-    " TODO
-    " let l:self._callstack =
-    "     \ dapper#model#StackTrace#new(l:self._id, l:self._message_passer)
-  endif
+  call l:self._RefreshStackTrace()
 endfunction

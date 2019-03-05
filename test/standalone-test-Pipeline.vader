@@ -16,7 +16,7 @@ Execute (Pipeline: Request Threads):
   call AwaitTimeout({ -> ReceivedMessage('ThreadsResponse')}, 3000, 1)
 Expect:
   <threads>
-  thread id: 1	name: thread 1		status: (N/A)
+  thread id: 1	name: thread 1		status: entry
   </threads>
 
 Execute (Pipeline: Dig Down into StackTraceBuffer):
