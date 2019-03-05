@@ -6,8 +6,12 @@ let s:typename = 'RequestDoer'
 " the results.
 
 ""
+" @public
+" @function dapper#RequestDoer#New({message_passer}, {command}, {request_args})
 " @dict RequestDoer
-" Construct a RequestDoer.
+" Construct a RequestDoer. {command} is the value of the "command" field of a
+" DebugProtocol.Request, while {request_args} is the value of the "arguments"
+" field of the same.
 "
 " @throws WrongType if {message_passer} doesn't implement a MiddleTalker interface, {command} is not a string, {request_args} is not a dict.
 function! dapper#RequestDoer#New(message_passer, command, request_args) abort
