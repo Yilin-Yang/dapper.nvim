@@ -47,7 +47,7 @@ export interface Report extends DebugProtocol.ProtocolMessage {
   /**
    * A verbose, detailed summary of the report.
    */
-  long: string;
+  long: any;
 
   /**
    * Any other miscellaneous information about this report.

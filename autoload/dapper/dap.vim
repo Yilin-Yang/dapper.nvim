@@ -39,8 +39,8 @@ function! dapper#dap#DapperReport() abort
       \ 'vim_id': typevim#Number(),
       \ 'kind': typevim#String(),
       \ 'brief': typevim#String(),
-      \ 'long': typevim#String(),
-      \ 'other?': typevim#String(),
+      \ 'long': typevim#Any(),
+      \ 'other?': typevim#Any(),
       \ }
     " TODO support extensions of multiple interfaces
     let s:MsgTypenameToInterface[l:vim_msg_typename] =

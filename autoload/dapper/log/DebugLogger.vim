@@ -126,6 +126,12 @@ endfunction
 " @throws WrongType if {report} is not a @dict(DapperReport) object.
 function! dapper#log#DebugLogger#ListifyReport(report) dict abort
   call typevim#ensure#Implements(a:report, s:report_interface)
+  if !maktaba#value#IsString(a:report.long)
+    let a:report.long = typevim#object#PrettyPrint(a:report.long)
+  endif
+  if !maktaba#value#IsString(a:report.other)
+    let a:report.other = typevim#object#PrettyPrint(a:report.other)
+  endif
 
   let l:lines_to_append = [
       \ 'report: { '.a:report.kind.', '.a:report.brief,

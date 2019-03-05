@@ -17,14 +17,8 @@ function! dapper#dap#DapperReport#New(...) abort
   let l:new.type = 'report'
   let l:new.kind = l:kind
   let l:new.brief = l:brief
-
-  let l:Long = get(a:000, 2, '')
-  let l:new.long = maktaba#value#IsString(l:Long) ?
-      \ l:Long : typevim#object#PrettyPrint(l:Long)
-
-  let l:Other = get(a:000, 3, '')
-  let l:new.other = maktaba#value#IsString(l:Other) ?
-      \ l:Other : typevim#object#PrettyPrint(l:Other)
+  let l:new.long = get(a:000, 2, '')
+  let l:new.other = get(a:000, 3, '')
 
   " autopopulate vim_msg_typename
   let l:new.vim_msg_typename = toupper(l:kind[0:0]).l:kind[1:].'Report'
