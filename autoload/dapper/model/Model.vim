@@ -65,7 +65,7 @@ function! dapper#model#Model#New(message_passer) abort
       \ '_ReceiveThreadsResponse': typevim#make#Member('_ReceiveThreadsResponse'),
       \ '_ThreadFromEvent': typevim#make#Member('_ThreadFromEvent'),
       \ '_ArchiveThread': typevim#make#Member('_ArchiveThread'),
-      \ '_ReqThreads': typevim#make#Member('_ReqThreads'),
+      \ '_RequestThreads': typevim#make#Member('_RequestThreads'),
       \ '_parent': v:null,
       \ '_children': [],
       \ 'GetParent': typevim#make#Member('GetParent'),
@@ -203,10 +203,11 @@ function! dapper#model#Model#Receive(msg) dict abort
   call typevim#ensure#Implements(a:msg, dapper#dap#DapperMessage())
   let l:typename = a:msg.vim_msg_typename
   if l:typename ==# 'ThreadEvent'
-    call l:self._ReqThreads()
+    call l:self._RequestThreads()
     call l:self._ReceiveThreadEvent(a:msg)
   elseif l:typename ==# 'StoppedEvent'
-    call l:self._ReqThreads()
+    call l:self._RequestThreads()
+    call l:self._ReceiveThreadEvent(a:msg)
   elseif l:typename ==# 'ThreadsResponse'
     call l:self._ReceiveThreadsResponse(a:msg)
   elseif l:typename ==# 'InitializeResponse'
@@ -254,8 +255,14 @@ function! dapper#model#Model#_ReceiveThreadEvent(event) dict abort
   elseif l:reason ==# 'exited'
     call l:self._ArchiveThread(l:body)
   else
-    let l:long_msg = 'Unrecognized reason: '.l:reason."\n".l:long_msg
-    let l:thread = l:self.thread(l:body.threadId)
+    let l:long_msg = 'Reason: '.l:reason."\n".l:long_msg
+    let l:tid = l:body.threadId
+    try
+      let l:thread = l:self.thread(l:tid)
+    catch /ERROR(NotFound)/
+      call l:self._ThreadFromEvent(l:body)
+      let l:thread = l:self.thread(l:tid)
+    endtry
     call l:thread.Update(l:body)
   endif
   let l:self._to_highlight = l:self.thread(l:body.threadId)
@@ -383,7 +390,7 @@ function! dapper#model#Model#_ArchiveThread(body) dict abort
 endfunction
 
 " BRIEF:  Request all active threads from the debug adapter.
-function! dapper#model#Model#_ReqThreads() dict abort
+function! dapper#model#Model#_RequestThreads() dict abort
   call s:CheckType(l:self)
   call l:self._message_passer.Request(
       \ 'threads', {}, function('dapper#model#Model#Receive', l:self))
