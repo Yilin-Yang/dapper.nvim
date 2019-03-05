@@ -20,7 +20,8 @@ let s:typename = 'DapperBuffer'
 " {message_passer} is the message-passing interface that DapperBuffer will
 " use, which shall have the same interface as @dict(MiddleTalker).
 "
-" For [bufparams], see @function(typevim#Buffer#New).
+" For [bufparams], see @function(typevim#Buffer#New). The wrapped buffer will
+" be set to |nomodifiable| by default, unless explicitly set otherwise.
 "
 " Implements @function(dapper#interface#UpdatePusher).
 "
@@ -30,6 +31,9 @@ function! dapper#view#DapperBuffer#new(message_passer, ...) abort
   call typevim#ensure#Implements(
       \ a:message_passer, dapper#MiddleTalker#Interface())
   let l:bufparams = maktaba#ensure#IsDict(get(a:000, 0, {}))
+  if !has_key(l:bufparams, 'modifiable')
+    let l:bufparams.modifiable = 0
+  endif
   let l:base = typevim#Buffer#New(l:bufparams)
 
   let l:new = {
