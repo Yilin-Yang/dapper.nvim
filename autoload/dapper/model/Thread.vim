@@ -1,6 +1,7 @@
 ""
 " @dict Thread
 " Stores information about a running (or stopped) thread.
+
 let s:typename = 'Thread'
 
 let s:thread_event_body = {
@@ -13,8 +14,8 @@ call typevim#make#Interface('ThreadEventBody', s:thread_event_body)
 
 ""
 " @public
-" @dict Thread
 " @function dapper#model#Thread#New({props} {message_passer})
+" @dict Thread
 " Construct a new Thread object. Will automatically request its own stack
 " trace on construction.
 "

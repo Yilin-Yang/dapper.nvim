@@ -215,8 +215,8 @@ endfunction
 " @dict DapperBuffer
 " Mark {new_child} as this buffer's child.
 "
-" @throws BadValue if {child} is not a dict.
-" @throws WrongType if {child} does not implement @function(dapper#interface#UpdatePusher()).
+" @throws BadValue if {new_child} is not a dict.
+" @throws WrongType if {new_child} does not implement @function(dapper#interface#UpdatePusher()).
 function! dapper#view#DapperBuffer#AddChild(new_child) dict abort
   call s:CheckType(l:self)
   call typevim#ensure#Implements(a:new_child, dapper#interface#UpdatePusher())
@@ -229,8 +229,8 @@ endfunction
 " Remove a child {to_remove} from this buffer's children. Returns 1 if a child
 " was removed, 0 if not.
 "
-" @throws BadValue if {child} is not a dict.
-" @throws WrongType if {child} does not implement @function(dapper#interface#UpdatePusher()).
+" @throws BadValue if {to_remove} is not a dict.
+" @throws WrongType if {to_remove} does not implement @function(dapper#interface#UpdatePusher()).
 function! dapper#view#DapperBuffer#RemoveChild(to_remove) dict abort
   call s:CheckType(l:self)
   call typevim#ensure#Implements(a:to_remove, dapper#interface#UpdatePusher())

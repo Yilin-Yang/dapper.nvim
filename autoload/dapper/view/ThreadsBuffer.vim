@@ -15,7 +15,7 @@ let s:thread_id_search_pat = '^thread id: '
 " {message_passer} (see @dict(MiddleTalker)).
 "
 " @throws BadValue if {model} or {message_passer} aren't dicts.
-" @throws WrongType if {model} or {message_passer} don't implement a @dict{Model} or @dict{MiddleTalker} interface, respectively.
+" @throws WrongType if {model} or {message_passer} don't implement a @dict(Model) or @dict(MiddleTalker) interface, respectively.
 function! dapper#view#ThreadsBuffer#New(model, message_passer) abort
   call typevim#ensure#Implements(
       \ a:model, dapper#model#Model#Interface())
