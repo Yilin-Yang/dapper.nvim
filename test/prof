@@ -1,0 +1,47 @@
+FUNCTION  dapper#dap#DapperReport#New()
+Called 6 times
+Total time:   0.012030
+ Self time:   0.000551
+
+count  total (s)   self (s)
+    6   0.000103   0.000055   let l:kind  = tolower(maktaba#ensure#IsString(get(a:000, 0, '')))
+    6   0.000094   0.000045   let l:brief = maktaba#ensure#IsString(get(a:000, 1, '')[0:49])
+    6   0.000154   0.000039   call maktaba#ensure#IsIn(l:kind, s:log_levels)
+                            
+    6   0.000261   0.000057   let l:interface = dapper#dap#DapperReport()
+    6   0.005231   0.000047   let l:new = typevim#make#Instance(l:interface)
+    6              0.000017   let l:new.type = 'report'
+    6              0.000014   let l:new.kind = l:kind
+    6              0.000013   let l:new.brief = l:brief
+    6              0.000019   let l:new.long = get(a:000, 2, '')
+    6              0.000031   let l:new.other = get(a:000, 3, '')
+                            
+                              " autopopulate vim_msg_typename
+    6              0.000029   let l:new.vim_msg_typename = toupper(l:kind[0:0]).l:kind[1:].'Report'
+                            
+    6   0.005920   0.000039   return typevim#ensure#Implements(l:new, l:interface)
+
+FUNCTION  dapper#dap#DapperReport()
+Called 6 times
+Total time:   0.000205
+ Self time:   0.000205
+
+count  total (s)   self (s)
+    6              0.000021   let l:vim_msg_typename = 'Report'
+    6              0.000024   if !has_key(s:MsgTypenameToInterface, l:vim_msg_typename)
+                                let l:prototype = { 'vim_msg_typename': typevim#String(), 'vim_id': typevim#Number(), 'kind': typevim#String(), 'brief': typevim#String(), 'long': typevim#Any(), 'other?': typevim#Any(), }
+                                " TODO support extensions of multiple interfaces
+                                let s:MsgTypenameToInterface[l:vim_msg_typename] = typevim#make#Extension(l:vim_msg_typename, dapper#dap#ProtocolMessage(), l:prototype)
+                              endif
+    6              0.000017   return s:MsgTypenameToInterface[l:vim_msg_typename]
+
+FUNCTIONS SORTED ON TOTAL TIME
+count  total (s)   self (s)  function
+    6   0.012030   0.000551  dapper#dap#DapperReport#New()
+    6   0.000205             dapper#dap#DapperReport()
+
+FUNCTIONS SORTED ON SELF TIME
+count  total (s)   self (s)  function
+    6   0.012030   0.000551  dapper#dap#DapperReport#New()
+    6              0.000205  dapper#dap#DapperReport()
+
