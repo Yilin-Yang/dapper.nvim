@@ -4,6 +4,22 @@ if !s:enter
 endif
 
 ""
+" @section Configuration, config
+" dapper.nvim may be configured in two ways: by using Google's Glaive plugin;
+" or by using "legacy" global variables (i.e. by explicitly setting variables
+" like `g:dapper_dig_down_mapping` in your vimrc).
+"
+" The former is strongly recommended: dapper.nvim uses vim-maktaba's "flags"
+" for settings and configuration, which enables easy validation and
+" "translation" of user settings, the setting of callback handlers that fire
+" whenever settings are changed, and a number of other useful features. The
+" latter should work for "static" configuration, but generally won't be able
+" to change dapper.nvim's behavior at runtime.
+"
+" Install Glaive (https://github.com/google/glaive) and use the |:Glaive|
+" command to configure dapper.nvim's maktaba flags.
+
+""
 " Return the value of {setting_name}, a scoped variable (e.g.
 " `"g:dapper_foobar"`, including the leading `"g:"`), or {default}, if
 " {setting_name} has no value set.
@@ -80,13 +96,8 @@ call s:plugin.Flag('log_buffer_writeback',
 " higher are printed in their entirety to dapper.nvim's log. This does
 " not affect log output to maktaba.
 "
-" May be set to, in order from lowest to highest severity,
-" - "debug"
-" - "info"
-" - "warn"
-" - "error"
-" - "severe"
-" - "no_logging"
+" May be set to, in order from lowest to highest severity:
+" "debug", "info", "warn", "error", "severe", "no_logging"
 "
 " Setting this to "no_logging" disables dapper.nvim's debug logging.
 "

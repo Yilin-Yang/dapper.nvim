@@ -163,8 +163,9 @@ endfunction
 " @public
 " @dict DebugLogger
 " Make a report. Log it to dapper.nvim's maktaba logger interface, which might
-" shout the message at the user. If {kind} is equal to @setting(min_log_level)
-" or greater, the FULL message will be appended to the debug log.
+" shout the message at the user. If {kind} is equal to
+" |dapper.nvim:min_log_level| or greater, the FULL message will be appended to
+" the debug log.
 "
 " {kind} is the type of report. These correspond one-to-one with the
 " |maktaba.Logger| log levels. This is not case sensitive.

@@ -18,9 +18,56 @@ staple them onto neovim.
 ==============================================================================
 CONFIGURATION                                             *dapper.nvim-config*
 
-This plugin uses maktaba flags for configuration. Install Glaive
-(https://github.com/google/glaive) and use the |:Glaive| command to configure
-them.
+dapper.nvim may be configured in two ways: by using Google's Glaive plugin; or
+by using "legacy" global variables (i.e. by explicitly setting variables like
+`g:dapper_dig_down_mapping` in your vimrc).
+
+The former is strongly recommended: dapper.nvim uses vim-maktaba's "flags" for
+settings and configuration, which enables easy validation and "translation" of
+user settings, the setting of callback handlers that fire whenever settings
+are changed, and a number of other useful features. The latter should work for
+"static" configuration, but generally won't be able to change dapper.nvim's
+behavior at runtime.
+
+Install Glaive (https://github.com/google/glaive) and use the |:Glaive|
+command to configure dapper.nvim's maktaba flags.
+
+                                            *dapper.nvim:filetypes_to_configs*
+Mapping between a filetype and all debug adapter configurations for that
+filetype.
+Default: s:GlobalSettingOrDefault('g:dapper_filetypes_to_configs', {}) `
+
+                                                 *dapper.nvim:log_buffer_name*
+The |bufname| of the debug log buffer.
+Default: s:GlobalSettingOrDefault('g:dapper_log_buffer_name', '[dapper] Debug
+  Log') `
+
+                                                         *dapper.nvim:logfile*
+The output file to which the debug log will be written, if log writing is
+enabled.
+Default: s:GlobalSettingOrDefault('g:dapper_logfile',
+  $HOME.'/dapper_debug_log.vim.dp') `
+
+                                            *dapper.nvim:log_buffer_writeback*
+Whether or not to write the debug log buffer out to a file on exit.
+Default: s:GlobalSettingOrDefault('g:dapper_log_buffer_writeback', 0) `
+
+                                                   *dapper.nvim:min_log_level*
+The "lowest" notification level to be written to the debug log buffer.
+Messages below this level are ignored, while messages at this level or higher
+are printed in their entirety to dapper.nvim's log. This does not affect log
+output to maktaba.
+
+May be set to, in order from lowest to highest severity: "debug", "info",
+"warn", "error", "severe", "no_logging"
+
+Setting this to "no_logging" disables dapper.nvim's debug logging.
+
+Note that setting this to "low" values, particularly "debug", may incur a
+significant performance penalty, as dapper.nvim's debug log output is
+extremely verbose. It's recommended to set this no lower than "warn" in
+ordinary use.
+Default: s:GlobalSettingOrDefault('g:dapper_min_log_level', 'error') `
 
                                                 *dapper.nvim:plugin[mappings]*
 Configures whether plugin/mappings.vim should be loaded.
@@ -32,13 +79,94 @@ DICTIONARIES                                               *dapper.nvim-dicts*
                                                     *dapper.nvim.DapperBuffer*
 A Buffer, with additional methods for use in the dapper UI.
 
-In addition to encapsulating a buffer, a `DapperBuffer` also:
+In addition to encapsulating a buffer, a DapperBuffer also acts as a parent or
+child to other DapperBuffers, allowing DapperBuffers to organize as a tree: UI
+updates and information about for "digging down" from one level of information
+to another (e.g. from a list of all running threads to a stack trace for a
+particular thread), and for "climbing up" from that deeper level back to the
+parent level.
 
-Acts as a parent or child to other `DapperBuffer`s, allowing `DapperBuffer`s
-  to organize as a tree: UI updates and information about for 'digging down'
-  from one level of information to another (e.g. from a list of all running
-  threads to a stack trace for a particular thread), and for 'climbing up'
-  from that deeper level back to the parent level.
+dapper#view#DapperBuffer#New({message_passer}, [bufparams])
+                                                          *DapperBuffer.new()*
+  Construct a DapperBuffer.
+
+  {message_passer} is the message-passing interface that DapperBuffer will
+  use, which shall have the same interface as |dapper.nvim.MiddleTalker|.
+
+  For [bufparams], see |typevim#Buffer#New()|.
+
+  Implements |dapper#interface#UpdatePusher()|.
+
+  Throws ERROR(BadValue) if {message_passer} is not a dict.
+  Throws ERROR(WrongType) if {message_passer} does not implement a
+  |dapper.nvim.MiddleTalker| interface, or if [bufparams] is not a dict.
+
+DapperBuffer.CleanUp()                                *DapperBuffer.CleanUp()*
+  Remove this DapperBuffer from the list of its parent's children.
+
+DapperBuffer._Log({kind}, {brief})                       *DapperBuffer._Log()*
+  Log a report.
+
+DapperBuffer.GetRange()                              *DapperBuffer.GetRange()*
+  Get the line range of an "entry" inside the buffer itself as a two-element
+  list of numbers, which are the first and last line that make up the 'entry',
+  inclusive.
+
+  Throws ERROR(NotFound) if the given "entry" could not be found.
+
+DapperBuffer.ConfigureBuffer()                *DapperBuffer.ConfigureBuffer()*
+  Set buffer-local settings for a DapperBuffer.
+
+DapperBuffer.ClimbUp([fail_silently])                 *DapperBuffer.ClimbUp()*
+  Step up one level to this buffer's parent. If [fail_silently] is false, this
+  will throw an ERROR(NotFound) if no parent has been set.
+
+  Calls to `climbUp` will move the cursor to the parent buffer, either by
+  switching the focused window or by opening the parent buffer in the current
+  window (if it wasn't already open in the same tabpage.)
+
+  [fail_silently] is 0 if omitted.
+
+DapperBuffer._DigDownAndPush({to_show})       *DapperBuffer._DigDownAndPush()*
+  Push the given item {to_show} to all children, and switch to one. Meant to
+  be called after determining what {to_show} during a call to
+  |dapper#view#DapperBuffer#DigDown()|.
+
+DapperBuffer.Open()                                      *DapperBuffer.Open()*
+  Open this buffer, and trigger setup/buffer-local mappings.
+
+DapperBuffer.SetParent({new_parent})                *DapperBuffer.SetParent()*
+  Set the parent of this DapperBuffer.
+
+DapperBuffer.GetParent()                            *DapperBuffer.GetParent()*
+  Get the parent DapperBuffer of this DapperBuffer.
+
+DapperBuffer.AddChild({new_child})                   *DapperBuffer.AddChild()*
+  Mark {new_child} as this buffer's child.
+
+  Throws ERROR(BadValue) if {new_child} is not a dict.
+  Throws ERROR(WrongType) if {new_child} does not implement
+  |dapper#interface#UpdatePusher(()|).
+
+DapperBuffer.RemoveChild({to_remove})             *DapperBuffer.RemoveChild()*
+  Remove a child {to_remove} from this buffer's children. Returns 1 if a child
+  was removed, 0 if not.
+
+  Throws ERROR(BadValue) if {to_remove} is not a dict.
+  Throws ERROR(WrongType) if {to_remove} does not implement
+  |dapper#interface#UpdatePusher(()|).
+
+DapperBuffer.GetChildren()                        *DapperBuffer.GetChildren()*
+  Returns a copied list of all of this buffer's children, in no particular
+  order.
+
+DapperBuffer._GetOpenInTab({buffers}, [tabnr])  *DapperBuffer._GetOpenInTab()*
+  Returns the the first DapperBuffer in the given list of {buffers} that is
+  open in the tabpage having [tabnr], or the number 0, if none could be found.
+
+  [tabnr] is the current tab if omitted.
+  Throws ERROR(WrongType) if {buffers} is not a list of
+  |dapper.nvim.DapperBuffer| objects or if [tabnr] is not a number.
 
                                                    *dapper.nvim.DapperMessage*
 A Debug Adapter Protocol message, annotated with a human-readable (and
@@ -50,7 +178,8 @@ A "custom" message type used by dapper.nvim, patterned off of the messages of
 the Debug Adapter Protocol. Used for sending information, updates, error
 messages, etc. to the frontend.
 
-DapperReport.New([kind], [brief], [Long], [Other])        *DapperReport.New()*
+dapper#dap#DapperReport#New([kind], [brief], [Long], [Other])
+                                                          *DapperReport.New()*
 
   Construct a DapperReport object.
 
@@ -114,7 +243,9 @@ DebugLogger.ListifyReport({report})              *DebugLogger.ListifyReport()*
 DebugLogger.NotifyReport({kind}, {brief}, [long], [other])
                                                   *DebugLogger.NotifyReport()*
   Make a report. Log it to dapper.nvim's maktaba logger interface, which might
-  shout the message at the user. Also append it to the debug log.
+  shout the message at the user. If {kind} is equal to
+  |dapper.nvim:min_log_level| or greater, the FULL message will be appended to
+  the debug log.
 
   {kind} is the type of report. These correspond one-to-one with the
   |maktaba.Logger| log levels. This is not case sensitive.
@@ -137,14 +268,39 @@ DebugLogger.NotifyReport({kind}, {brief}, [long], [other])
                                                     *dapper.nvim.DebuggeeArgs*
 Arguments for starting the debuggee process.
 
-DebuggeeArgs.New({request}, {name})                       *DebuggeeArgs.New()*
+dapper#config#DebuggeeArgs#Interface()              *DebuggeeArgs.Interface()*
+
+DebuggeeArgs.New({request}, {name}, {args}, [initial_bps])
+                                                          *DebuggeeArgs.New()*
   Construct a DebuggeeArgs object.
 
   {request} is either `"launch"` or `"attach"`.
 
   {name} is a "human-friendly" name for this debug adapter configuration.
 
-  Throws ERROR(WrongType) if {request} or {name} aren't strings.
+  {args} is either a DebugProtocol.LaunchRequestArguments (must be specified
+  if {request} is `"launch"`), or a DebugProtocol.AttachRequestArguments (must
+  be specified if {request} is `"attach"`).
+
+  [initial_bps] is a struct of InitialBreakpoints to set immediately upon
+  construction, or an empty dict (to signify that no initial breakpoints are
+  being sent).
+
+  Throws ERROR(BadValue) if {args} or [initial_bps] are not dictionaries.
+  Throws ERROR(WrongType) if {request} or {name} aren't strings, if {args}
+  does not implement one of the two interfaces as mentioned above, or if
+  [initial_bps] is nonempty and not an InitialBreakpoints.
+
+                                                           *dapper.nvim.Event*
+A DebugProtocol.Event message.
+
+dapper#dap#Event#New([event] [body])                             *Event.New()*
+
+  Construct a DebugProtocol.Event object.
+
+  [event] is '' if omitted.
+  [body] is {} if omitted.
+  Throws ERROR(WrongType) if [event] is not a string.
 
                                               *dapper.nvim.InitialBreakpoints*
 Breakpoints to be set immediately after launching a debuggee process.
@@ -175,6 +331,16 @@ dapper#MiddleTalker#get()                                 *MiddleTalker.Get()*
 MiddleTalker.__GetID()                                *MiddleTalker.__GetID()*
   Return a request ID number, guaranteed to be distinct from those of all
   existing requests.
+
+MiddleTalker.VimifyMessage({msg})               *MiddleTalker.VimifyMessage()*
+  (Re)populate the `vim_msg_typename` and `vim_id` of the given {msg}, based
+  on its type and other properties. `vim_id` is set to 0, if not present or
+  not a number or string; is converted to a number (by "adding" 0) if a
+  string; or left unmodified, if it's just a number.
+
+  Throws ERROR(BadValue) if {msg} is a malformed ProtocolMessage.
+  Throws ERROR(WrongType) if {msg} is not a dict, or is not a ProtocolMessage
+  at all.
 
 MiddleTalker.Receive({msg})                           *MiddleTalker.Receive()*
   Receive a response or event {msg}, passing it to subscribers.
@@ -266,9 +432,84 @@ Model.Receive({msg})                                         *Model.Receive()*
   Throws ERROR(WrongType) if {msg} is not a dict, or if it is not a
   |dapper.nvim.DapperMessage|.
 
+Model.GetParent()                                          *Model.GetParent()*
+  Return the Model's parent UpdatePusher.
+
+Model.SetParent({new_parent})                              *Model.SetParent()*
+  Set the parent UpdatePusher of this Model.
+  Throws ERROR(BadValue) if {new_parent} is not a dict.
+  Throws ERROR(WrongType) if {new_parent} does not implement
+  |dapper#interface#UpdatePusher(()|).
+
+Model.AddChild({new_child})                                 *Model.AddChild()*
+  Add a child UpdatePusher to this object.
+  Throws ERROR(BadValue) if {new_child} is not a dict.
+  Throws ERROR(WrongType) if {new_child} does not implement
+  |dapper#interface#UpdatePusher(()|).
+
+Model.RemoveChild({to_remove})                           *Model.RemoveChild()*
+  Remove the child UpdatePusher {to_remove} from this Model's children. Return
+  1 if {to_remove} was found and removed, 0 otherwise.
+  Throws ERROR(BadValue) if {to_remove} is not a dict.
+  Throws ERROR(WrongType) if {to_remove} does not implement
+  |dapper#interface#UpdatePusher(()|).
+
+Model.GetChildren()                                      *Model.GetChildren()*
+  Returns a copied list of all this Model's children.
+
+Model.Push()                                                    *Model.Push()*
+  Do nothing.
+
                                                      *dapper.nvim.RequestDoer*
 Sends the given {command} with the given {request_args} and resolves with the
 results.
+
+                                                        *dapper.nvim.Response*
+A DebugProtocol.Response message.
+
+dapper#dap#Response#New([success] [command] [msg_or_body])    *Response.New()*
+
+  Construct a DebugProtocol.Response object.
+
+  [success] is 1 if omitted.
+  [command] is '' if omitted.
+  Throws ERROR(WrongType) if [success] is not a bool, [command] is not a
+  string, or if: [success] is true and [msg_or_body] is not a dict; or
+  [success] is false and [msg_or_body] is not a string.
+
+                                                *dapper.nvim.StackTraceBuffer*
+Shows a thread's stack trace. Allows the user to "drill down" into particular
+stackframes, or back out into the parent |dapper.nvim.ThreadsBuffer|.
+
+dapper#view#StackTraceBuffer#New({message_passer}, [thread])
+                                                      *StackTraceBuffer.New()*
+  Construct a StackTraceBuffer from a {message_passer} and, optionally, the
+  |dapper.nvim.Thread| object [thread]. If provided, StackTraceBuffer will
+  associate with the given [thread] and display its stack trace.
+
+  [thread] is {} if omitted.
+
+  Throws ERROR(BadValue) if {message_passer} or [thread] are not dicts.
+  Throws ERROR(WrongType) if {message_passer} does not implement a
+  |dapper.nvim.MiddleTalker| interface, or if [thread] is nonempty and is not
+  a |dapper.nvim.Thread|.
+
+StackTraceBuffer.thread()                          *StackTraceBuffer.thread()*
+  Return the thread object whose callstack this buffer shows.
+
+StackTraceBuffer.Push({thread})                      *StackTraceBuffer.Push()*
+  Display the stack trace of the given thread. The buffer will update when the
+  StackTraceResponse arrives from the debug adapter, or throw an appropriate
+  error message if the request fails entirely.
+
+  Throws ERROR(BadValue) if {thread} is not a dict.
+  Throws ERROR(WrongType) if {thread} is not a |dapper.nvim.Thread|.
+
+StackTraceBuffer.ClimbUp()                        *StackTraceBuffer.ClimbUp()*
+  Climb back up to a list of all threads.
+
+StackTraceBuffer.DigDown()                        *StackTraceBuffer.DigDown()*
+  Open the given stack frame.
 
                                                        *dapper.nvim.StartArgs*
 All arguments supplied to the middle-end. When provided in a call to
@@ -294,19 +535,123 @@ dapper#config#StartArgs#New({adapter_config}, {debuggee_args}, {vscode_attr},
   Throws ERROR(WrongType) if any of the arguments mentioned above are not of
   the specified types.
 
+                                                          *dapper.nvim.Thread*
+Stores information about a running (or stopped) thread.
+
+dapper#model#Thread#New({props} {message_passer})               *Thread.New()*
+  Construct a new Thread object. Will automatically request its own stack
+  trace on construction.
+
+  {props} is the body of a ThreadEvent (or a similar structure), which can
+  contain the following optinal properties:
+  "id" or "threadId", which are numbers.
+  "name", a string.
+  "reason", a string.
+
+  Throws ERROR(WrongType) if the {props} are present and don't have the above
+  types, or if {message_passer} isn't a dict.
+
+Thread.id()                                                      *Thread.id()*
+  Returns this thread's unique numerical ID.
+
+Thread.name()                                                  *Thread.name()*
+  Returns this thread's name.
+
+Thread.status()                                              *Thread.status()*
+  Returns the status of this thread.
+
+Thread.stackTrace()                                      *Thread.stackTrace()*
+  Returns a Promise that, when resolved, returns the thread's StackTrace.
+
+Thread.Update({props}, [update_stack_trace])                 *Thread.Update()*
+  Update the properties of this Thread from {props}, which is the body of a
+  ThreadEvent. {props} may contain the following optional properties:
+  "id" or "threadId"
+  "name"
+  "reason"
+
+  If [update_stack_trace] is true, calling this function will prompt the
+  Thread to update its cached stack trace.
+
+  [update_stack_trace] is 1 if omitted.
+
+  Throws ERROR(BadValue) if {props} is not a dict.
+  Throws ERROR(WrongType) if {props} contains the properties above, but with
+  the wrong types, or if [update_stack_trace] is not a bool.
+
                                                    *dapper.nvim.ThreadsBuffer*
 Shows active threads in the debuggee; 'digs down' into callstacks.
+
+dapper#view#ThreadsBuffer#New({model} {message_passer})  *ThreadsBuffer.New()*
+  Construct a ThreadsBuffer using the given {model} (see |dapper.nvim.Model|)
+  and {message_passer} (see |dapper.nvim.MiddleTalker|).
+
+  Throws ERROR(BadValue) if {model} or {message_passer} aren't dicts.
+  Throws ERROR(WrongType) if {model} or {message_passer} don't implement a
+  |dapper.nvim.Model| or |dapper.nvim.MiddleTalker| interface, respectively.
+
+ThreadsBuffer.Push({threads}, [to_highlight])           *ThreadsBuffer.Push()*
+  Show the given list of {threads}. If given a |dapper.nvim.Thread|
+  [to_highlight], show that at the top of the buffer.
+
+  Throws ERROR(BadValue) if [to_highlight] is provided and is not a dict.
+  Throws ERROR(WrongType) if {threads} is not a dict, or if [to_highlight] is
+  provided and is not a |dapper.nvim.Thread|.
 
                                                 *dapper.nvim.VSCodeAttributes*
 Settings from a `launch.json` that normally control VSCode-specific behavior,
 e.g.  `"preLaunchTask"`, `"postLaunchTask"`, `"internalConsoleOptions"` and
 `"debugServer"`.
 
-dapper#config#VSCodeAttributes#New()                  *VSCodeAttributes.New()*
+dapper#config#VSCodeAttributes#New([prelaunch] [postlaunch] [console_opt]
+  [debugserver])                                      *VSCodeAttributes.New()*
   Construct and return a VSCodeAttributes object.
+
+  [prelaunch] is a "preLaunchTask"; [postlaunch] is a "postLaunchTask";
+  [console_opt] are "internalConsoleOptions"; and [debug_server] is a
+  [debugServer] port number.
 
 ==============================================================================
 FUNCTIONS                                              *dapper.nvim-functions*
+
+dapper#receive({msg})                                       *dapper#receive()*
+  Receive a response or event from the TypeScript middle-end.
+
+dapper#ensure#IsValidLogLevel({level})       *dapper#ensure#IsValidLogLevel()*
+  Checks if the given {level} corresponds to a valid maktaba notification
+  level (see |maktaba#log#SetNotificationLevel|), or if {level} is the string
+  "none". Returns {level} for convenience.
+
+  Throws ERROR(BadValue) if {level} is not a valid notification level, or the
+  string "none".
+  Throws ERROR(WrongType) if {level} is not a string.
+
+dapper#helpers#LevelToNum(level)                 *dapper#helpers#LevelToNum()*
+  Converts the given maktaba notification level (see
+  |maktaba#log#SetNotificationLevel|) to a numerical value. "Lower"
+  notification levels have lower numerical values than "higher" levels, e.g.
+  "debug" corresponds to a lower value than "info", which has a lower value
+  than "warn".
+
+  {level} may also be "none", which returns a numerical value larger than all
+  "true" notification levels.
+
+  Throws ERROR(BadValue) if {level} is a string but is not a maktaba
+  notification level.
+  Throws ERROR(WrongType) if {level} is not a string.
+
+dapper#interface#UpdatePusher()              *dapper#interface#UpdatePusher()*
+  Return an interface for an "update pusher" object, an object that may exist
+  in a tree, which may accept updates from a parent and push updates to
+  children.
+
+dapper#view#StackTraceBuffer#GetRange({index})
+                                     *dapper#view#StackTraceBuffer#GetRange()*
+  Return the line range of the stack frame with the given index.
+
+  Throws ERROR(BadValue) if given a negative {index}.
+  Throws ERROR(NotFound) if the given entry can't be found.
+  Throws ERROR(WrongType) if {index} isn't a number.
 
 
 vim:tw=78:ts=8:ft=help:norl:
