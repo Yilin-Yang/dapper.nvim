@@ -7,7 +7,7 @@
 "
 " @default event=''
 " @default body={}
-" @throws WrongType if {event} is not a string.
+" @throws WrongType if [event] is not a string.
 function! dapper#dap#Event#New(...) abort
   let l:event = maktaba#ensure#IsString(get(a:000, 0, ''))
   let l:body  = get(a:000, 1, {})

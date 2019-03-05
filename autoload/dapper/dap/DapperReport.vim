@@ -1,7 +1,7 @@
 ""
 " @public
 " @dict DapperReport
-" @function dapper#dap#DapperReport#New([kind] [brief] [Long] [Other])
+" @function dapper#dap#DapperReport#New([kind], [brief], [Long], [Other])
 "
 " Construct a DapperReport object.
 "
@@ -31,4 +31,4 @@ function! dapper#dap#DapperReport#New(...) abort
 
   return typevim#ensure#Implements(l:new, l:interface)
 endfunction
-let s:log_levels = ['debug', 'info', 'warn', 'error', 'severe']
+let s:log_levels = dapper#constants#LOG_LEVELS()
