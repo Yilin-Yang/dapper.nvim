@@ -40,7 +40,7 @@ endfunction
 " construction, or an empty dict (to signify that no initial breakpoints are
 " being sent).
 "
-" @throws BadValue if {args} or {initial_bps} are not dictionaries.
+" @throws BadValue if {args} or [initial_bps] are not dictionaries.
 " @throws WrongType if {request} or {name} aren't strings, if {args} does not implement one of the two interfaces as mentioned above, or if [initial_bps] is nonempty and not an InitialBreakpoints.
 function! dapper#config#DebuggeeArgs#New(
     \ request, name, args, ...) abort

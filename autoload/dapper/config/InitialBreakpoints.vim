@@ -26,7 +26,7 @@ endfunction
 "
 " [bps] should be a @dict(SetBreakpointsArguments); [function_bps] should be a
 " @dict(SetFunctionBreakpointsArguments); [exception_bps] should be a
-" @dict(SetExcepSetFunctionBreakpointsArguments). Each defaults to an empty
+" @dict(SetExceptionBreakpointsArguments). Each defaults to an empty
 " dictionary if omitted.
 "
 " @throws WrongType if [bps], [function_bps], or [exception_bps] are not dictionaries, or if they are nonempty but do not implement the appropriate interfaces.
