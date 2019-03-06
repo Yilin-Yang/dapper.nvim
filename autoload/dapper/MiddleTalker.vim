@@ -177,7 +177,7 @@ function! dapper#MiddleTalker#Receive(msg) abort dict
         \ a:msg
         \ )
   endif
-  let l:id = a:msg['vim_id']
+  let l:id = a:msg.vim_id
   if l:id ># 0 " msg is a response to a request
     let l:Cb = l:self.__ids_to_callbacks[l:id]
     call l:self.__Log(
