@@ -353,8 +353,8 @@ function! dapper#model#Model#_ThreadFromEvent(body) dict abort
   call s:CheckType(l:self)
 
   let l:thread = dapper#model#Thread#New(
-      \ a:body,
-      \ l:self._message_passer)
+      \ l:self._message_passer,
+      \ a:body)
   let l:self._ids_to_running[l:thread.id()] = l:thread
 
   call l:self._message_passer.NotifyReport(

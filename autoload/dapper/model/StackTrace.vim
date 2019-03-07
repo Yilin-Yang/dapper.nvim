@@ -7,13 +7,13 @@ let s:typename = 'StackTrace'
 
 ""
 " @public
-" @function dapper#model#StackTrace#New({stack_trace_response}, {message_passer})
+" @function dapper#model#StackTrace#New({message_passer}, {stack_trace_response})
 " @dict StackTrace
 " Construct a new StackTrace object.
 "
 " @throws BadValue if {stack_trace_response} or {message_passer} are not dicts.
 " @throws WrongType if {stack_trace_response} is not a StackTraceResponse, or if {message_passer} does not implement a @dict(MiddleTalker) interface.
-function! dapper#model#StackTrace#New(stack_trace_response, message_passer) abort
+function! dapper#model#StackTrace#New(message_passer, stack_trace_response) abort
   call typevim#ensure#Implements(
       \ a:stack_trace_response, dapper#dap#StackTraceResponse())
   call typevim#ensure#Implements(

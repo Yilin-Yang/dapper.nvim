@@ -15,7 +15,7 @@ call typevim#make#Interface('ThreadEventBody', s:thread_event_body)
 
 ""
 " @public
-" @function dapper#model#Thread#New({props} {message_passer})
+" @function dapper#model#Thread#New({message_passer}, {props})
 " @dict Thread
 " Construct a new Thread object. Will automatically request its own stack
 " trace on construction.
@@ -27,7 +27,7 @@ call typevim#make#Interface('ThreadEventBody', s:thread_event_body)
 " - "reason", a string.
 "
 " @throws WrongType if the {props} are present and don't have the above types, or if {message_passer} isn't a dict.
-function! dapper#model#Thread#New(props, message_passer) abort
+function! dapper#model#Thread#New(message_passer, props) abort
   call typevim#ensure#Implements(a:props, s:thread_event_body)
   call typevim#ensure#Implements(a:message_passer, dapper#MiddleTalker#Interface())
   let l:tid = get(a:props, 'id', get(a:props, 'threadId', 0))
@@ -152,7 +152,7 @@ function! dapper#model#Thread#Receive(msg) dict abort
     return
   endif
   let l:self._stack_trace =
-      \ dapper#model#StackTrace#New(a:msg, l:self._message_passer)
+      \ dapper#model#StackTrace#New(l:self._message_passer,a:msg)
 endfunction
 
 ""
