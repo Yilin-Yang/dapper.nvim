@@ -32,6 +32,8 @@ function! dapper#model#StackTrace#New(stack_trace_response, message_passer) abor
         \ 'Got bad stack frame in StackTraceResponse: %s',
         \ typevim#object#ShallowPrint(a:stack_trace_response))
   endfor
+  " _indices_to_frames is a dict between stack frame indices in the callstack,
+  " and constructed model#StackFrame objects
   let l:new = {
       \ '_response_body': a:stack_trace_response.body,
       \ '_indices_to_frames': {},
@@ -39,10 +41,11 @@ function! dapper#model#StackTrace#New(stack_trace_response, message_passer) abor
       \ 'totalFrames': typevim#make#Member('totalFrames'),
       \ 'stackFrames': typevim#make#Member('stackFrames'),
       \ 'frame': typevim#make#Member('frame'),
-      \ 'Receive': typevim#make#Member('Receive')
+      \ '_FrameFromMessage': typevim#make#Member('_FrameFromMessage')
       \ }
   call typevim#make#Class(s:typename, l:new)
-  let l:new.Receive = typevim#object#Bind(l:new.Receive, l:new)
+  let l:new._FrameFromMessage =
+      \ typevim#object#Bind(l:new._FrameFromMessage, l:new)
   return l:new
 endfunction
 
@@ -87,7 +90,8 @@ function! dapper#model#StackTrace#frame(index) dict abort
         \ a:index, l:self.totalFrames())
   endif
   let l:raw_frame = l:self._response_body.stackFrames[a:index]
-  if l:raw_frame.presentationHint ==# 'label'
+  if has_key(l:raw_frame, 'presentationHint')
+      \ && l:raw_frame.presentationHint ==# 'label'
     throw maktaba#error#BadValue(
         \ 'Requested stack frame is a "label", not a real stack frame: %d',
         \ a:index)
@@ -101,7 +105,24 @@ function! dapper#model#StackTrace#frame(index) dict abort
     let l:doer = dapper#RequestDoer#New(
         \ l:self._message_passer, 'scopes', {'frameId': l:raw_frame.id})
     let l:to_return = typevim#Promise#New(l:doer)
-    call l:to_return.Then(l:self.Receive)
-    return l:to_return
+    return l:to_return.Then(
+        \ function(l:self._FrameFromMessage, [a:index, l:raw_frame]))
   endif
+endfunction
+
+""
+" @dict StackTrace
+" Construct a @dict(StackFrame) from the given {msg}, store it in
+" `_indices_to_frames`, and return it.
+"
+" @throws BadValue if {frame} or {msg} are not dict.
+" @throws WrongType if {idx} is not a number, or {frame} is not a DebugProtocol.StackFrame, or if {msg} is not a DebugProtocol.ScopesResponse.
+function! dapper#model#StackTrace#_FrameFromMessage(idx, frame, msg) dict abort
+  call maktaba#ensure#IsNumber(a:idx)
+  call typevim#ensure#Implements(a:frame, dapper#dap#StackFrame())
+  call typevim#ensure#Implements(a:msg, dapper#dap#ScopesResponse())
+  let l:new_frame =
+      \ dapper#model#StackFrame#New(l:self._message_passer, a:frame, a:msg)
+  let l:self._indices_to_frames[a:idx] = l:new_frame
+  return l:new_frame
 endfunction

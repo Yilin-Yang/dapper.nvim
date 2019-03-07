@@ -33,6 +33,15 @@ Expect:
   (4)	[NO]	(l:1, c:0)	File(4)
   </stacktrace>
 
+Execute (Pipeline: Get Stack Frame from Callstack):
+  let g:thread = g:dapper_model.thread(1)
+  let g:callstack = g:thread.stackTrace().Get()
+  let g:frame_promise = g:callstack.frame(0)
+  " echo typevim#object#PrettyPrint(g:frame)
+  call AwaitTimeout({ -> g:frame_promise.State() ==# 'fulfilled'}, 4000, 1)
+  let g:frame = g:frame_promise.Get()
+  AssertEqual '#(0)', g:frame.name()
+
 Execute (Pipeline: Cleanup):
   " call g:tb.CleanUp()
   " unlet g:tb

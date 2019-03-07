@@ -6,13 +6,13 @@ let s:typename = 'StackFrame'
 
 ""
 " @public
-" @function dapper#model#StackFrame#New({stack_frame}, {scopes_response}, {message_passer})
+" @function dapper#model#StackFrame#New({message_passer}, {stack_frame}, {scopes_response})
 " @dict StackFrame
 " Construct a new StackFrame object.
 "
 " @throws BadValue if {stack_frame}, {scopes_response}, or {message_passer} are not dicts.
 " @throws WrongType if {stack_frame} is not a DebugProtocol.StackFrame, {scopes_response} is not a ScopesResponse, or if {message_passer} does not implement a @dict(MiddleTalker) interface.
-function! dapper#model#StackFrame#New(stack_frame, scopes_response, message_passer) abort
+function! dapper#model#StackFrame#New(message_passer, stack_frame, scopes_response) abort
   call typevim#ensure#Implements(
       \ a:stack_frame, dapper#dap#StackFrame())
   call typevim#ensure#Implements(
@@ -20,7 +20,7 @@ function! dapper#model#StackFrame#New(stack_frame, scopes_response, message_pass
   call typevim#ensure#Implements(
       \ a:message_passer, dapper#MiddleTalker#Interface())
   let l:new = {
-      \ '_raw_scopes': s:ValidateScopes(copy(a:scopes_response.body.scopes)),
+      \ '_raw_scopes': v:null,
       \ '_names_to_scopes': {},
       \ '_stack_frame': a:stack_frame,
       \ 'id': typevim#make#Member('id'),
@@ -37,6 +37,8 @@ function! dapper#model#StackFrame#New(stack_frame, scopes_response, message_pass
       \ 'scopes': typevim#make#Member('scopes'),
       \ }
   call typevim#make#Class(s:typename, l:new)
+  let l:new._raw_scopes =
+      \ s:ValidateScopes(l:new, copy(a:scopes_response.body.scopes))
   let l:new._HandleVariablesResponse =
       \ typevim#object#Bind(l:new._HandleVariablesResponse, l:new)
   return l:new
@@ -53,15 +55,15 @@ endfunction
 " the offending DebugProtocol.Scope "in place". Returns the validated list
 " afterwards for convenience.
 "
-" @throws BadValue if {self} or {response} are not dicts.
-" @throws WrongType if {self} is not a StackFrame or {response} is not a ScopesResponse.
+" @throws BadValue if {self} is not a dict.
+" @throws WrongType if {self} is not a StackFrame or {response} is not a list.
 function! s:ValidateScopes(self, scopes) abort
   call s:CheckType(a:self)
-  call typevim#ensure#Implements(a:scopes, dapper#dap#ScopesResponse())
-  call maktaba#ensure#IsEqual(a:scopes.vim_msg_typename, 'ScopesResponse')
+  call maktaba#ensure#IsList(a:scopes)
   let l:i = 0 | while l:i <# len(a:scopes)
     let l:scope = a:scopes[l:i]
     if typevim#value#Implements(l:scope, dapper#dap#Scope())
+      let l:i += 1
       continue
     endif
     call a:self._message_passer.NotifyReport(
