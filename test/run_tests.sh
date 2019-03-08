@@ -49,7 +49,7 @@ runIndividually() {
   local COMMAND=$1
   local GLOB=$2
   local FILES
-  FILES=$(ls "$GLOB")
+  FILES=$(ls $GLOB)
   for FILE in $FILES; do
     local SINGLE_CMD="${COMMAND//\*/$FILE}"
     runAndExitOnFail "$SINGLE_CMD"

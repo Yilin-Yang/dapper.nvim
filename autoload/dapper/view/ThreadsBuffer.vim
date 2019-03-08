@@ -98,7 +98,7 @@ function! dapper#view#ThreadsBuffer#Push(threads, ...) dict abort
 
   call l:self._ResetBuffer()
 
-  let l:ids_and_threads = sort(items(a:threads))
+  let l:ids_and_threads = sort(items(a:threads), 'typevim#object#CompareKeys')
   let l:ids_and_exited  = []
   if l:to_highlight isnot v:null
     call l:self._PrependEntry(l:to_highlight)

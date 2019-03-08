@@ -52,7 +52,6 @@ Expect:
   </threads>
 
 Execute (ThreadsBuffer: Cleanup):
-  call g:tb.Open()
   call MockCleanUp()
-  normal! ggVGd
+  call g:tb.CleanUp()
   unlet g:tb
