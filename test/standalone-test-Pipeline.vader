@@ -42,6 +42,16 @@ Execute (Pipeline: Get Stack Frame from Callstack):
   let g:frame = g:frame_promise.Get()
   AssertEqual '#(0)', g:frame.name()
 
+Execute (Pipeline: Get Local Scope from Stack Frame):
+  let g:scope_promise = g:frame.scope('Local')
+  call AwaitTimeout({ -> g:scope_promise.State() ==# 'fulfilled'}, 4000, 1)
+  let g:scope = g:scope_promise.Get()
+  let g:variables = g:scope.variables()
+  let g:local_int = g:variables[0]
+  AssertEqual 'local_0_i', g:local_int.name
+  AssertEqual 'integer', g:local_int.type
+  AssertEqual '123', g:local_int.value
+
 Execute (Pipeline: Cleanup):
   " call g:tb.CleanUp()
   " unlet g:tb
