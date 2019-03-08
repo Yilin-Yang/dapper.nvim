@@ -20,6 +20,7 @@ function! dapper#model#StackFrame#New(message_passer, stack_frame, scopes_respon
   call typevim#ensure#Implements(
       \ a:message_passer, dapper#MiddleTalker#Interface())
   let l:new = {
+      \ '_message_passer': a:message_passer,
       \ '_raw_scopes': v:null,
       \ '_names_to_scopes': {},
       \ '_stack_frame': a:stack_frame,
@@ -34,6 +35,7 @@ function! dapper#model#StackFrame#New(message_passer, stack_frame, scopes_respon
       \ 'presentationHint': typevim#make#Member('presentationHint'),
       \
       \ '_HandleVariablesResponse': typevim#make#Member('_HandleVariablesResponse'),
+      \ 'scope': typevim#make#Member('scope'),
       \ 'scopes': typevim#make#Member('scopes'),
       \ }
   call typevim#make#Class(s:typename, l:new)
@@ -153,6 +155,19 @@ endfunction
 ""
 " @public
 " @dict StackFrame
+" Return a list of the names of all scopes accessible from this StackFrame.
+function! dapper#model#StackFrame#scopes() dict abort
+  call s:CheckType(l:self)
+  let l:names = []
+  for l:scope in l:self._raw_scopes
+    call add(l:names, l:scope.name)
+  endfor
+  return l:names
+endfunction
+
+""
+" @public
+" @dict StackFrame
 " Return a |TypeVim.Promise| that resolves to a @dict(Scope) object
 " representing the DebugProtocol.Scope in this StackFrame with the requested
 " {name}.
@@ -183,15 +198,16 @@ function! dapper#model#StackFrame#scope(name) dict abort
         \ l:self._message_passer, 'variables',
         \ {'variablesReference': l:raw_scope.variablesReference})
     let l:to_return = typevim#Promise#New(l:doer)
-    return l:to_return.Then(l:self._HandleVariablesResponse)
+    return l:to_return.Then(
+        \ typevim#object#Bind(
+            \ l:self._HandleVariablesResponse, l:self, [l:raw_scope], 1))
   endif
 endfunction
 
 ""
 " @dict StackFrame
-" Construct a @dict(Scope) with {name}, from {msg}, a
-" DebugProtocol.VariablesResponse, store it in the `_names_to_scopes`
-" dictionary, and then return it.
+" Construct a @dict(Scope) from {msg}, a DebugProtocol.VariablesResponse,
+" store it in the `_names_to_scopes` dictionary, and then return it.
 "
 " @throws BadValue if {scope} or {msg} are not dicts.
 " @throws WrongType if {scope} is not a DebugProtocol.Scope, or {msg} is not a DebugProtocol.ProtocolMessage.

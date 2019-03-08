@@ -93,7 +93,8 @@ dapper#view#DapperBuffer#New({message_passer}, [bufparams])
   {message_passer} is the message-passing interface that DapperBuffer will
   use, which shall have the same interface as |dapper.nvim.MiddleTalker|.
 
-  For [bufparams], see |typevim#Buffer#New()|.
+  For [bufparams], see |typevim#Buffer#New()|. The wrapped buffer will be set
+  to |nomodifiable| by default, unless explicitly set otherwise.
 
   Implements |dapper#interface#UpdatePusher()|.
 
@@ -191,7 +192,7 @@ Basic startup configuration for a debug adapter.
 
 `adapter_id` appears to be the value of `type` in `launch.json`.
 
-dapper#config#DebugAdapterConfig#New({runtime_env} {exe_filepath}
+dapper#config#DebugAdapterConfig#New({runtime_env}, {exe_filepath},
   {adapter_id})                                     *DebugAdapterConfig.New()*
   Construct a new DebugAdapterConfig object.
 
@@ -486,14 +487,66 @@ dapper#dap#Response#New([success] [command] [msg_or_body])    *Response.New()*
   string, or if: [success] is true and [msg_or_body] is not a dict; or
   [success] is false and [msg_or_body] is not a string.
 
+                                                           *dapper.nvim.Scope*
+Stores the variables found in a particular DebugProtocol.Scope.
+
+dapper#model#Scope#New({raw_scope}, {vars_response})             *Scope.New()*
+
+  Construct a new Scope object.
+
+  Throws ERROR(BadValue) if {raw_scope} and {vars_response} aren't both dicts.
+  Throws ERROR(WrongType) if {raw_scope} is not a DebugProtocol.Scope or
+  {vars_response} is not a DebugProtocol.VariablesResponse.
+
                                                       *dapper.nvim.StackFrame*
 Stores the scopes for a particular stack frame in a thread's callstack.
+
+dapper#model#StackFrame#New({message_passer}, {stack_frame},
+  {scopes_response})                                        *StackFrame.New()*
+  Construct a new StackFrame object.
+
+  Throws ERROR(BadValue) if {stack_frame}, {scopes_response}, or
+  {message_passer} are not dicts.
+  Throws ERROR(WrongType) if {stack_frame} is not a DebugProtocol.StackFrame,
+  {scopes_response} is not a ScopesResponse, or if {message_passer} does not
+  implement a |dapper.nvim.MiddleTalker| interface.
+
+StackFrame.id()                                              *StackFrame.id()*
+  Return a unique identifier for the stack frame.
+
+StackFrame.name()                                          *StackFrame.name()*
+
+StackFrame.source()                                      *StackFrame.source()*
+
+StackFrame.line()                                          *StackFrame.line()*
+
+StackFrame.column()                                      *StackFrame.column()*
+
+StackFrame.endLine()                                    *StackFrame.endLine()*
+
+StackFrame.endColumn()                                *StackFrame.endColumn()*
+
+StackFrame.moduleId()                                  *StackFrame.moduleId()*
+
+StackFrame.presentationHint()                  *StackFrame.presentationHint()*
+
+StackFrame.scopes()                                      *StackFrame.scopes()*
+  Return a list of the names of all scopes accessible from this StackFrame.
+
+StackFrame.scope({name})                                  *StackFrame.scope()*
+  Return a |TypeVim.Promise| that resolves to a |dapper.nvim.Scope| object
+  representing the DebugProtocol.Scope in this StackFrame with the requested
+  {name}.
+
+  Throws ERROR(NotFound) if this StackFrame has no DebugProtocol.Scope with
+  {name}.
+  Throws ERROR(WrongType) if {name} is not a string.
 
                                                       *dapper.nvim.StackTrace*
 Stores a thread's callstack. Provides an interface to retrieve information
 about particular stack frames.
 
-dapper#model#StackTrace#New({stack_trace_response}, {message_passer})
+dapper#model#StackTrace#New({message_passer}, {stack_trace_response})
                                                             *StackTrace.New()*
   Construct a new StackTrace object.
 
@@ -581,7 +634,7 @@ dapper#config#StartArgs#New({adapter_config}, {debuggee_args}, {vscode_attr},
 Stores information about a running (or stopped) thread: metadata, and the
 thread's callstack.
 
-dapper#model#Thread#New({props} {message_passer})               *Thread.New()*
+dapper#model#Thread#New({message_passer}, {props})              *Thread.New()*
   Construct a new Thread object. Will automatically request its own stack
   trace on construction.
 

@@ -9,7 +9,7 @@ let s:typename = 'DebugAdapterConfig'
 ""
 " @public
 " @dict DebugAdapterConfig
-" @function dapper#config#DebugAdapterConfig#New({runtime_env} {exe_filepath} {adapter_id})
+" @function dapper#config#DebugAdapterConfig#New({runtime_env}, {exe_filepath}, {adapter_id})
 " Construct a new DebugAdapterConfig object.
 "
 " {runtime_env} is the environment in which to run the debug adapter, e.g.
