@@ -110,3 +110,15 @@ call s:plugin.Flag('min_log_level',
 
 call s:plugin.flags.min_log_level.AddTranslator(
     \ function('dapper#ensure#IsValidLogLevel'))
+
+""
+" The greatest recursion depth to which dapper.nvim will inspect a
+" "structured" variable holding other structured variables.
+"
+" This setting exists to prevent infinite recursion, e.g. if a local variable
+" in the debuggee process is infinitely self-recursive, dapper.nvim will stop
+" "drilling down" into its contents after delving this many levels deep. It is
+" still possible to drill deeper by manually expanding the variable contents
+" in the @dict(VariablesBuffer).
+call s:plugin.Flag('max_drilldown_recursion',
+    \ s:GlobalSettingOrDefault('g:dapper_max_drilldown_recursion', 10))

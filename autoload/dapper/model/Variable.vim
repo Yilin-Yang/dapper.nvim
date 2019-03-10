@@ -2,6 +2,7 @@
 " @dict Variable
 " Represent the contents of a variable.
 
+let s:plugin = maktaba#plugin#Get('dapper.nvim')
 let s:typename = 'Variable'
 
 ""
@@ -11,13 +12,20 @@ let s:typename = 'Variable'
 "
 " @throws BadValue if {message_passer} or {variable} are not dicts.
 " @throws WrongType if {message_passer} does not implement a @dict(MiddleTalker) interface, or if {variable} is not a DebugProtocol.Variable.
-function! dapper#model#Variable#New(message_passer, variable, ...) abort
+function! dapper#model#Variable#New(message_passer, variable) abort
+  return dapper#model#Variable#__New(a:message_passer, a:variable, 0)
+endfunction
+
+function! dapper#model#Variable#__New(message_passer, variable, recursion_depth) abort
   call typevim#ensure#Implements(a:message_passer, dapper#MiddleTalker#Interface())
   call typevim#ensure#Implements(a:variable, dapper#dap#Variable())
+  call maktaba#ensure#IsNumber(a:recursion_depth)
+
   let l:new = {
       \ '_message_passer': a:message_passer,
       \ '_variable': a:variable,
       \ '_names_to_children': {},
+      \ '__recursion_depth': a:recursion_depth,
       \
       \ 'name': typevim#make#Member('name'),
       \ 'value': typevim#make#Member('value'),
@@ -43,7 +51,10 @@ function! dapper#model#Variable#New(message_passer, variable, ...) abort
   " TODO cache this 'constructor Promise', have async functions resolve when
   " it does (to eliminate redundant VariablesRequests while this request is
   " pending)
-  " call dapper#model#Variable#__GetPromiseUpdateChild(l:new)
+  try
+    call dapper#model#Variable#__GetPromiseAutopopulate(l:new)
+  catch /ERROR(NotAuthorized)/
+  endtry
   return l:new
 endfunction
 
@@ -185,7 +196,8 @@ function! dapper#model#Variable#_UpdateFromMsg(msg) dict abort
         \ 'Variable %s got a non-VariablesResponse!', l:name)
   endif
   for l:raw_var in a:msg.body.variables
-    let l:new_var = dapper#model#Variable#New(l:self._message_passer, l:raw_var)
+    let l:new_var = dapper#model#Variable#__New(
+        \ l:self._message_passer, l:raw_var, l:self.__recursion_depth + 1)
     let l:self._names_to_children[l:new_var.name()] = l:new_var
   endfor
   return copy(l:self._names_to_children)
@@ -289,6 +301,25 @@ function! dapper#model#Variable#__ReturnChildWithName(self, name_or_idx, ...) ab
         \ a:self.name(), a:name_or_idx)
   endif
   return a:self._names_to_children[a:name_or_idx]
+endfunction
+
+""
+" @dict Variable
+" The same as @function(dapper#model#Variable#__GetPromiseUpdateChild), but
+" meant to be invoked exclusively from the Variable constructor. Halts with an
+" ERROR(NotAuthorized) if the recursion depth has gone too deep.
+function! dapper#model#Variable#__GetPromiseAutopopulate(self) abort
+  call s:CheckType(a:self)
+  if a:self.__recursion_depth ># s:plugin.flags.max_drilldown_recursion.Get()
+    call a:self._message_passer.NotifyReport(
+        \ 'info',
+        \ 'Too deeply nested, halting drill-down: '.a:self.name(),
+        \ a:self._variable
+        \ )
+    throw maktaba#error#NotAuthorized(
+        \ 'Recursed too deep during autopopulation of '.a:self.name())
+  endif
+  return dapper#model#Variable#__GetPromiseUpdateChild(a:self)
 endfunction
 
 ""
