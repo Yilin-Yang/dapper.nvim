@@ -11,9 +11,9 @@ let s:typename = 'Variable'
 "
 " @throws BadValue if {message_passer} or {variable} are not dicts.
 " @throws WrongType if {message_passer} does not implement a @dict(MiddleTalker) interface, or if {variable} is not a DebugProtocol.Variable.
-function! dapper#model#Variable#New(message_passer, variable) abort
-  " call typevim#ensure#Implements(a:message_passer, dapper#MiddleTalker#Interface())
-  " call typevim#ensure#Implements(a:variable, dapper#MiddleTalker#Variable())
+function! dapper#model#Variable#New(message_passer, variable, ...) abort
+  call typevim#ensure#Implements(a:message_passer, dapper#MiddleTalker#Interface())
+  call typevim#ensure#Implements(a:variable, dapper#dap#Variable())
   let l:new = {
       \ '_message_passer': a:message_passer,
       \ '_variable': a:variable,
