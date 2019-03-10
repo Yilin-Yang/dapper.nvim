@@ -43,7 +43,7 @@ function! dapper#model#Variable#New(message_passer, variable) abort
   " TODO cache this 'constructor Promise', have async functions resolve when
   " it does (to eliminate redundant VariablesRequests while this request is
   " pending)
-  call dapper#model#Variable#__GetPromiseUpdateChild(l:new)
+  " call dapper#model#Variable#__GetPromiseUpdateChild(l:new)
   return l:new
 endfunction
 
@@ -184,7 +184,7 @@ function! dapper#model#Variable#_UpdateFromMsg(msg) dict abort
     throw maktaba#error#Failure(
         \ 'Variable %s got a non-VariablesResponse!', l:name)
   endif
-  for l:raw_var in a:msg.body.response
+  for l:raw_var in a:msg.body.variables
     let l:new_var = dapper#model#Variable#New(l:self._message_passer, l:raw_var)
     let l:self._names_to_children[l:new_var.name()] = l:new_var
   endfor
