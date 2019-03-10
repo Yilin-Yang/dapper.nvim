@@ -46,11 +46,14 @@ Execute (Pipeline: Get Local Scope from Stack Frame):
   let g:scope_promise = g:frame.scope('Local')
   call AwaitTimeout({ -> g:scope_promise.State() ==# 'fulfilled'}, 4000, 1)
   let g:scope = g:scope_promise.Get()
-  let g:variables = g:scope.variables()
-  let g:local_int = g:variables[0]
-  AssertEqual 'local_0_i', g:local_int.name
-  AssertEqual 'integer', g:local_int.type
-  AssertEqual '123', g:local_int.value
+  let g:variables_promise = g:scope.variables()
+  call AwaitTimeout({ -> g:variables_promise.State() ==# 'fulfilled'}, 4000, 1)
+  let g:variables = g:variables_promise.Get()
+  let g:local_int = g:variables['local_0_i']
+  AssertEqual 'local_0_i', g:local_int.name()
+  AssertEqual 'integer', g:local_int.type()
+  AssertEqual '123', g:local_int.value()
+Then (Check Values in Structured Variable):
 
 Execute (Pipeline: Cleanup):
   " call g:tb.CleanUp()
