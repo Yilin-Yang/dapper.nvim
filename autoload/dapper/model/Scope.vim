@@ -34,6 +34,8 @@ function! dapper#model#Scope#New(message_passer, raw_scope, vars_response) abort
       \ '_message_passer': a:message_passer,
       \ '_raw_scope': a:raw_scope,
       \ '_vars_response': a:vars_response,
+      \ '_names_to_variables':
+          \ s:ParseResponseIntoVariables(a:message_passer, a:vars_response),
       \
       \ 'name': typevim#make#Member('name'),
       \ 'variablesReference': typevim#make#Member('variablesReference'),
@@ -57,7 +59,7 @@ endfunction
 
 ""
 " Return {property} of {self}, if present. Else, throw an ERROR(NotFound).
-function s:ReturnPropIfPresent(self, property) abort
+function! s:ReturnPropIfPresent(self, property) abort
   call s:CheckType(a:self)
   call maktaba#ensure#IsString(a:property)
   if has_key(a:self._raw_scope, a:property)
@@ -66,6 +68,20 @@ function s:ReturnPropIfPresent(self, property) abort
   throw maktaba#error#NotFound(
       \ 'Could not find property %s in Scope; it might be optional?',
       \ a:property)
+endfunction
+
+""
+" Parse the contents of the given {vars_response} into a dict between variable
+" names/indices and the variables themselves.
+function! s:ParseResponseIntoVariables(message_passer, vars_response) abort
+  call typevim#ensure#Implements(a:message_passer, dapper#MiddleTalker#Interface())
+  call typevim#ensure#Implements(a:vars_response, dapper#dap#VariablesResponse())
+  let l:names_to_vars = {}
+  for l:raw_var in a:vars_response.body.variables
+    let l:names_to_vars[l:raw_var.name] =
+        \ dapper#model#Variable#New(a:message_passer, l:raw_var)
+  endfor
+  return l:names_to_vars
 endfunction
 
 ""
@@ -161,8 +177,12 @@ endfunction
 ""
 " @public
 " @dict Scope
-" Return the DebugProtocol.Variable objects associated with this Scope object.
+" Return a |TypeVim.Promise| that resolves to a dict between this scope's
+" variable names/indices and their corresponding @dict(Variable) objects.
 function! dapper#model#Scope#variables() dict abort
   call s:CheckType(l:self)
-  return copy(l:self._vars_response.body.variables)
+  " probably not necessary, but just for interface consistency
+  let l:to_return = typevim#Promise#New()
+  call l:to_return.Resolve(copy(l:self._names_to_variables))
+  return l:to_return
 endfunction
