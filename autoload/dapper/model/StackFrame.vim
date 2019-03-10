@@ -221,7 +221,7 @@ function! dapper#model#StackFrame#scope(name) dict abort
 
   if has_key(l:self._names_to_scopes, a:name)
     let l:to_return = typevim#Promise#New()
-    call l:to_return.Resolve(l:self._scopes)
+    call l:to_return.Resolve(l:self._names_to_scopes)
     return l:to_return
   else
     let l:doer = dapper#RequestDoer#New(
