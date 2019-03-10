@@ -81,7 +81,7 @@ endfunction
 
 ""
 " Return {property} of {self}, if present. Else, throw an ERROR(NotFound).
-function s:ReturnPropIfPresent(self, property) abort
+function! s:ReturnPropIfPresent(self, property) abort
   call s:CheckType(a:self)
   call maktaba#ensure#IsString(a:property)
   if has_key(a:self._stack_frame, a:property)
