@@ -283,7 +283,7 @@ function! dapper#model#Variable#Child(name_or_idx) dict abort
   else
     let l:to_return = typevim#Promise#New()
     call l:to_return.Resolve(
-        \ dapper#model#Variables#__ReturnChildWithName(l:self, a:name_or_idx))
+        \ dapper#model#Variable#__ReturnChildWithName(l:self, a:name_or_idx))
     return l:to_return
   endif
 endfunction
