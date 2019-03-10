@@ -73,7 +73,7 @@ function! dapper#MiddleTalker#Get() abort
   return typevim#ensure#Implements(g:dapper_middletalker, s:interface)
 endfunction
 
-function s:CheckType(Obj) abort
+function! s:CheckType(Obj) abort
   call typevim#ensure#IsType(a:Obj, s:typename)
 endfunction
 
