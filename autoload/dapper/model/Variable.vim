@@ -12,9 +12,10 @@ let s:typename = 'Variable'
 " @throws BadValue if {message_passer} or {variable} are not dicts.
 " @throws WrongType if {message_passer} does not implement a @dict(MiddleTalker) interface, or if {variable} is not a DebugProtocol.Variable.
 function! dapper#model#Variable#New(message_passer, variable) abort
-  call typevim#ensure#Implements(a:message_passer, dapper#MiddleTalker#Interface())
-  call typevim#ensure#Implements(a:variable, dapper#MiddleTalker#Variable())
+  " call typevim#ensure#Implements(a:message_passer, dapper#MiddleTalker#Interface())
+  " call typevim#ensure#Implements(a:variable, dapper#MiddleTalker#Variable())
   let l:new = {
+      \ '_message_passer': a:message_passer,
       \ '_variable': a:variable,
       \ '_names_to_children': {},
       \
@@ -37,6 +38,12 @@ function! dapper#model#Variable#New(message_passer, variable) abort
   let l:new._UpdateFromMsg = typevim#object#Bind(l:new._UpdateFromMsg, l:new)
   let l:new._HandleFailedReq =
       \ typevim#object#Bind(l:new._HandleFailedReq, l:new)
+
+  " immediately start populating variable entries
+  " TODO cache this 'constructor Promise', have async functions resolve when
+  " it does (to eliminate redundant VariablesRequests while this request is
+  " pending)
+  call dapper#model#Variable#__GetPromiseUpdateChild(l:new)
   return l:new
 endfunction
 
@@ -46,7 +53,7 @@ endfunction
 
 ""
 " Return {property} of {self}, if present. Else, throw an ERROR(NotFound).
-function s:ReturnPropIfPresent(self, property) abort
+function! s:ReturnPropIfPresent(self, property) abort
   call s:CheckType(a:self)
   call maktaba#ensure#IsString(a:property)
   if has_key(a:self._variable, a:property)
