@@ -105,7 +105,7 @@ function! dapper#view#StackTraceBuffer#Push(thread) dict abort
       \ l:self._ShowCallstack,
       \ l:self._PrintFailedResponse)
   call l:self._Log(
-      \ 'info',
+      \ 'debug',
       \ 'Will print StackTraceResponse in this buffer',
       \ l:stack_trace_promise,
       \ l:self
