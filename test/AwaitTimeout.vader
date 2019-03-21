@@ -2,24 +2,29 @@
 "     `SubscriptionHelpers.vader`.
 Execute (AwaitTimeout: Declare Helper Functions):
 
-  " RETURNS:  (v:t_float)   Seconds since the time marked by a:reltime,
-  "                         which is a time point returned by `reltime()`.
+  ""
+  " Returns the number of seconds since the time marked by {reltime}, a time
+  " point returned by `reltime()`. as a float.
   function! TimeSince(reltime) abort
     let l:diff = reltime(a:reltime, reltime())
     return reltimefloat(l:diff)
   endfunction
 
-  " BRIEF:  Loop until `Condition()` returns true, or `timeout` ms have passed.
-  " PARAM:  should_throw  (v:t_bool)  Whether to throw an exception on timeout.
-  " PARAM:  resolution  (v:t_number)  How long to wait before checking the
-  "                                   condition on a given iteration, in
-  "                                   milliseconds. When set too low, nvim will
-  "                                   be stuck busy-looping when events occur,
-  "                                   and may not respond to calls from remote
-  "                                   plugins.
+  ""
+  " Loop until {Condition} returns true, or {timeout} ms have passed.
+  "
+  " [should_throw] should be true if an exception should be thrown on timeout.
+  "
+  " [resolution]  How long to wait before checking the condition on a given
+  " iteration, in milliseconds. When set too low, nvim will be stuck
+  " busy-looping when events occur, and may not respond to calls from remote
+  " plugins.
   function! AwaitTimeout(Condition, timeout, ...) abort
-    let a:should_throw = get(a:000, 0, 0)
-    let a:resolution = get(a:000, 1, 100)
+    call maktaba#ensure#IsFuncref(a:Condition)
+    call maktaba#ensure#IsNumber(a:timeout)
+    let l:should_throw = typevim#ensure#IsBool(get(a:000, 0, 0))
+    let l:resolution = maktaba#ensure#IsNumber(get(a:000, 1, 100))
+
     let l:start = reltime()
     let l:sec = a:timeout / 1000.0
     let l:timed_out = 1
@@ -28,9 +33,24 @@ Execute (AwaitTimeout: Declare Helper Functions):
         let l:timed_out = 0
         break
       endif
-      execute 'sleep '.a:resolution.'m'
+      execute 'sleep '.l:resolution.'m'
     endwhile
-    if l:timed_out && a:should_throw
+    if l:timed_out && l:should_throw
       throw '(AwaitTimeout) Timed out while waiting for event.'
     endif
+  endfunction
+
+  ""
+  " @usage {promise} {timeout} [should_throw] [resolution]
+  " Loop until {promise} is no longer pending, or {timeout} ms have passed.
+  " Returns the value of the Promise, whether it resolved or rejected.
+  function! AwaitPromise(promise, timeout, ...) abort
+    let l:should_throw = get(a:000, 0, 0)
+    let l:resolution = get(a:000, 1, 100)
+
+    call typevim#ensure#IsType(a:promise, 'Promise')
+    call AwaitTimeout(
+        \ { -> a:promise.State() !=# 'pending'},
+        \ a:timeout, l:should_throw, l:resolution)
+    return a:promise.Get()
   endfunction

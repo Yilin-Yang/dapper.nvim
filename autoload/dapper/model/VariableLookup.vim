@@ -13,7 +13,7 @@ let s:typename = 'VariableLookup'
 ""
 " @public
 " @dict VariableLookup
-" @function dapper#view#VariableLookup#New({stack_frame}, {message_passer})
+" @function dapper#model#VariableLookup#New({stack_frame}, {message_passer})
 " Construct a VariableLookup object, used for accessing the Model
 " representations of some item represented in {stack_frame}.
 "
@@ -22,7 +22,7 @@ let s:typename = 'VariableLookup'
 "
 " @throws BadValue if {stack_frame} or {message_passer} are not dicts.
 " @throws WrongType if {stack_frame} is not a @dict(StackFrame), or if {message_passer} does not implement the MiddleTalker interface.
-function! dapper#view#VariableLookup#New(stack_frame, message_passer) abort
+function! dapper#model#VariableLookup#New(stack_frame, message_passer) abort
   call typevim#ensure#IsType(a:stack_frame, 'StackFrame')
   call typevim#ensure#Implements(
       \ a:message_passer, dapper#MiddleTalker#Interface())

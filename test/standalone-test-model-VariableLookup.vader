@@ -1,0 +1,44 @@
+Include: AwaitTimeout.vader
+Include: StartMockDebugAdapter.vader
+Include: SubscriptionHelpers.vader
+
+Execute (VariableLookup: Setup):
+  let g:timeout_len = 4000  " ms
+  call AwaitTimeout({ -> ReceivedMessage('LaunchResponse')}, g:timeout_len, 1)
+
+  call g:dapper_model.Update()
+  call AwaitTimeout({ -> ReceivedMessage('ThreadsResponse')}, g:timeout_len, 1)
+
+  " receive thread 1; get topmost stack frame
+  let g:thread = g:dapper_model.thread(1)
+  let g:st = AwaitPromise(g:thread.stackTrace(), g:timeout_len, 1)
+  let g:sf = AwaitPromise(g:st.frame(0), g:timeout_len, 1)
+
+  let g:vl = dapper#model#VariableLookup#New(g:sf, g:dapper_middletalker)
+
+  function! ObjSet() abort
+    return exists('g:obj')
+  endfunction
+
+  function! SetObj(obj) abort
+    let g:obj = a:obj
+  endfunction
+
+  function! GetObj() abort
+    let l:temp = g:obj
+    unlet g:obj
+    return l:temp
+  endfunction
+
+  let g:SetWithReturned = function('SetObj')
+
+Execute (VariableLookup: Nonexistent Scope):
+  AssertThrows g:vl.VariableFromPath(['Locl'], g:SetWithReturned)
+  " TODO
+
+Execute (VariableLookup: Retrieve Locals):
+  call g:vl.VariableFromPath(['Local'], g:SetWithReturned)
+  call AwaitTimeout(function('ObjSet'), g:timeout_len, 1)
+  let g:returned = GetObj()
+Then:
+  AssertEqual 'Local', g:returned.name()
