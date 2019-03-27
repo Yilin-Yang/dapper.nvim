@@ -38,7 +38,6 @@ describe('typenameOf', () => {
       kind: '',
       brief: 'foobar',
       long: 'foobarfoobar',
-      alert: true,
     };
     assert.equal(typenameOf(msg), 'Report');
   });
@@ -49,7 +48,6 @@ describe('typenameOf', () => {
       kind: 'error',
       brief: 'foobar',
       long: 'foobarfoobar',
-      alert: true,
     };
     assert.equal(typenameOf(msg), 'ErrorReport');
   });
@@ -60,7 +58,6 @@ describe('typenameOf', () => {
       kind: 'status',
       brief: 'foobar',
       long: 'foobarfoobar',
-      alert: true,
     };
     assert.equal(typenameOf(msg), 'StatusReport');
   });
