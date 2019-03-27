@@ -48,3 +48,11 @@ Execute (VariableLookup: Retrieve Local Variable):
 Then (Retrieve Local Structured Variable):
   let g:var = AwaitPromise(g:vl.VariableFromPath(['Local', 'local_0_o']), g:timeout_len, 1)
   AssertEqual 'local_0_o', g:var.name()
+
+Execute (VariableLookup: Retrieve Nested Global Variable):
+  let g:var = AwaitPromise(
+      \ g:vl.VariableFromPath(
+          \ ['Global', 'global_0_o', 'object__o', 'object__f']), g:timeout_len, 1)
+  AssertEqual 'object__f', g:var.name()
+  AssertEqual '3.14', g:var.value()
+  AssertEqual 'float', g:var.type()
