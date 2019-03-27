@@ -44,6 +44,10 @@ the following:
 
 ```bash
 sudo npm install -g neovim
+
+# OR, if you use yarn,
+
+yarn add global neovim
 ```
 
 ### Plugin Installation
@@ -62,7 +66,7 @@ Plug 'Yilin-Yang/dapper.nvim', { 'do': 'yarn install', }
 " ...
 call plug#end()
 ```
-And then run `:PlugInstall`.
+And then run `:PlugInstall`, followed by `:UpdateRemotePlugins`.
 
 Other package managers (like Vundle) are usable, so long as you make sure to
 install the plugin's Node.js package dependencies. For instance, you might do
