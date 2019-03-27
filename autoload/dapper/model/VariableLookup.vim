@@ -208,15 +208,13 @@ endfunction
 " reject with the text of an ERROR(NotFound) exception.
 "
 " @throws NotFound if the given scope could not be found.
-" @throws WrongType if {lookup_path} is not a list of strings, or if {Callback} is not a Funcref..
-function! dapper#model#VariableLookup#VariableFromPath(
-    \ lookup_path, Callback) dict abort
+" @throws WrongType if {lookup_path} is not a list of strings.
+function! dapper#model#VariableLookup#VariableFromPath(lookup_path) dict abort
   call s:CheckType(l:self)
   call maktaba#ensure#IsList(a:lookup_path)
   for l:Obj in a:lookup_path
     call maktaba#ensure#IsString(l:Obj)
   endfor
-  call maktaba#ensure#IsFuncref(a:Callback)
 
   let l:names_to_scope_promises = l:self.__names_to_scope_promises
   if empty(a:lookup_path)  " Promise resolves to all Scope objects
