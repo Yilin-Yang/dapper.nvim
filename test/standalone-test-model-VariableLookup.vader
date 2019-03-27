@@ -30,13 +30,26 @@ Execute (VariableLookup: Setup):
     return l:temp
   endfunction
 
+  function! EatArgs(...) abort
+  endfunction
+
   let g:SetWithReturned = function('SetObj')
+  let g:DoNothing = function('EatArgs')
 
 Execute (VariableLookup: Nonexistent Scope):
-  AssertThrows g:vl.VariableFromPath(['Locl'], g:SetWithReturned)
-  " TODO
+  AssertThrows call g:vl.VariableFromPath(['Locl'], g:DoNothing)
 
-Execute (VariableLookup: Retrieve Locals):
+  AssertNotEqual -1, match(g:vader_exception, 'ERROR(NotFound)'),
+      \ 'Threw wrong exception: ' . g:vader_exception
+
+  " call g:promise.Then(g:DoNothing, g:SetWithReturned)
+  " call AwaitTimeout(function('ObjSet'), g:timeout_len, 1)
+  " let g:returned = GetObj()
+  " AssertEqual 'rejected', g:promise.State()
+  " AssertNotEqual -1, match(g:promise.Get(), 'ERROR(NotFound)'),
+  "     \ 'Promise rejected with wrong value: ' . str(g:returned)
+
+Execute (VariableLookup: Retrieve Local Scope):
   call g:vl.VariableFromPath(['Local'], g:SetWithReturned)
   call AwaitTimeout(function('ObjSet'), g:timeout_len, 1)
   let g:returned = GetObj()
