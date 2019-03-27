@@ -21,7 +21,7 @@ let g:project_root = split(getcwd(), '/test')[0]
 let g:test_dir = g:project_root.'/test'
 let g:dapper_logfile = g:project_root.'/test/LOGFILE.vim'
 let g:dapper_log_buffer_writeback = 1
-let g:dapper_min_log_level = 'debug'
+let g:dapper_min_log_level = 'info'
 
 " TODO: make it possible to change settings after calls to Detect?
 call maktaba#plugin#Detect()
