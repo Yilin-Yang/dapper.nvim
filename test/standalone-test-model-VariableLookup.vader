@@ -16,42 +16,13 @@ Execute (VariableLookup: Setup):
 
   let g:vl = dapper#model#VariableLookup#New(g:sf, g:dapper_middletalker)
 
-  function! ObjSet() abort
-    return exists('g:obj')
-  endfunction
-
-  function! SetObj(obj) abort
-    let g:obj = a:obj
-  endfunction
-
-  function! GetObj() abort
-    let l:temp = g:obj
-    unlet g:obj
-    return l:temp
-  endfunction
-
-  function! EatArgs(...) abort
-  endfunction
-
-  let g:SetWithReturned = function('SetObj')
-  let g:DoNothing = function('EatArgs')
-
 Execute (VariableLookup: Nonexistent Scope):
-  AssertThrows call g:vl.VariableFromPath(['Locl'], g:DoNothing)
-
+  AssertThrows call g:vl.VariableFromPath(['Locl'])
+Then (Check Exception Text):
   AssertNotEqual -1, match(g:vader_exception, 'ERROR(NotFound)'),
       \ 'Threw wrong exception: ' . g:vader_exception
 
-  " call g:promise.Then(g:DoNothing, g:SetWithReturned)
-  " call AwaitTimeout(function('ObjSet'), g:timeout_len, 1)
-  " let g:returned = GetObj()
-  " AssertEqual 'rejected', g:promise.State()
-  " AssertNotEqual -1, match(g:promise.Get(), 'ERROR(NotFound)'),
-  "     \ 'Promise rejected with wrong value: ' . str(g:returned)
-
 Execute (VariableLookup: Retrieve Local Scope):
-  call g:vl.VariableFromPath(['Local'], g:SetWithReturned)
-  call AwaitTimeout(function('ObjSet'), g:timeout_len, 1)
-  let g:returned = GetObj()
-Then:
-  AssertEqual 'Local', g:returned.name()
+  let g:scope = AwaitPromise(g:vl.VariableFromPath(['Local']), g:timeout_len, 1)
+Then (Check Name of Scope):
+  AssertEqual 'Local', g:scope.name()
