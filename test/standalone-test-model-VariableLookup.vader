@@ -18,11 +18,33 @@ Execute (VariableLookup: Setup):
 
 Execute (VariableLookup: Nonexistent Scope):
   AssertThrows call g:vl.VariableFromPath(['Locl'])
-Then (Check Exception Text):
   AssertNotEqual -1, match(g:vader_exception, 'ERROR(NotFound)'),
       \ 'Threw wrong exception: ' . g:vader_exception
+  let g:vader_exception = ''
 
 Execute (VariableLookup: Retrieve Local Scope):
   let g:scope = AwaitPromise(g:vl.VariableFromPath(['Local']), g:timeout_len, 1)
-Then (Check Name of Scope):
   AssertEqual 'Local', g:scope.name()
+
+Execute (VariableLookup: Nonexistent Local Variable):
+  " complicated try/catch to handle the possibility that the Promise might
+  " reject asynchronously, and return the rejection from AwaitPromise,
+  " OR fail immediately
+  try
+    let g:vader_exception =
+        \ AwaitPromise(g:vl.VariableFromPath(['Local', 'locl_0_i']), g:timeout_len, 1)
+  catch
+    let g:vader_exception = v:exception
+  finally
+    if len(v:exception) | let g:vader_exception = v:exception | endif
+    AssertNotEqual -1, match(g:vader_exception, 'Did not find variable'),
+        \ 'Threw wrong exception: ' . g:vader_exception
+  endtry
+
+Execute (VariableLookup: Retrieve Local Variable):
+  let g:var = AwaitPromise(g:vl.VariableFromPath(['Local', 'local_0_i']), g:timeout_len, 1)
+  AssertEqual 'local_0_i', g:var.name()
+  AssertEqual '123', g:var.value()
+Then (Retrieve Local Structured Variable):
+  let g:var = AwaitPromise(g:vl.VariableFromPath(['Local', 'local_0_o']), g:timeout_len, 1)
+  AssertEqual 'local_0_o', g:var.name()

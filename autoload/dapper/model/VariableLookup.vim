@@ -137,13 +137,22 @@ function! s:VariableDoer_Receive(obj) dict abort
   call s:VariableDoer_CheckType(l:self)
   let l:lookup_path = l:self._lookup_path
 
+  " make sure to increment index beforehand, since TypeVim Promises can
+  " resolve instantly
   let l:idx = l:self._path_index
+  let l:self._path_index += 1
   if l:idx ==# 1 && typevim#value#IsType(a:obj, 'Scope')
-    call a:obj.variables().Then(l:self.Receive, l:self.Reject)
     let l:self._path_index -= 1  " we haven't 'really' advanced in the path
+    call a:obj.variables().Then(l:self.Receive, l:self.Reject)
   elseif l:idx ==# 1  " dict between variable names and Variable objects
     call maktaba#ensure#IsDict(a:obj)
-    let l:first_var = a:obj[l:lookup_path[1]]
+    let l:first_varname = l:lookup_path[1]
+    if !has_key(a:obj, l:first_varname)
+      call l:self.Reject(maktaba#error#NotFound(
+          \ 'Did not find variable with name: %s', l:first_varname))
+      return
+    endif
+    let l:first_var = a:obj[l:first_varname]
     if l:self._EndOfPath()
       call l:self.Resolve(l:first_var)
       return
@@ -154,7 +163,7 @@ function! s:VariableDoer_Receive(obj) dict abort
     catch /ERROR(NotFound)/
       call l:self.Reject(v:exception)
     endtry
-  elseif l:idx ># 2
+  elseif l:idx ># 1
     call typevim#ensure#IsType(a:obj, 'Variable')
     let l:next_var = l:lookup_path[l:idx + 1]
     try
@@ -167,14 +176,13 @@ function! s:VariableDoer_Receive(obj) dict abort
         \ 'Failed to advance path index in VariableDoer? %s',
         \ typevim#object#ShallowPrint(l:self))
   endif
-  let l:self._path_index += 1
 endfunction
 
 function! s:VariableDoer_StartDoing() dict abort
   call s:VariableDoer_CheckType(l:self)
   " start the lookup waterfall with the initial Scope
-  call l:self._scope_promise.Then(l:self.Receive, l:self.Reject)
   let l:self._path_index += 1
+  call l:self._scope_promise.Then(l:self.Receive, l:self.Reject)
 endfunction
 
 ""
@@ -184,7 +192,7 @@ endfunction
 function! s:VariableDoer_EndOfPath(...) dict abort
   call s:VariableDoer_CheckType(l:self)
   let l:index = maktaba#ensure#IsNumber(get(a:000, 0, l:self._path_index))
-  return l:index + 1 ==# len(l:self._lookup_path)
+  return l:index + 1 >=# len(l:self._lookup_path)
 endfunction
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
