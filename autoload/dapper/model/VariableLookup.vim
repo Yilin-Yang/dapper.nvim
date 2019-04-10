@@ -119,11 +119,9 @@ function! s:VariableDoer_New(message_passer, lookup_path, scope_promise) abort
       \ '_message_passer': typevim#ensure#Implements(
           \ a:message_passer, dapper#MiddleTalker#Interface()),
       \ '_lookup_path': maktaba#ensure#IsList(a:lookup_path),
-      \ '_path_index': 0,
       \ '_scope_promise': typevim#ensure#IsType(a:scope_promise, 'Promise'),
       \ 'Receive': function('s:VariableDoer_Receive'),
       \ 'StartDoing': function('s:VariableDoer_StartDoing'),
-      \ '_EndOfPath': function('s:VariableDoer_EndOfPath'),
       \ }
   let l:new.Receive = typevim#object#Bind(l:new.Receive, l:new)
   return typevim#make#Derived('VariableDoer', typevim#Doer#New(), l:new)
@@ -137,43 +135,37 @@ function! s:VariableDoer_Receive(obj) dict abort
   call s:VariableDoer_CheckType(l:self)
   let l:lookup_path = l:self._lookup_path
 
-  " make sure to increment index beforehand, since TypeVim Promises can
-  " resolve instantly
-  let l:idx = l:self._path_index
-  let l:self._path_index += 1
-  if l:idx ==# 1 && typevim#value#IsType(a:obj, 'Scope')
-    let l:self._path_index -= 1  " we haven't 'really' advanced in the path
+  if typevim#value#IsType(a:obj, 'Scope')
+    " this is a Scope object; request a dict of its variables
     call a:obj.variables().Then(l:self.Receive, l:self.Reject)
-  elseif l:idx ==# 1  " dict between variable names and Variable objects
+  elseif maktaba#value#IsDict(a:obj) && !typevim#value#IsValidObject(a:obj)
+    " dict between variable names and Variable objects
     call maktaba#ensure#IsDict(a:obj)
-    let l:first_varname = l:lookup_path[1]
+    let l:first_varname = l:lookup_path[0]
+    unlet l:lookup_path[0]  " pop
     if !has_key(a:obj, l:first_varname)
       call l:self.Reject(maktaba#error#NotFound(
           \ 'Did not find variable with name: %s', l:first_varname))
       return
     endif
     let l:first_var = a:obj[l:first_varname]
-    if l:self._EndOfPath()
+    if empty(l:lookup_path)
       call l:self.Resolve(l:first_var)
       return
     endif
-    try
-      call l:first_var.Child(l:lookup_path[2]).Then(
-          \ l:self.Receive, l:self.Reject)
-    catch /ERROR(NotFound)/
-      call l:self.Reject(v:exception)
-    endtry
-  elseif l:idx ># 1
-    call typevim#ensure#IsType(a:obj, 'Variable')
-    let l:next_var = l:lookup_path[l:idx + 1]
-    try
-      call a:obj.Child(l:next_var).Then(l:self.Receive, l:self.Reject)
-    catch /ERROR(NotFound)/
-      call l:self.Reject(v:exception)
-    endtry
-  else  " 0 or negative index
+    call l:first_var.Child(l:lookup_path[0]).Then(
+        \ l:self.Receive, l:self.Reject)
+  elseif typevim#value#IsType(a:obj, 'Variable')
+    if empty(l:lookup_path)
+      call l:self.Resolve(a:obj)
+      return
+    endif
+    let l:next_var = l:lookup_path[0]
+    unlet l:lookup_path[0]
+    call a:obj.Child(l:next_var).Then(l:self.Receive, l:self.Reject)
+  else
     throw maktaba#error#Failure(
-        \ 'Failed to advance path index in VariableDoer? %s',
+        \ 'Received unexpected object in VariableDoer_Receive: ',
         \ typevim#object#ShallowPrint(l:self))
   endif
 endfunction
@@ -181,18 +173,8 @@ endfunction
 function! s:VariableDoer_StartDoing() dict abort
   call s:VariableDoer_CheckType(l:self)
   " start the lookup waterfall with the initial Scope
-  let l:self._path_index += 1
+  unlet l:self._lookup_path[0]  " 'pop' front of list
   call l:self._scope_promise.Then(l:self.Receive, l:self.Reject)
-endfunction
-
-""
-" Return true when the given [index] is the last element of the lookup path.
-"
-" @default index=the current stored path_index
-function! s:VariableDoer_EndOfPath(...) dict abort
-  call s:VariableDoer_CheckType(l:self)
-  let l:index = maktaba#ensure#IsNumber(get(a:000, 0, l:self._path_index))
-  return l:index + 1 >=# len(l:self._lookup_path)
 endfunction
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
