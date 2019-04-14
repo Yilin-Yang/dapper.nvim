@@ -72,6 +72,51 @@ function! dapper#view#VariablesPrinter#VariableFromString(string) abort
 endfunction
 
 ""
+" Convert the given variable into a string, suitable for printing into the
+" managed buffer. The inverse of
+" @function(dapper#view#VariablesPrinter#VariableFromString).
+function! dapper#view#VariablesPrinter#StringFromVariable(variable, prefix) abort
+  if !maktaba#value#IsIn(a:prefix, ['>', 'v', '-'])
+    throw maktaba#error#Failure(
+        \ 'Bad prefix "%s" when printing variable: %s', a:prefix,
+        \ typevim#PrintShallow(a:variable))
+  endif
+  if !typevim#value#Implements(a:variable, s:variable_interface)
+    throw maktaba#error#Failure(
+        \ 'Failed to print malformed variable: %s',
+        \ typevim#PrintShallow(a:variable))
+  endif
+  if a:prefix ==# '-' && !a:variable.unstructured
+    throw maktaba#error#Failure(
+        \ 'Tried to print structured variable as unstructured: %s',
+        \ typevim#PrintShallow(a:variable))
+  elseif a:prefix !=# '-' && a:variable.unstructured
+    throw maktaba#error#Failure(
+        \ 'Tried to print unstructured variable as structured: %s',
+        \ typevim#PrintShallow(a:variable))
+  endif
+  let l:str = a:variable.indentation.a:prefix.' '.a:variable.name.', '
+      \ .a:variable.type
+  if !empty(a:variable.presentation_hint)
+    let l:str .= ', '.a:variable.presentation_hint
+  endif
+  let l:str .= ': '.a:variable.value
+  return l:str
+endfunction
+
+let s:variable_interface = {
+    \ 'indentation': typevim#Bool(),
+    \ 'expanded': typevim#Bool(),
+    \ 'unstructured': typevim#Bool(),
+    \ 'name': typevim#String(),
+    \ 'type': typevim#String(),
+    \ 'presentation_hint': typevim#String(),
+    \ 'value': typevim#String(),
+    \ }
+call typevim#make#Interface(s:variable_interface)
+
+
+""
 " Return a regex pattern that matches a variable with the given [indentation],
 " [name], and [type]. All of these default to matching any text, if not
 " provided.
@@ -101,6 +146,27 @@ function! dapper#view#VariablesPrinter#ScopeFromString(string) abort
       \ 'info': l:matches[3],
       \ }
 endfunction
+
+""
+" Convert the given scope into a string, suitable for printing into the
+" managed buffer. The inverse of
+" @function(dapper#view#VariablesPrinter#ScopeFromString).
+function! dapper#view#VariablesPrinter#StringFromScope(scope, collapsed) abort
+  call typevim#ensure#IsBool(a:collapsed)
+  if !typevim#value#Implements(a:scope, s:scope_interface)
+    throw maktaba#error#Failure(
+        \ 'Failed to print malformed scope: %s', typevim#PrintShallow(a:scope))
+  endif
+  let l:prefix = a:collapsed ? '>' : 'v'
+  return l:prefix.' '.a:scope.name.' : '.a:scope.info
+endfunction
+
+let s:scope_interface = {
+    \ 'expanded': typevim#Bool(),
+    \ 'name': typevim#String(),
+    \ 'info': typevim#String(),
+    \ }
+call typevim#make#Interface(s:scope_interface)
 
 ""
 " Return a regex pattern that matches a scope with [name]. If [name] is not
@@ -238,18 +304,30 @@ endfunction
 ""
 " @public
 " @dict VariablesPrinter
-" Expand the given scope or variable in the managed buffer. If the collapse
+" Collapse the given scope or variable in the managed buffer. If the collapse
 " was successful, return 1. If it was not (e.g. the variable was already
 " collapsed, or the variable is not a "structured" variable that can be
 " collapsed) return 0.
 "
-" Does not recursively collapse structured variables inside the requested
-" scope/variable.
-"
 " @throws BadValue if {lookup_path_of_var} contains values that aren't strings.
 " @throws NotFound if {lookup_path_of_var} corresponds to no known scope or variable.
 " @throws WrongType if the given {lookup_path_of_var} is not a list.
-function! dapper#view#VariablesPrinter#CollapseEntry() dict abort
+function! dapper#view#VariablesPrinter#CollapseEntry(lookup_path) dict abort
   call s:CheckType(l:self)
-  " TODO
+  let [l:start, l:end] = l:self.GetRange(a:lookup_path)
+  let l:start_line = l:self._buffer.GetLines(l:start)
+
+  if len(a:lookup_path ==# 1)  " is Scope
+    let l:scope = dapper#view#VariablesPrinter#ScopeFromString(l:start_line)
+    if !l:scope.expanded | return 0 | endif
+    let l:collapsed_str =
+        \ dapper#view#VariablesPrinter#StringFromScope(l:scope, 0)
+  else  " is Variable
+    let l:var = dapper#view#VariablesPrinter#VariableFromString(l:start_line)
+    if !l:var.expanded || l:var.unstructured | return 0 | endif
+    let l:collapsed_str =
+        \ dapper#view#VariablesPrinter#StringFromVariable(l:var, '>')
+  endif
+  call l:self._buffer.ReplaceLines(l:start, l:end, [l:collapsed_str])
+  return 1
 endfunction
