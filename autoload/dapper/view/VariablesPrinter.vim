@@ -286,7 +286,7 @@ function! dapper#view#VariablesPrinter#VarFromCursor(curpos, ...) dict abort
   let l:line_no = maktaba#ensure#IsNumber(a:curpos[1])
   let l:return_as_lookup_path = typevim#ensure#IsBool(get(a:000, 0, 0))
 
-  let l:line = l:self._buffer.GetLines(l:line_no)
+  let l:line = l:self._buffer.GetLines(l:line_no)[0]
 
   let l:var = dapper#view#VariablesPrinter#VariableFromString(l:line)
   if empty(l:var)  " is a scope
@@ -313,14 +313,14 @@ function! s:BacktrackLookupPath(buffer, working_lookup_path, search_start,
   if l:indent ==# ''  " next up is the scope
     let l:scope_line = a:buffer.search(s:SCOPE_PATTERN, 'bW', a:search_start)
     let l:scope = dapper#view#VariablesPrinter#ScopeFromString(
-        \ a:buffer.GetLines(l:scope_line))
+        \ a:buffer.GetLines(l:scope_line)[0])
     return [l:scope.name] + a:working_lookup_path
   endif
 
   let l:next_up_pattern = s:VariablePattern(l:indent)
   let l:next_up = a:buffer.search(l:next_up_pattern, 'bW', a:search_start)
   let l:variable = dapper#view#VariablesPrinter#VariableFromString(
-      \ a:buffer.GetLines(l:next_up))
+      \ a:buffer.GetLines(l:next_up)[0])
   return [l:variable.name] + a:working_lookup_path
 endfunction
 
@@ -341,7 +341,7 @@ endfunction
 function! dapper#view#VariablesPrinter#ExpandEntry(lookup_path) dict abort
   call s:CheckType(l:self)
   let [l:start, l:end] = l:self.GetRange(a:lookup_path)
-  let l:start_line = l:self._buffer.GetLines(l:start)
+  let l:start_line = l:self._buffer.GetLines(l:start)[0]
 
   if len(a:lookup_path ==# 1)  " is Scope
     let l:scope = dapper#view#VariablesPrinter#ScopeFromString(l:start_line)
@@ -375,7 +375,7 @@ endfunction
 function! dapper#view#VariablesPrinter#CollapseEntry(lookup_path) dict abort
   call s:CheckType(l:self)
   let [l:start, l:end] = l:self.GetRange(a:lookup_path)
-  let l:start_line = l:self._buffer.GetLines(l:start)
+  let l:start_line = l:self._buffer.GetLines(l:start)[0]
 
   if len(a:lookup_path ==# 1)  " is Scope
     let l:scope = dapper#view#VariablesPrinter#ScopeFromString(l:start_line)
