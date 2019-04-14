@@ -248,13 +248,13 @@ function! s:GetVariableRange(buffer, lookup_path_of_var, search_start,
   if !l:var_start
     throw maktaba#error#NotFound('Could not find variable: ' . l:var)
   endif
-  let l:scope_end = a:buffer.search(s:SCOPE_PATTERN, 'W', l:var_start)
-  let l:var_end = a:buffer.search(
-      \ s:VariablePattern(l:indent), 'W', l:var_start, a:search_end)
-  if (!l:var_end && l:scope_end) || (l:scope_end && l:scope_end <# l:var_end)
-    " 'range-terminating' entry is a scope, not a variable
-    let l:var_end = l:scope_end - 1
-  elseif !l:var_end
+
+  " search till the next line with equal or lesser indentation, or the
+  " end of the buffer, whichever comes first
+  let l:terminate_pat = '^[ ]\{0,'.(l:cur_indent_level * 2).'}\S'
+  let l:var_end = a:buffer.search(l:terminate_pat, 'W', l:var_start)
+
+  if !l:var_end
     let l:var_end = a:buffer.NumLines()
   else
     let l:var_end -= 1
