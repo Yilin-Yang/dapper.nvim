@@ -272,14 +272,56 @@ endfunction
 " @dict(Scope) or @dict(Variable), as appropriate.
 "
 " @default return_as_lookup_path=0
-" @throws BadValue if the given {curpos} does not include, at least, `bufnum`, `lnum`, `col`, and `off`. See |getpos()|, or if any of these are not numbers.
+" @throws BadValue if the given {curpos} is not a four- or five-element list whose second element is a number.
 " @throws NotFound if the given {curpos} does not correspond to any scope or variable in the managed buffer.
 " @throws WrongType if the given {curpos} is not a list, or if [return_as_lookup_path] is not a bool.
 function! dapper#view#VariablesPrinter#VarFromCursor(curpos, ...) dict abort
   call s:CheckType(l:self)
   call maktaba#ensure#IsList(a:curpos)
+  if !maktaba#value#IsIn(len(a:curpos), [4, 5])
+    throw maktaba#error#BadValue(
+        \ 'Did not give a curpos as returned by getpos() or getcurpos(): %s',
+        \ typevim#PrintShallow(a:curpos))
+  endif
+  let l:line_no = maktaba#ensure#IsNumber(a:curpos[1])
   let l:return_as_lookup_path = typevim#ensure#IsBool(get(a:000, 0, 0))
-  " TODO
+
+  let l:line = l:self._buffer.GetLines(l:line_no)
+
+  let l:var = dapper#view#VariablesPrinter#VariableFromString(l:line)
+  if empty(l:var)  " is a scope
+    let l:scope = dapper#view#VariablesPrinter#ScopeFromString(l:line)
+    return l:return_as_lookup_path ?
+        \ [l:scope.name] : l:self._var_lookup.VariableFromPath([l:scope.name])
+  endif
+  " is a variable
+  let l:lookup_path = s:BacktrackLookupPath(
+      \ l:self._buffer, [l:var.name], l:line_no, len(l:var.indentation) / 2)
+  return l:return_as_lookup_path ?
+      \ l:lookup_path : l:self._var_lookup.VariableFromPath(l:lookup_path)
+endfunction
+
+""
+" Reconstruct a lookup path by backtracking from line number {search_start}.
+"
+" When first called, {working_lookup_path} contains the name of the
+" VarFromCursor, and {cur_indent_level} is the indent level of that variable.
+function! s:BacktrackLookupPath(buffer, working_lookup_path, search_start,
+                              \ cur_indent_level) abort
+  let l:indent = typevim#object#GetIndentBlock(a:cur_indent_level - 1)
+
+  if l:indent ==# ''  " next up is the scope
+    let l:scope_line = a:buffer.search(s:SCOPE_PATTERN, 'bW', a:search_start)
+    let l:scope = dapper#view#VariablesPrinter#ScopeFromString(
+        \ a:buffer.GetLines(l:scope_line))
+    return [l:scope.name] + a:working_lookup_path
+  endif
+
+  let l:next_up_pattern = s:VariablePattern(l:indent)
+  let l:next_up = a:buffer.search(l:next_up_pattern, 'bW', a:search_start)
+  let l:variable = dapper#view#VariablesPrinter#VariableFromString(
+      \ a:buffer.GetLines(l:next_up))
+  return [l:variable.name] + a:working_lookup_path
 endfunction
 
 ""
