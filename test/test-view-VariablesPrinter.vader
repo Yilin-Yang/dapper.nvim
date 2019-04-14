@@ -154,3 +154,27 @@ Execute (VariablesPrinter: GetRange, Variable That Doesn't Exist):
   AssertThrows call g:vp.GetRange(['Middle', 'quoz', 'bar_'])
   AssertNotEqual -1, match(g:vader_exception, 'ERROR(NotFound)'),
       \ 'Threw wrong exception: '.g:vader_exception
+
+Execute (VariablesPrinter: VarFromCursor, Scope @ Top of Buffer):
+  call g:buffer.SetBuffer(bufnr('%'))
+  normal! gg
+  let g:path = g:vp.VarFromCursor(getcurpos(), 1)
+  AssertEqual ['Local'], g:path
+
+Execute (VariablesPrinter: VarFromCursor, Collapsed Scope in Middle of Buffer):
+  call g:buffer.SetBuffer(bufnr('%'))
+  call search('> Middle')
+  let g:path = g:vp.VarFromCursor(getcurpos(), 1)
+  AssertEqual ['Middle'], g:path
+
+Execute (VariablesPrinter: VarFromCursor, Nested Variable @ Buffer Bottom):
+  call g:buffer.SetBuffer(bufnr('%'))
+  normal! G
+  let g:path = g:vp.VarFromCursor(getcurpos(), 1)
+  AssertEqual ['Global', 'quoz', 'bar_'], g:path
+
+Execute (VariablesPrinter: VarFromCursor, "Top-Level" Variable):
+  call g:buffer.SetBuffer(bufnr('%'))
+  normal! 2G
+  let g:path = g:vp.VarFromCursor(getcurpos(), 1)
+  AssertEqual ['Local', 'foo'], g:path

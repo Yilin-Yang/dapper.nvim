@@ -308,20 +308,24 @@ endfunction
 " VarFromCursor, and {cur_indent_level} is the indent level of that variable.
 function! s:BacktrackLookupPath(buffer, working_lookup_path, search_start,
                               \ cur_indent_level) abort
-  let l:indent = typevim#object#GetIndentBlock(a:cur_indent_level - 1)
-
-  if l:indent ==# ''  " next up is the scope
+  if a:cur_indent_level <=# 1
+    " we've gotten the 'last' variable, next up is the scope
     let l:scope_line = a:buffer.search(s:SCOPE_PATTERN, 'bW', a:search_start)
     let l:scope = dapper#view#VariablesPrinter#ScopeFromString(
         \ a:buffer.GetLines(l:scope_line)[0])
     return [l:scope.name] + a:working_lookup_path
   endif
 
+  let l:indent = typevim#object#GetIndentBlock(a:cur_indent_level - 1)
+
   let l:next_up_pattern = s:VariablePattern(l:indent)
   let l:next_up = a:buffer.search(l:next_up_pattern, 'bW', a:search_start)
   let l:variable = dapper#view#VariablesPrinter#VariableFromString(
       \ a:buffer.GetLines(l:next_up)[0])
-  return [l:variable.name] + a:working_lookup_path
+  let l:updated_lookup_path = [l:variable.name] + a:working_lookup_path
+
+  return s:BacktrackLookupPath(a:buffer, l:updated_lookup_path, l:next_up,
+                             \ a:cur_indent_level - 1)
 endfunction
 
 ""
