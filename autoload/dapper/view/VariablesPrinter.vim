@@ -204,11 +204,12 @@ function! dapper#view#VariablesPrinter#GetRange(lookup_path_of_var) dict abort
           \ typevim#PrintShallow(a:lookup_path_of_var))
     endif
   endfor
+  let l:lookup_path_of_var = copy(a:lookup_path_of_var)
   let l:buffer = l:self._buffer
 
   " match scope
-  let l:scope = a:lookup_path_of_var[0]
-  unlet a:lookup_path_of_var[0]
+  let l:scope = l:lookup_path_of_var[0]
+  unlet l:lookup_path_of_var[0]
   let l:scope_pattern = s:ScopePattern(l:scope)
   let l:scope_start = l:buffer.search(l:scope_pattern, 'wc')
   if !l:scope_start
@@ -221,13 +222,13 @@ function! dapper#view#VariablesPrinter#GetRange(lookup_path_of_var) dict abort
     let l:scope_end -= 1
   endif
 
-  if empty(a:lookup_path_of_var)  " user only wanted a scope
+  if empty(l:lookup_path_of_var)  " user only wanted a scope
     return [l:scope_start, l:scope_end]
   endif
 
   " from there, match variable, etc.
   return s:GetVariableRange(
-      \ l:self._buffer, a:lookup_path_of_var, l:scope_start, l:scope_end)
+      \ l:self._buffer, l:lookup_path_of_var, l:scope_start, l:scope_end)
 endfunction
 
 function! s:GetVariableRange(buffer, lookup_path_of_var, search_start,
@@ -381,11 +382,11 @@ function! dapper#view#VariablesPrinter#CollapseEntry(lookup_path) dict abort
   let [l:start, l:end] = l:self.GetRange(a:lookup_path)
   let l:start_line = l:self._buffer.GetLines(l:start)[0]
 
-  if len(a:lookup_path ==# 1)  " is Scope
+  if len(a:lookup_path) ==# 1  " is Scope
     let l:scope = dapper#view#VariablesPrinter#ScopeFromString(l:start_line)
     if !l:scope.expanded | return 0 | endif
     let l:collapsed_str =
-        \ dapper#view#VariablesPrinter#StringFromScope(l:scope, 0)
+        \ dapper#view#VariablesPrinter#StringFromScope(l:scope, 1)
   else  " is Variable
     let l:var = dapper#view#VariablesPrinter#VariableFromString(l:start_line)
     if !l:var.expanded || l:var.unstructured | return 0 | endif

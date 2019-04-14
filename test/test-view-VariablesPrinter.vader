@@ -178,3 +178,17 @@ Execute (VariablesPrinter: VarFromCursor, "Top-Level" Variable):
   normal! 2G
   let g:path = g:vp.VarFromCursor(getcurpos(), 1)
   AssertEqual ['Local', 'foo'], g:path
+
+Execute (VariablesPrinter: CollapseEntry, Local):
+  call g:buffer.SetBuffer(bufnr('%'))
+  let g:success = g:vp.CollapseEntry(['Local'])
+  AssertEqual 1, g:success
+Expect:
+  > Local : 5 named, 8 indexed
+  > Middle : 8 named, 8 indexed
+  v Global : 5 named, 8 indexed
+    - foo, int: 234
+    - bar, float: 6.28
+    v quoz, Foo, {class}:
+      - foo_, int, {property}: 567
+      - bar_, string, {property}: "goodbye, world"
