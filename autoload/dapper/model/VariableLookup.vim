@@ -12,6 +12,21 @@ let s:typename = 'VariableLookup'
 
 ""
 " @public
+" @function dapper#model#VariableLookup#Interface()
+" @dict VariableLookup
+" Returns the interface that VariableLookup implements.
+function! dapper#model#VariableLookup#Interface() abort
+  if !exists('s:interface')
+    let s:interface = {
+        \ 'VariableFromPath': typevim#Func(),
+        \ }
+    call typevim#make#Interface(s:typename, s:interface)
+  endif
+  return s:interface
+endfunction
+
+""
+" @public
 " @dict VariableLookup
 " @function dapper#model#VariableLookup#New({stack_frame}, {message_passer})
 " Construct a VariableLookup object, used for accessing the Model
