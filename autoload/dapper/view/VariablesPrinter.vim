@@ -25,12 +25,13 @@ let s:typename = 'VariablesPrinter'
 " {vars_lookup} is a @dict(VariableLookup) object.
 "
 " @throws BadValue if {message_passer}, {buffer}, or {var_lookup} are not dicts.
-" @throws WrongType if {message_passer} does not implement a @dict(MiddleTalker) interface, {buffer} is not a |TypeVim.Buffer|, or {var_lookup} is not a @dict(VariableLookup).
+" @throws WrongType if {message_passer} does not implement a @dict(MiddleTalker) interface, {buffer} is not a |TypeVim.Buffer|, or {var_lookup} does not implement a @dict(VariableLookup) interface.
 function! dapper#view#VariablesPrinter#New(message_passer, buffer, var_lookup) abort
   call typevim#ensure#Implements(
       \ a:message_passer, dapper#MiddleTalker#Interface())
   call typevim#ensure#IsType(a:buffer, 'Buffer')
-  call typevim#ensure#IsType(a:var_lookup, 'VariableLookup')
+  call typevim#ensure#Implements(
+      \ a:var_lookup, dapper#model#VariableLookup#Interface())
 
   let l:new = {
       \ '_message_passer': a:message_passer,
@@ -120,16 +121,71 @@ lockvar s:SCOPE_PATTERN
 " Returns a two-element list: the first and last line containing the requested
 " variable, inclusive.
 "
-" @throws BadValue if {lookup_path_of_var} contains values that aren't strings.
+" @throws BadValue if {lookup_path_of_var} contains values that aren't strings, or is empty.
 " @throws NotFound if no matching variable could be found. This may also occur if the requested variable is hidden in a collapsed block.
 " @throws WrongType if {lookup_path_of_var} is not a list.
 function! dapper#view#VariablesPrinter#GetRange(lookup_path_of_var) dict abort
   call s:CheckType(l:self)
   call maktaba#ensure#IsList(a:lookup_path_of_var)
+  if empty(a:lookup_path_of_var)
+    throw maktaba#error#BadValue('Gave empty lookup path in call to GetRange!')
+  endif
+  for l:Val in a:lookup_path_of_var
+    if !maktaba#value#IsString(l:Val)
+      throw maktaba#error#BadValue(
+          \ 'Gave non-string component %s in lookup path: %s',
+          \ typevim#PrintShallow(l:Val),
+          \ typevim#PrintShallow(a:lookup_path_of_var))
+    endif
+  endfor
+  let l:buffer = l:self._buffer
 
   " match scope
-  " from there, match variable, etc.
+  let l:scope = a:lookup_path_of_var[0]
+  unlet a:lookup_path_of_var[0]
+  let l:scope_pattern = s:ScopePattern(l:scope)
+  let l:scope_start = l:buffer.search(l:scope_pattern, 'wc')
+  if !l:scope_start
+    throw maktaba#error#NotFound('Could not find scope: '.l:scope)
+  endif
+  let l:scope_end = l:buffer.search(s:SCOPE_PATTERN, 'Wc', l:scope_start + 1)
+  if !l:scope_end  " hit end of buffer during search
+    let l:scope_end = l:buffer.NumLines()
+  else
+    let l:scope_end -= 1
+  endif
 
+  if empty(a:lookup_path_of_var)  " user only wanted a scope
+    return [l:scope_start, l:scope_end]
+  endif
+
+  " from there, match variable, etc.
+  return s:GetVariableRange(l:self._buffer, a:lookup_path_of_var)
+endfunction
+
+function! s:GetVariableRange(buffer, lookup_path_of_var, search_start,
+                           \ search_end, ...) abort
+  let l:cur_indent_level = get(a:000, 0, 1)
+  let l:indent = typevim#value#GetIndentBlock(l:cur_indent_level)
+
+  let l:var = a:lookup_path_of_var[0]
+  unlet a:lookup_path_of_var[0]
+
+  let l:var_pattern = s:VariablePattern(l:indent, l:var)
+  let l:var_start = a:buffer.search(
+      \ l:var_pattern, 'Wc', a:search_start, a:search_end)
+  if !l:var_start
+    throw maktaba#error#NotFound('Could not find variable: ' + l:var)
+  endif
+  let l:var_end = a:buffer.search(
+      \ s:VARIABLE_PATTERN, 'Wc', l:var_start + 1, a:search_end)
+
+  if empty(a:lookup_path_of_var)
+    return [l:var_start, l:var_end]
+  endif
+
+  return s:GetVariableRange(a:buffer, a:lookup_path_of_var, l:var_start,
+                          \ l:var_end, l:cur_indent_level + 1)
 endfunction
 
 ""

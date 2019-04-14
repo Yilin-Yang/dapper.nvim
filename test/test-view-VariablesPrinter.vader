@@ -93,3 +93,37 @@ Execute (VariablesPrinter: Parse Scope w/ Info):
       \ 'name': 'Local',
       \ 'info': '5 named, 8 indexed'
       \ }, g:parsed
+
+Given (Buffer Contents):
+  v Local : 5 named, 8 indexed
+    - foo, int: 123
+    - bar, float: 3.14
+    v quoz, Foo, {class}:
+      - foo_, int, {property}: 456
+      - bar_, string, {property}: "hello, world"
+  > Middle : 8 named, 8 indexed
+  v Global : 5 named, 8 indexed
+    - foo, int: 234
+    - bar, float: 6.28
+    v quoz, Foo, {class}:
+      - foo_, int, {property}: 567
+      - bar_, string, {property}: "goodbye, world"
+
+Execute (VariablesPrinter: Set Up, Create Buffer, Printer Object):
+  let g:var_lookup = {
+      \ 'VariableFromPath': { -> 0 }
+      \ }
+  let g:buffer = typevim#Buffer#New({'bufnr': bufnr('%')})
+  let g:vp = dapper#view#VariablesPrinter#New(
+      \ g:dapper_middletalker, g:buffer, g:var_lookup)
+
+Execute (VariablesPrinter: GetRange, Scope):
+  call g:buffer.SetBuffer(bufnr('%'))
+  let g:range = g:vp.GetRange(['Local'])
+  AssertEqual [1, 6], g:range
+
+  let g:range = g:vp.GetRange(['Middle'])
+  AssertEqual [7, 7], g:range
+
+  let g:range = g:vp.GetRange(['Global'])
+  AssertEqual [8, 13], g:range
