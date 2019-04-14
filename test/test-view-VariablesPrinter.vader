@@ -127,3 +127,18 @@ Execute (VariablesPrinter: GetRange, Scope):
 
   let g:range = g:vp.GetRange(['Global'])
   AssertEqual [8, 13], g:range
+
+Execute (VariablesPrinter: GetRange, Unstructured Variable):
+  call g:buffer.SetBuffer(bufnr('%'))
+  let g:range = g:vp.GetRange(['Local', 'foo'])
+  AssertEqual [2, 2], g:range
+
+Execute (VariablesPrinter: GetRange, Nested Unstructured Variable):
+  call g:buffer.SetBuffer(bufnr('%'))
+  let g:range = g:vp.GetRange(['Global', 'foo'])
+  AssertEqual [9, 9], g:range
+
+Execute (VariablesPrinter: GetRange, Nested Structured Variable):
+  call g:buffer.SetBuffer(bufnr('%'))
+  let g:range = g:vp.GetRange(['Global', 'quoz', 'bar_'])
+  AssertEqual [13, 13], g:range

@@ -148,7 +148,7 @@ function! dapper#view#VariablesPrinter#GetRange(lookup_path_of_var) dict abort
   if !l:scope_start
     throw maktaba#error#NotFound('Could not find scope: '.l:scope)
   endif
-  let l:scope_end = l:buffer.search(s:SCOPE_PATTERN, 'Wc', l:scope_start + 1)
+  let l:scope_end = l:buffer.search(s:SCOPE_PATTERN, 'W', l:scope_start)
   if !l:scope_end  " hit end of buffer during search
     let l:scope_end = l:buffer.NumLines()
   else
@@ -160,13 +160,14 @@ function! dapper#view#VariablesPrinter#GetRange(lookup_path_of_var) dict abort
   endif
 
   " from there, match variable, etc.
-  return s:GetVariableRange(l:self._buffer, a:lookup_path_of_var)
+  return s:GetVariableRange(
+      \ l:self._buffer, a:lookup_path_of_var, l:scope_start, l:scope_end)
 endfunction
 
 function! s:GetVariableRange(buffer, lookup_path_of_var, search_start,
                            \ search_end, ...) abort
   let l:cur_indent_level = get(a:000, 0, 1)
-  let l:indent = typevim#value#GetIndentBlock(l:cur_indent_level)
+  let l:indent = typevim#object#GetIndentBlock(l:cur_indent_level)
 
   let l:var = a:lookup_path_of_var[0]
   unlet a:lookup_path_of_var[0]
@@ -175,10 +176,15 @@ function! s:GetVariableRange(buffer, lookup_path_of_var, search_start,
   let l:var_start = a:buffer.search(
       \ l:var_pattern, 'Wc', a:search_start, a:search_end)
   if !l:var_start
-    throw maktaba#error#NotFound('Could not find variable: ' + l:var)
+    throw maktaba#error#NotFound('Could not find variable: ' . l:var)
   endif
   let l:var_end = a:buffer.search(
-      \ s:VARIABLE_PATTERN, 'Wc', l:var_start + 1, a:search_end)
+      \ s:VariablePattern(l:indent), 'W', l:var_start, a:search_end)
+  if !l:var_end
+    let l:var_end = a:buffer.NumLines()
+  else
+    let l:var_end -= 1
+  endif
 
   if empty(a:lookup_path_of_var)
     return [l:var_start, l:var_end]
