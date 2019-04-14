@@ -69,8 +69,20 @@ function! dapper#view#VariablesPrinter#VariableFromString(string) abort
       \ 'value': l:matches[6],
       \ }
 endfunction
-let s:VARIABLE_PATTERN =
-    \ '^\([ ]\{-}\)\([>v-]\) \(.\{-}\), \(.\{-}\)\%(, \(.\{-}\)\)\{0,1}:\%( \(.*\)\)\?$'
+
+""
+" Return a regex pattern that matches a variable with the given [indentation],
+" [name], and [type]. All of these default to matching any text, if not
+" provided.
+function! s:VariablePattern(...) abort
+  let l:indentation = maktaba#ensure#IsString(get(a:000, 0, '[ ]\{-}'))
+  let l:name = maktaba#ensure#IsString(get(a:000, 1, '.\{-}'))
+  let l:type = maktaba#ensure#IsString(get(a:000, 2, '.\{-}'))
+  return '^\('.l:indentation.'\)\([>v-]\) \('.l:name.'\), \('.l:type.
+      \ '\)\%(, \(.\{-}\)\)\{0,1}:\%( \(.*\)\)\?$'
+endfunction
+
+let s:VARIABLE_PATTERN = s:VariablePattern()
 lockvar s:VARIABLE_PATTERN
 
 ""
@@ -88,8 +100,16 @@ function! dapper#view#VariablesPrinter#ScopeFromString(string) abort
       \ 'info': l:matches[3],
       \ }
 endfunction
-let s:SCOPE_PATTERN =
-    \ '^\([>v]\) \(.*\) :\%( \(.*\)\)\?$'
+
+""
+" Return a regex pattern that matches a scope with [name]. If [name] is not
+" provided, match a scope with any name.
+function! s:ScopePattern(...) abort
+  let l:name = maktaba#ensure#IsString(get(a:000, 0, '.*'))
+  return '^\([>v]\) \('.l:name.'\) :\%( \(.*\)\)\?$'
+endfunction
+
+let s:SCOPE_PATTERN = s:ScopePattern()
 lockvar s:SCOPE_PATTERN
 
 ""
