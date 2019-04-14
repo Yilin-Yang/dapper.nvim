@@ -60,15 +60,17 @@ function! dapper#view#VariablesPrinter#VariableFromString(string) abort
   let l:matches = matchlist(a:string, s:VARIABLE_PATTERN)
   if empty(l:matches) | return {} | endif
   return {
-      \ 'expanded': l:matches[1] ==# 'v',
-      \ 'name': l:matches[2],
-      \ 'type': l:matches[3],
-      \ 'presentation_hint': l:matches[4],
-      \ 'value': l:matches[5],
+      \ 'indentation': l:matches[1],
+      \ 'expanded': l:matches[2] ==# 'v',
+      \ 'unstructured': l:matches[2] ==# '-',
+      \ 'name': l:matches[3],
+      \ 'type': l:matches[4],
+      \ 'presentation_hint': l:matches[5],
+      \ 'value': l:matches[6],
       \ }
 endfunction
 let s:VARIABLE_PATTERN =
-    \ '^[ ]\{-}\([>v]\) \(.\{-}\), \(.\{-}\)\%(, \(.\{-}\)\)\{0,1}: \(.*\)$'
+    \ '^\([ ]\{-}\)\([>v-]\) \(.\{-}\), \(.\{-}\)\%(, \(.\{-}\)\)\{0,1}:\%( \(.*\)\)\?$'
 lockvar s:VARIABLE_PATTERN
 
 ""
@@ -87,7 +89,7 @@ function! dapper#view#VariablesPrinter#ScopeFromString(string) abort
       \ }
 endfunction
 let s:SCOPE_PATTERN =
-    \ '^\([>v]\) \(.*\) : \(.*\)$'
+    \ '^\([>v]\) \(.*\) :\%( \(.*\)\)\?$'
 lockvar s:SCOPE_PATTERN
 
 ""

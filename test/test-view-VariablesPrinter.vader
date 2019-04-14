@@ -1,0 +1,95 @@
+Execute (VariablesPrinter: Parse Structured Variable):
+  let g:parsed = dapper#view#VariablesPrinter#VariableFromString(
+      \ '  v quoz, Foo, {class}:')
+  AssertEqual {
+      \ 'indentation': '  ',
+      \ 'expanded': 1,
+      \ 'unstructured': 0,
+      \ 'name': 'quoz',
+      \ 'type': 'Foo',
+      \ 'presentation_hint': '{class}',
+      \ 'value': '',
+      \ }, g:parsed
+
+Execute (VariablesPrinter: Parse Unstructured Variable):
+  let g:parsed = dapper#view#VariablesPrinter#VariableFromString(
+      \ '  - foo, int: 123')
+  AssertEqual {
+      \ 'indentation': '  ',
+      \ 'expanded': 0,
+      \ 'unstructured': 1,
+      \ 'name': 'foo',
+      \ 'type': 'int',
+      \ 'presentation_hint': '',
+      \ 'value': '123',
+      \ }, g:parsed
+
+Execute (VariablesPrinter: Parse Hinted Unstructured Variable):
+  let g:parsed = dapper#view#VariablesPrinter#VariableFromString(
+      \ '    - foo_, int, {property}: 456' )
+  AssertEqual {
+      \ 'indentation': '    ',
+      \ 'expanded': 0,
+      \ 'unstructured': 1,
+      \ 'name': 'foo_',
+      \ 'type': 'int',
+      \ 'presentation_hint': '{property}',
+      \ 'value': '456',
+      \ }, g:parsed
+
+Execute (VariablesPrinter: Parse Hinted Unstructured String Variable):
+  let g:parsed = dapper#view#VariablesPrinter#VariableFromString(
+    \ '    - bar_, string, {property}: "hello, world"')
+  AssertEqual {
+      \ 'indentation': '    ',
+      \ 'expanded': 0,
+      \ 'unstructured': 1,
+      \ 'name': 'bar_',
+      \ 'type': 'string',
+      \ 'presentation_hint': '{property}',
+      \ 'value': '"hello, world"',
+      \ }, g:parsed
+
+Execute (VariablesPrinter: Parse String Variable w/ Misinterpretable Contents):
+  let g:parsed = dapper#view#VariablesPrinter#VariableFromString(
+    \ '    - bar_, string: "{garble},:"')
+  AssertEqual {
+      \ 'indentation': '    ',
+      \ 'expanded': 0,
+      \ 'unstructured': 1,
+      \ 'name': 'bar_',
+      \ 'type': 'string',
+      \ 'presentation_hint': '',
+      \ 'value': '"{garble},:"',
+      \ }, g:parsed
+
+Execute (VariablesPrinter: Parse String Variable Holding The Line It's In):
+  let g:parsed = dapper#view#VariablesPrinter#VariableFromString(
+    \ '    - bar_, string: "    - bar_, string: "{garble},:""')
+  AssertEqual {
+      \ 'indentation': '    ',
+      \ 'expanded': 0,
+      \ 'unstructured': 1,
+      \ 'name': 'bar_',
+      \ 'type': 'string',
+      \ 'presentation_hint': '',
+      \ 'value': '"    - bar_, string: "{garble},:""',
+      \ }, g:parsed
+
+Execute (VariablesPrinter: Parse Bare Scope):
+  let g:parsed = dapper#view#VariablesPrinter#ScopeFromString(
+    \ '> Local :')
+  AssertEqual {
+      \ 'expanded': 0,
+      \ 'name': 'Local',
+      \ 'info': ''
+      \ }, g:parsed
+
+Execute (VariablesPrinter: Parse Scope w/ Info):
+  let g:parsed = dapper#view#VariablesPrinter#ScopeFromString(
+    \ '> Local : 5 named, 8 indexed')
+  AssertEqual {
+      \ 'expanded': 0,
+      \ 'name': 'Local',
+      \ 'info': '5 named, 8 indexed'
+      \ }, g:parsed
