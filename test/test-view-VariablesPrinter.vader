@@ -128,6 +128,12 @@ Execute (VariablesPrinter: GetRange, Scope):
   let g:range = g:vp.GetRange(['Global'])
   AssertEqual [8, 13], g:range
 
+Execute (VariablesPrinter: GetRange, Scope That Doesn't Exist):
+  call g:buffer.SetBuffer(bufnr('%'))
+  AssertThrows call g:vp.GetRange(['ScopeyMcScopeface'])
+  AssertNotEqual -1, match(g:vader_exception, 'ERROR(NotFound)'),
+      \ 'Threw wrong exception: '.g:vader_exception
+
 Execute (VariablesPrinter: GetRange, Unstructured Variable):
   call g:buffer.SetBuffer(bufnr('%'))
   let g:range = g:vp.GetRange(['Local', 'foo'])
@@ -142,3 +148,9 @@ Execute (VariablesPrinter: GetRange, Nested Structured Variable):
   call g:buffer.SetBuffer(bufnr('%'))
   let g:range = g:vp.GetRange(['Global', 'quoz', 'bar_'])
   AssertEqual [13, 13], g:range
+
+Execute (VariablesPrinter: GetRange, Variable That Doesn't Exist):
+  call g:buffer.SetBuffer(bufnr('%'))
+  AssertThrows call g:vp.GetRange(['Middle', 'quoz', 'bar_'])
+  AssertNotEqual -1, match(g:vader_exception, 'ERROR(NotFound)'),
+      \ 'Threw wrong exception: '.g:vader_exception
