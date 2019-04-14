@@ -113,7 +113,7 @@ let s:variable_interface = {
     \ 'presentation_hint': typevim#String(),
     \ 'value': typevim#String(),
     \ }
-call typevim#make#Interface(s:variable_interface)
+call typevim#make#Interface('ParsedVariable', s:variable_interface)
 
 
 ""
@@ -166,7 +166,7 @@ let s:scope_interface = {
     \ 'name': typevim#String(),
     \ 'info': typevim#String(),
     \ }
-call typevim#make#Interface(s:scope_interface)
+call typevim#make#Interface('ParsedScope', s:scope_interface)
 
 ""
 " Return a regex pattern that matches a scope with [name]. If [name] is not
