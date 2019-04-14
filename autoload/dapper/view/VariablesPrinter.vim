@@ -100,12 +100,15 @@ function! dapper#view#VariablesPrinter#StringFromVariable(variable, prefix) abor
   if !empty(a:variable.presentation_hint)
     let l:str .= ', '.a:variable.presentation_hint
   endif
-  let l:str .= ': '.a:variable.value
+  let l:str .= ':'
+  if !empty(a:variable.value)
+    let l:str .= ' '.a:variable.value
+  endif
   return l:str
 endfunction
 
 let s:variable_interface = {
-    \ 'indentation': typevim#Bool(),
+    \ 'indentation': typevim#String(),
     \ 'expanded': typevim#Bool(),
     \ 'unstructured': typevim#Bool(),
     \ 'name': typevim#String(),
@@ -245,9 +248,13 @@ function! s:GetVariableRange(buffer, lookup_path_of_var, search_start,
   if !l:var_start
     throw maktaba#error#NotFound('Could not find variable: ' . l:var)
   endif
+  let l:scope_end = a:buffer.search(s:SCOPE_PATTERN, 'W', l:var_start)
   let l:var_end = a:buffer.search(
       \ s:VariablePattern(l:indent), 'W', l:var_start, a:search_end)
-  if !l:var_end
+  if (!l:var_end && l:scope_end) || (l:scope_end && l:scope_end <# l:var_end)
+    " 'range-terminating' entry is a scope, not a variable
+    let l:var_end = l:scope_end - 1
+  elseif !l:var_end
     let l:var_end = a:buffer.NumLines()
   else
     let l:var_end -= 1
