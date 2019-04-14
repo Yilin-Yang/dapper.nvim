@@ -338,9 +338,27 @@ endfunction
 " @throws BadValue if {lookup_path_of_var} contains values that aren't strings.
 " @throws NotFound if {lookup_path_of_var} corresponds to no known scope or variable.
 " @throws WrongType if the given {lookup_path_of_var} is not a list.
-function! dapper#view#VariablesPrinter#ExpandEntry() dict abort
+function! dapper#view#VariablesPrinter#ExpandEntry(lookup_path) dict abort
   call s:CheckType(l:self)
+  let [l:start, l:end] = l:self.GetRange(a:lookup_path)
+  let l:start_line = l:self._buffer.GetLines(l:start)
+
+  if len(a:lookup_path ==# 1)  " is Scope
+    let l:scope = dapper#view#VariablesPrinter#ScopeFromString(l:start_line)
+    if l:scope.expanded | return 0 | endif
+    let l:expanded_str =
+        \ dapper#view#VariablesPrinter#StringFromScope(l:scope, 1)
+    " TODO and expand the children
+  else  " is Variable
+    let l:var = dapper#view#VariablesPrinter#VariableFromString(l:start_line)
+    if l:var.expanded || l:var.unstructured | return 0 | endif
+    let l:expanded_str =
+        \ dapper#view#VariablesPrinter#StringFromVariable(l:var, 'v')
+    " TODO and expland the children
+  endif
   " TODO
+  call l:self._buffer.ReplaceLines(l:start, l:end, [l:expanded_str])
+  return 1
 endfunction
 
 ""
