@@ -51,6 +51,46 @@ function! s:CheckType(Obj) abort
 endfunction
 
 ""
+" Given a line of text from a VariablesPrinter-managed buffer that contains a
+" variable, parse that text into a dict and return it.
+"
+" If no match was made, return an empty dictionary.
+function! dapper#view#VariablesPrinter#VariableFromString(string) abort
+  call maktaba#ensure#IsString(a:string)
+  let l:matches = matchlist(a:string, s:VARIABLE_PATTERN)
+  if empty(l:matches) | return {} | endif
+  return {
+      \ 'expanded': l:matches[1] ==# 'v',
+      \ 'name': l:matches[2],
+      \ 'type': l:matches[3],
+      \ 'presentation_hint': l:matches[4],
+      \ 'value': l:matches[5],
+      \ }
+endfunction
+let s:VARIABLE_PATTERN =
+    \ '^[ ]\{-}\([>v]\) \(.\{-}\), \(.\{-}\)\%(, \(.\{-}\)\)\{0,1}: \(.*\)$'
+lockvar s:VARIABLE_PATTERN
+
+""
+" Given a line of text from a VariablesPrinter-managed buffer that contains a
+" scope, parse that text into a dict and return it.
+"
+" If no match was made, return an empty dictionary.
+function! dapper#view#VariablesPrinter#ScopeFromString(string) abort
+  call maktaba#ensure#IsString(a:string)
+  let l:matches = matchlist(a:string, s:SCOPE_PATTERN)
+  if empty(l:matches) | return {} | endif
+  return {
+      \ 'expanded': l:matches[1] ==# 'v',
+      \ 'name': l:matches[2],
+      \ 'info': l:matches[3],
+      \ }
+endfunction
+let s:SCOPE_PATTERN =
+    \ '^\([>v]\) \(.*\) : \(.*\)$'
+lockvar s:SCOPE_PATTERN
+
+""
 " @public
 " Get the range of lines in the managed buffer in which the given variable is
 " printed. Takes in a {lookup_path_of_var}.
@@ -66,12 +106,9 @@ function! dapper#view#VariablesPrinter#GetRange(lookup_path_of_var) dict abort
   call maktaba#ensure#IsList(a:lookup_path_of_var)
 
   " match scope
-  " TODO add 'search in buffer' member function to TypeVim.Buffer
-
   " from there, match variable, etc.
 
 endfunction
-let s:scope_pattern = '^[>V] \(.*\) : \(.*\)$'
 
 ""
 " @public
