@@ -42,7 +42,14 @@ function! dapper#view#VariablesPrinter#New(message_passer, buffer, var_lookup) a
       \ 'VarFromCursor': typevim#make#Member('VarFromCursor'),
       \ 'ExpandEntry': typevim#make#Member('ExpandEntry'),
       \ 'CollapseEntry': typevim#make#Member('CollapseEntry'),
+      \ '_PrintCollapsedChildren': typevim#make#Member('_PrintCollapsedChildren'),
+      \ '_PrintExpandedChild': typevim#make#Member('_PrintExpandedChild'),
       \ }
+
+  let l:new._PrintCollapsedChildren =
+      \ typevim#object#Bind(l:new._PrintCollapsedChildren, l:new)
+  let l:new._PrintExpandedChild =
+      \ typevim#object#Bind(l:new._PrintExpandedChild, l:new)
 
   return typevim#make#Class(s:typename, l:new)
 endfunction
@@ -183,7 +190,124 @@ let s:SCOPE_PATTERN = s:ScopePattern()
 lockvar s:SCOPE_PATTERN
 
 ""
+" @dict VariablesPrinter
+" Print the children of the given object as collapsed items underneath the
+" given parent.
+"
+" @throws BadValue if {var_or_scope} is not a dict.
+" @throws WrongType if {child_of} is not a list, {rec_depth} is not a number, or {var_or_scope} is not a @dict(Variable) or @dict(Scope), or {children} is not a dict,
+function! dapper#view#VariablesPrinter#_PrintCollapsedChildren(
+    \ child_of, rec_depth, var_or_scope, children) dict abort
+  let l:rec_depth = maktaba#ensure#IsNumber(get(a:000, 0, 3))
+  if l:rec_depth ==# 0  " stop printing at this point
+    " TODO if l:rec_depth is 1, make no further recursive calls?
+    return
+  endif
+  if !maktaba#value#IsDict(a:var_or_scope)
+    throw maktaba#error#BadValue('Given var_or_scope is not a dict: %s',
+                               \ typevim#PrintShallow(a:var_or_scope))
+  endif
+  let l:is_var = typevim#value#IsType(a:var_or_scope, 'Variable')
+  let l:is_sco = typevim#value#IsType(a:var_or_scope, 'Scope')
+  if !(l:is_var || l:is_sco)
+    throw maktaba#error#WrongType(
+        \ 'Given var_or_scope is not a Variable or Scope: %s',
+        \ typevim#PrintShallow(a:var_or_scope))
+  endif
+  call maktaba#ensure#IsDict(a:children)
+
+  let [l:parent_start, l:parent_end] = l:self.GetRange(a:child_of)
+  if (l:parent_start != l:parent_end)
+    throw maktaba#error#Failure(
+        \ 'Parent %s was already expanded before PrintCollapsedChildren?',
+        \ typevim#PrintShallow(a:child_of))
+  endif
+
+  " sort children in alphabetical order by name
+  let l:name_and_var = sort(items(a:children),
+                          \ function('typevim#object#CompareKeys'))
+
+  let l:print_after = l:parent_end
+  for [l:name, l:var] in l:name_and_var
+    call maktaba#ensure#IsString(l:name)
+    call typevim#ensure#IsType(l:var, 'Variable')
+    let l:has_children = l:var.HasChildren()
+    if l:has_children
+      let l:var_str =
+          \ dapper#view#VariablesPrinter#StringFromVariable(l:var, '>')
+    else
+      let l:var_str =
+          \ dapper#view#VariablesPrinter#StringFromVariable(l:var, '-')
+    endif
+    call l:self._buffer.InsertLines(l:print_after, [l:var_str])
+
+    let l:var_path = [a:child_of] + [l:var.name()]
+    " TODO ensure that Then() activates on an async timer
+    if a:rec_depth ># 1 && l:has_children
+      call l:var.Children().Then(
+          \ function(l:self._PrintCollapsedChildren,
+            \ [l:var_path, a:rec_depth - 1, l:var]))
+    endif
+    let l:print_after += 1
+  endfor
+endfunction
+
+""
+" @dict VariablesPrinter
+" Replace the collapsed entry for the given {var} with its string expansion.
+" If applicable, recursively print the children of {var} as well.
+"
+" @throws BadValue if {var} is not a dict.
+" @throws WrongType if {child_of} is not a list, {rec_depth} is not a number, or {var} is not a @dict(Variable),
+function! dapper#view#VariablesPrinter#_PrintExpandedChild(
+    \ child_of, rec_depth, var) dict abort
+  call maktaba#ensure#IsList(a:child_of)
+  call maktaba#ensure#IsNumber(a:rec_depth)
+  call typevim#ensure#IsType(a:var, 'Variable')
+
+
+endfunction
+
+" TODO script-local wrapper that takes resolved var-or-scope as last param,
+" passes it to PrintVariable
+
+""
 " @public
+" @dict VariablesPrinter
+" Asynchronously (and recursively) print the given {var_or_scope} into the
+" managed buffer.
+"
+" {child_of} is the lookup path of the parent of {var_or_scope}. In practice,
+" if {child_of} is nonempty, {var_or_scope} must be a @dict(Variable).
+"
+" [rec_depth] is the number of "levels deep" to which {var_or_scope} and its
+" children should be printed. If equal to 1, only {var_or_scope} will be
+" printed in a "collapsed" state. If equal to 2, {var_or_scope} will be
+" printed, and its immediate children will be printed in a "collapsed" state,
+" and so on.
+"
+" @default rec_depth=3
+" @throws BadValue if {var_or_scope} is not a dict, or if {child_of} contains non-string values.
+" @throws WrongType if {var_or_scope} is not a @dict(Variable) or a @dict(Scope), {child_of} is not a list, or [rec_depth] is not a number.
+function! dapper#view#VariablesPrinter#PrintVariable(
+    \ var_or_scope, child_of, ...) dict abort
+
+  " FOO BAR
+
+
+  " TODO print in sorted order?
+  if empty(a:child_of)
+    let l:last_line = l:self._buffer.NumLines()
+    let l:parent_start = l:last_line
+    let l:parent_end = l:last_line
+  else
+    let [l:parent_start, l:parent_end] = l:self.GetRange(a:child_of)
+  endif
+endfunction
+
+""
+" @public
+" @dict VariablesPrinter
 " Get the range of lines in the managed buffer in which the given variable is
 " printed. Takes in a {lookup_path_of_var}.
 "
