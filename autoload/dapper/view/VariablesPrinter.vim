@@ -225,7 +225,7 @@ function! dapper#view#VariablesPrinter#_PrintCollapsedChildren(
 
   " sort children in alphabetical order by name
   let l:name_and_var = sort(items(a:children),
-                          \ function('typevim#object#CompareKeys'))
+                          \ function('typevim#value#CompareKeys'))
 
   let l:print_after = l:parent_end
   for [l:name, l:var] in l:name_and_var
