@@ -38,6 +38,7 @@ function! dapper#model#Variable#__New(message_passer, variable, recursion_depth)
       \
       \ '_UpdateFromMsg': typevim#make#Member('_UpdateFromMsg'),
       \ '_HandleFailedReq': typevim#make#Member('_HandleFailedReq'),
+      \ 'HasChildren': typevim#make#Member('HasChildren'),
       \ 'ChildNames': typevim#make#Member('ChildNames'),
       \ 'Children': typevim#make#Member('Children'),
       \ 'Child': typevim#make#Member('Child'),
@@ -222,6 +223,20 @@ function! dapper#model#Variable#_HandleFailedReq(msg) dict abort
       \ )
   let l:self._names_to_children = {}
   return {}
+endfunction
+
+""
+" @public
+" @dict Variable
+" Return true if this is a "structured" Variable with children, and false
+" otherwise.
+function! dapper#model#Variable#HasChildren() dict abort
+  call s:CheckType(l:self)
+  try
+    return l:self.variablesReference() !=# 0
+  catch /ERROR(NotFound)/
+    return 0
+  endtry
 endfunction
 
 ""
