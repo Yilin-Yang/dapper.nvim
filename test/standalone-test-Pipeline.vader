@@ -35,7 +35,7 @@ Expect:
 
 Execute (Pipeline: Get Stack Frame from Callstack):
   let g:thread = g:dapper_model.thread(1)
-  let g:callstack = g:thread.stackTrace().Get()
+  let g:callstack = AwaitPromise(g:thread.stackTrace(), 4000)
   let g:frame_promise = g:callstack.frame(0)
   " echo typevim#object#PrettyPrint(g:frame)
   call AwaitTimeout({ -> g:frame_promise.State() ==# 'fulfilled'}, 4000, 1)
@@ -61,17 +61,17 @@ Then (Check Values in Structured Variable):
   let g:child_promise = g:object_top.Children()
   call AwaitTimeout({ -> g:child_promise.State() ==# 'fulfilled'}, 4000, 1)
 
-  let g:var = g:object_top.Child('object__i').Get()
+  let g:var = AwaitPromise(g:object_top.Child('object__i'), 4000)
   AssertEqual 'object__i', g:var.name()
   AssertEqual 'integer',   g:var.type()
   AssertEqual '123',       g:var.value()
 
-  let g:var = g:object_top.Child('object__f').Get()
+  let g:var = AwaitPromise(g:object_top.Child('object__f'), 4000)
   AssertEqual 'object__f', g:var.name()
   AssertEqual 'float',     g:var.type()
   AssertEqual '3.14',      g:var.value()
 
-  let g:var = g:object_top.Child('object__s').Get()
+  let g:var = AwaitPromise(g:object_top.Child('object__s'), 4000)
   AssertEqual 'object__s',   g:var.name()
   AssertEqual 'string',      g:var.type()
   AssertEqual 'hello world', g:var.value()

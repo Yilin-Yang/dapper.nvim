@@ -38,6 +38,9 @@ Execute (AwaitTimeout: Declare Helper Functions):
     if l:timed_out && l:should_throw
       throw '(AwaitTimeout) Timed out while waiting for event.'
     endif
+    " add an additional sleep statement, to give Promises the chance
+    " to call back
+    execute 'sleep '.l:resolution.'m'
   endfunction
 
   ""
