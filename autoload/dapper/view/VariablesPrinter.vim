@@ -59,6 +59,76 @@ function! s:CheckType(Obj) abort
 endfunction
 
 ""
+" Convert the given @dict(Variable) {variable} into the "compact struct" used
+" by functions like @function(dapper#view#VariablesPrinter#StringFromVariable).
+"
+" {child_of} is the lookup path to the parent of {variable}.
+"
+" The returned struct defaults to being collapsed, if {variable} is
+" structured. If [expanded] is true, and {variable} is structured, then it
+" will be expanded.
+"
+" @default expanded=0
+function! s:DictVariableToStruct(child_of, variable, ...) abort
+  call maktaba#ensure#IsList(a:child_of)
+  call typevim#ensure#IsType(a:variable, 'Variable')
+  let l:expanded = typevim#ensure#IsBool(get(a:000, 0, 0))
+  let l:to_return = {
+      \ 'indentation': typevim#object#GetIndentBlock(len(a:child_of)),
+      \ 'expanded': 0,
+      \ 'unstructured': a:variable.HasChildren(),
+      \ 'name': a:variable.name(),
+      \ 'type': '',
+      \ 'presentation_hint': '',
+      \ 'value': a:variable.value(),
+      \ }
+  if !l:to_return.unstructured && l:expanded
+    let l:to_return.expanded = 1
+  endif
+  try | let l:to_return.type = a:variable.type()
+  catch /ERROR(NotFound)/
+  endtry
+
+  try | let l:to_return.presentation_hint = a:variable.presentationHint()
+  catch /ERROR(NotFound)/
+  endtry
+
+  return l:to_return
+endfunction
+
+""
+" Convert the given @dict(Scope) into the "compact struct" used by functions
+" like @function(dapper#view#VariablesPrinter#StringFromScope).
+"
+" The returned struct defaults to being collapsed, if {variable} is
+" structured. If [expanded] is true, and {variable} is structured, then it
+" will be expanded.
+"
+" @default expanded=0
+function! s:DictScopeToStruct(scope, ...) abort
+  call typevim#ensure#IsType(a:scope, 'Scope')
+  " TODO figure out a more modular way of printing scope info?
+  let l:to_return = {
+      \ 'expanded': typevim#ensure#IsBool(get(a:000, 0, 0)) ==# 1,
+      \ 'name': a:scope.name(),
+      \ 'info': '',
+      \ }
+  let l:info = ''
+  try | let l:info = a:scope.namedVariables().' named'
+  catch /ERROR(NotFound)/
+  endtry
+  try
+    let l:to_add =
+        \ (empty(l:info) ? '' : ', ') . a:scope.indexedVariables()
+        \ . ' indexed'
+    let l:info .= l:to_add
+  catch /ERROR(NotFound)/
+  endtry
+  let l:to_return.info = l:info
+  return l:to_return
+endfunction
+
+""
 " Given a line of text from a VariablesPrinter-managed buffer that contains a
 " variable, parse that text into a dict and return it.
 "
@@ -191,17 +261,34 @@ lockvar s:SCOPE_PATTERN
 
 ""
 " @dict VariablesPrinter
-" Print the children of the given object as collapsed items underneath the
-" given parent.
+" Asynchronously (and recursively) print the given {var_or_scope} into the
+" managed buffer underneath the given parent.
 "
-" @throws BadValue if {var_or_scope} is not a dict.
-" @throws WrongType if {child_of} is not a list, {rec_depth} is not a number, or {var_or_scope} is not a @dict(Variable) or @dict(Scope), or {children} is not a dict,
+" Assumes that the parent scope or variable has already been printed in the
+" managed buffer, i.e. a GetRange call to find the parent will not throw an
+" ERROR(NotFound).
+"
+" {child_of} is the lookup path of the parent of {var_or_scope}. In practice,
+" if {child_of} is nonempty, {var_or_scope} must be a @dict(Variable).
+"
+" {rec_depth} is the number of "levels deep" to which {var_or_scope} and its
+" children should be printed. If equal to 1, only {var_or_scope} will be
+" printed in a "collapsed" state. If equal to 2, {var_or_scope} will be
+" printed, and its immediate children will be printed in a "collapsed" state,
+" and so on.
+"
+" {children} is a dict between variable indices/names and corresponding
+" @dict(Variable) objects.
+"
+" @default rec_depth=3
+" @throws BadValue if {var_or_scope} is not a dict, {child_of} contains non-string values, or [rec_depth] is not a positive number.
+" @throws WrongType if {var_or_scope} is not a @dict(Variable) or a @dict(Scope), {child_of} is not a list, or {rec_depth} is not a number, or {children} is not a dict.
 function! dapper#view#VariablesPrinter#_PrintCollapsedChildren(
     \ child_of, rec_depth, var_or_scope, children) dict abort
   let l:rec_depth = maktaba#ensure#IsNumber(get(a:000, 0, 3))
-  if l:rec_depth ==# 0  " stop printing at this point
-    " TODO if l:rec_depth is 1, make no further recursive calls?
-    return
+  if l:rec_depth <# 1
+    throw maktaba#error#BadValue(
+        \ 'rec_depth in PrintVariable must be positive, gave: %d', l:rec_depth)
   endif
   if !maktaba#value#IsDict(a:var_or_scope)
     throw maktaba#error#BadValue('Given var_or_scope is not a dict: %s',
@@ -218,9 +305,28 @@ function! dapper#view#VariablesPrinter#_PrintCollapsedChildren(
 
   let [l:parent_start, l:parent_end] = l:self.GetRange(a:child_of)
   if (l:parent_start != l:parent_end)
-    throw maktaba#error#Failure(
-        \ 'Parent %s was already expanded before PrintCollapsedChildren?',
-        \ typevim#PrintShallow(a:child_of))
+    " the parent was already expanded; clear all of its current children,
+    " since we're going to overwrite them
+    call l:self._buffer.DeleteLines(l:parent_start + 1, l:parent_end)
+  endif
+
+  " if there's a parent, change its prefix from '>' to 'v'
+  if l:is_var  " will only have a parent if this is a variable
+    " try to parse parent as a Variable; if that fails, parse it as a Scope
+    let l:parent_line = l:self._buffer.GetLines(l:parent_start)[0]
+    let l:parent =
+        \ dapper#view#VariablesPrinter#VariableFromString(l:parent_line)
+    if empty(l:parent)
+      let l:parent =
+          \ dapper#view#VariablesPrinter#ScopeFromString(l:parent_line)
+      let l:parent_str =
+          \ dapper#view#VariablesPrinter#StringFromScope(l:parent, 0)
+    else
+      let l:parent_str =
+          \ dapper#view#VariablesPrinter#StringFromVariable(a:child_of, 'v')
+    endif
+    call l:self._buffer.ReplaceLines(
+        \ l:parent_start, l:parent_start, [l:parent_str])
   endif
 
   " sort children in alphabetical order by name
@@ -232,17 +338,20 @@ function! dapper#view#VariablesPrinter#_PrintCollapsedChildren(
     call maktaba#ensure#IsString(l:name)
     call typevim#ensure#IsType(l:var, 'Variable')
     let l:has_children = l:var.HasChildren()
+    let l:var_struct = s:DictVariableToStruct(l:var)
     if l:has_children
       let l:var_str =
-          \ dapper#view#VariablesPrinter#StringFromVariable(l:var, '>')
+          \ dapper#view#VariablesPrinter#StringFromVariable(l:var_struct, '>')
     else
       let l:var_str =
-          \ dapper#view#VariablesPrinter#StringFromVariable(l:var, '-')
+          \ dapper#view#VariablesPrinter#StringFromVariable(l:var_struct, '-')
     endif
+
+    " print the first line of each child variable so that the callback
+    " will be able to find an entry to update
     call l:self._buffer.InsertLines(l:print_after, [l:var_str])
 
     let l:var_path = [a:child_of] + [l:var.name()]
-    " TODO ensure that Then() activates on an async timer
     if a:rec_depth ># 1 && l:has_children
       call l:var.Children().Then(
           \ function(l:self._PrintCollapsedChildren,
@@ -252,58 +361,6 @@ function! dapper#view#VariablesPrinter#_PrintCollapsedChildren(
   endfor
 endfunction
 
-""
-" @dict VariablesPrinter
-" Replace the collapsed entry for the given {var} with its string expansion.
-" If applicable, recursively print the children of {var} as well.
-"
-" @throws BadValue if {var} is not a dict.
-" @throws WrongType if {child_of} is not a list, {rec_depth} is not a number, or {var} is not a @dict(Variable),
-function! dapper#view#VariablesPrinter#_PrintExpandedChild(
-    \ child_of, rec_depth, var) dict abort
-  call maktaba#ensure#IsList(a:child_of)
-  call maktaba#ensure#IsNumber(a:rec_depth)
-  call typevim#ensure#IsType(a:var, 'Variable')
-
-
-endfunction
-
-" TODO script-local wrapper that takes resolved var-or-scope as last param,
-" passes it to PrintVariable
-
-""
-" @public
-" @dict VariablesPrinter
-" Asynchronously (and recursively) print the given {var_or_scope} into the
-" managed buffer.
-"
-" {child_of} is the lookup path of the parent of {var_or_scope}. In practice,
-" if {child_of} is nonempty, {var_or_scope} must be a @dict(Variable).
-"
-" [rec_depth] is the number of "levels deep" to which {var_or_scope} and its
-" children should be printed. If equal to 1, only {var_or_scope} will be
-" printed in a "collapsed" state. If equal to 2, {var_or_scope} will be
-" printed, and its immediate children will be printed in a "collapsed" state,
-" and so on.
-"
-" @default rec_depth=3
-" @throws BadValue if {var_or_scope} is not a dict, or if {child_of} contains non-string values.
-" @throws WrongType if {var_or_scope} is not a @dict(Variable) or a @dict(Scope), {child_of} is not a list, or [rec_depth] is not a number.
-function! dapper#view#VariablesPrinter#PrintVariable(
-    \ var_or_scope, child_of, ...) dict abort
-
-  " FOO BAR
-
-
-  " TODO print in sorted order?
-  if empty(a:child_of)
-    let l:last_line = l:self._buffer.NumLines()
-    let l:parent_start = l:last_line
-    let l:parent_end = l:last_line
-  else
-    let [l:parent_start, l:parent_end] = l:self.GetRange(a:child_of)
-  endif
-endfunction
 
 ""
 " @public
