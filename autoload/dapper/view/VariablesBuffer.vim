@@ -15,16 +15,18 @@ let s:counter = 0
 " Construct a VariablesBuffer from a {message_passer} and, optionally, the
 " @dict(StackFrame) object that the VariablesBuffer should show.
 "
-" @default {stack_frame}={}
+" @default stack_frame={}
 "
-" @throws BadValue if {message_passer} or {stack_frame} are not dicts.
+" @throws BadValue if {message_passer} or [stack_frame] are not dicts.
 " @throws WrongType if {message_passer} does not implement a @dict(MiddleTalker) interface, or if [stack_frame] is nonempty and is not a @dict(StackFrame).
 function! dapper#view#VariablesBuffer#New(message_passer, ...) abort
   call typevim#ensure#Implements(
       \ a:message_passer, dapper#MiddleTalker#Interface())
   let l:stack_frame = get(a:000, 0, {})
+  let l:has_stack_frame = 0
   if !empty(l:stack_frame)
     call typevim#ensure#IsType(l:stack_frame, 'StackFrame')
+    let l:has_stack_frame = 1
   endif
 
   let l:base = dapper#view#DapperBuffer#new(
@@ -34,6 +36,8 @@ function! dapper#view#VariablesBuffer#New(message_passer, ...) abort
   let l:new = {
       \ '_stack_frame': l:stack_frame,
       \ '_names_to_scopes': {},
+      \ '_lookup': v:null,
+      \ '_printer': v:null,
       \ '_ResetBuffer': typevim#make#Member('_ResetBuffer'),
       \ 'stackFrame': typevim#make#Member('stackFrame'),
       \ 'Push': typevim#make#Member('Push'),
@@ -47,6 +51,14 @@ function! dapper#view#VariablesBuffer#New(message_passer, ...) abort
       \ '_ShowVariables': typevim#make#Member('_ShowVariables'),
       \ }
   call typevim#make#Derived(s:typename, l:base, l:new)
+
+  if l:has_stack_frame
+    let l:new._lookup =
+        \ dapper#model#VariableLookup#New(a:message_passer, l:stack_frame)
+    let l:new._printer =
+        \ dapper#view#VariablesPrinter#New(a:message_passer, l:new._lookup)
+  endif
+
   let l:new._PrintFailedResponse =
       \ typevim#object#Bind(l:new._PrintFailedResponse, l:new)
   let l:new._ShowVariables =
@@ -54,32 +66,6 @@ function! dapper#view#VariablesBuffer#New(message_passer, ...) abort
   call l:new._ResetBuffer()
   return l:new
 endfunction
-
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-let s:linemanip = 'LineManipulator'
-
-""
-" Construct a new LineManipulator object, used for manipulating the contents
-" of a VariablesBuffer.
-"
-" {model_lookup} is a ModelLookup object.
-function! s:LineManipNew(model_lookup) abort
-  " call s:CheckModelLookup(a:model_lookup)
-  let l:new = {
-      \ '_model_lookup': a:model_lookup,
-      \ 'PrintVariable': function('s:PrintVariable'),
-      \ 'GetRange': function('s:GetRange'),
-      \ 'GetSelected': function('s:GetSelected'),
-      \ 'ExpandEntry': function('s:ExpandEntry'),
-      \ 'CollapseEntry': function('s:CollapseEntry'),
-      \ }
-  return typevim#make#Class(s:linemanip, l:new)
-endfunction
-
-function! s:CheckLineManip(Obj) abort
-  call typevim#ensure#IsType(a:Obj, s:linemanip)
-endfunction
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 function! s:CheckType(Obj) abort
   call typevim#ensure#IsType(a:Obj, s:typename)
@@ -98,7 +84,7 @@ endfunction
 " @public
 " @dict VariablesBuffer
 " Return the stack frame object whose scopes and variables this buffer shows.
-function! dapper#view#StackTraceBuffer#stackFrame() dict abort
+function! dapper#view#VariablesBuffer#stackFrame() dict abort
   call s:CheckType(l:self)
   return l:self._stack_frame
 endfunction
@@ -115,8 +101,12 @@ endfunction
 " @throws WrongType if {stack_frame} is not a @dict(StackFrame).
 function! dapper#view#VariablesBuffer#Push(stack_frame) dict abort
   call s:CheckType(l:self)
-  call typevim#ensure#IsType(a:stack_frame, 'Thread')
-  let l:self._stack_frame = a:stack_frame
+  let l:self._stack_frame = typevim#ensure#IsType(a:stack_frame, 'StackFrame')
+  let l:self._var_lookup =
+      \ dapper#model#VariableLookup#New(l:self._message_passer, a:stack_frame)
+  let l:self._printer =
+      \ dapper#view#VariablesPrinter#New(l:self._message_passer, )
+  " TODO replace member variables using new stack frame
   " TODO mark existing Scopes as obsolete until they're replaced?
   let l:self._names_to_scopes = {}
   let l:scopes = a:stack_frame.scopes()

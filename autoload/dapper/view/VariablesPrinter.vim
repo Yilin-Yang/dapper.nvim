@@ -17,12 +17,12 @@ let s:typename = 'VariablesPrinter'
 ""
 " @public
 " @dict VariablesPrinter
-" @function dapper#view#VariablesPrinter#New({message_passer}, {var_lookup})
+" @function dapper#view#VariablesPrinter#New({message_passer}, {buffer}, {var_lookup})
 " Construct a VariablesPrinter.
 "
 " {message_passer} is an object satisfying the @dict(MiddleTalker) interface.
 " {buffer} is the |TypeVim.Buffer| object that this object will manipulate.
-" {vars_lookup} is a @dict(VariableLookup) object.
+" {var_lookup} is a @dict(VariableLookup) object.
 "
 " @throws BadValue if {message_passer}, {buffer}, or {var_lookup} are not dicts.
 " @throws WrongType if {message_passer} does not implement a @dict(MiddleTalker) interface, {buffer} is not a |TypeVim.Buffer|, or {var_lookup} does not implement a @dict(VariableLookup) interface.
@@ -278,7 +278,7 @@ lockvar s:SCOPE_PATTERN
 " ERROR(NotFound).
 "
 " {child_of} is the lookup path of {var_or_scope}. In practice, if {child_of}
-" is nonempty, the variables in {chidren} must be @dict(Variable)s.
+" is nonempty, the variables in {children} must be @dict(Variable)s.
 "
 " {rec_depth} is the number of "levels deep" to which {var_or_scope} and its
 " children should be printed. If equal to 1, only {var_or_scope} and {children}
@@ -289,8 +289,7 @@ lockvar s:SCOPE_PATTERN
 " {children} is a dict between variable indices/names and corresponding
 " @dict(Variable) objects.
 "
-" @default rec_depth=3
-" @throws BadValue if {var_or_scope} is not a dict, {child_of} contains non-string values, or [rec_depth] is not a positive number.
+" @throws BadValue if {var_or_scope} is not a dict, {child_of} contains non-string values, or {rec_depth} is not a positive number.
 " @throws WrongType if {var_or_scope} is not a @dict(Variable) or a @dict(Scope), {child_of} is not a list, or {rec_depth} is not a number, or {children} is not a dict.
 function! dapper#view#VariablesPrinter#_PrintCollapsedChildren(
     \ child_of, rec_depth, var_or_scope, children) dict abort

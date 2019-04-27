@@ -69,6 +69,17 @@ extremely verbose. It's recommended to set this no lower than "warn" in
 ordinary use.
 Default: s:GlobalSettingOrDefault('g:dapper_min_log_level', 'error') `
 
+                                         *dapper.nvim:max_drilldown_recursion*
+The greatest recursion depth to which dapper.nvim will inspect a "structured"
+variable holding other structured variables.
+
+This setting exists to prevent infinite recursion, e.g. if a local variable in
+the debuggee process is infinitely self-recursive, dapper.nvim will stop
+"drilling down" into its contents after delving this many levels deep. It is
+still possible to drill deeper by manually expanding the variable contents in
+the |dapper.nvim.VariablesBuffer|.
+Default: s:GlobalSettingOrDefault('g:dapper_max_drilldown_recursion', 10) `
+
                                                 *dapper.nvim:plugin[mappings]*
 Configures whether plugin/mappings.vim should be loaded.
 Default: 0 `
@@ -386,7 +397,7 @@ MiddleTalker.Unsubscribe({name_pattern}, {Callback})
   Throws ERROR(WrongType) if {name_pattern} is not a string, or if {Callback}
   is not a |Funcref|.
 
-MiddleTalker.NotifyReport({kind}, {brief}, [long], [alert], [other])
+MiddleTalker.NotifyReport({kind}, {brief}, [long], [other])
                                                  *MiddleTalker.NotifyReport()*
   Pass a |dapper.nvim.DapperReport| to the attached |dapper.nvim.DebugLogger|,
   while also sending it to the appropriate subscribers.
@@ -490,13 +501,57 @@ dapper#dap#Response#New([success] [command] [msg_or_body])    *Response.New()*
                                                            *dapper.nvim.Scope*
 Stores the variables found in a particular DebugProtocol.Scope.
 
-dapper#model#Scope#New({raw_scope}, {vars_response})             *Scope.New()*
+dapper#model#Scope#New({message_passer}, {raw_scope}, {vars_response})
+                                                                 *Scope.New()*
 
   Construct a new Scope object.
 
-  Throws ERROR(BadValue) if {raw_scope} and {vars_response} aren't both dicts.
-  Throws ERROR(WrongType) if {raw_scope} is not a DebugProtocol.Scope or
-  {vars_response} is not a DebugProtocol.VariablesResponse.
+  Throws ERROR(BadValue) if {message_passer}, {raw_scope}, and {vars_response}
+  aren't all dicts.
+  Throws ERROR(WrongType) if {message_passer} does not implement a
+  |dapper.nvim.MiddleTalker| interface, or if {raw_scope} is not a
+  DebugProtocol.Scope or {vars_response} is not a
+  DebugProtocol.VariablesResponse.
+
+Scope.name()                                                    *Scope.name()*
+  Return the name of this Scope object, or |v:null| if it could not be found.
+
+Scope.namedVariables()                                *Scope.namedVariables()*
+  Return the namedVariables property of this Scope object, or |v:null| if it
+  could not be found..
+
+Scope.indexedVariables()                            *Scope.indexedVariables()*
+  Return the indexedVariables property of this Scope object, or |v:null| if it
+  could not be found.
+
+Scope.expensive()                                          *Scope.expensive()*
+  Return the expensive property of this Scope object, or |v:null| if it could
+  not be found.
+
+Scope.source()                                                *Scope.source()*
+  Return the source property of this Scope object, or |v:null| if it could not
+  be found.
+
+Scope.line()                                                    *Scope.line()*
+  Return the line property of this Scope object, or |v:null| if it could not
+  be found.
+
+Scope.column()                                                *Scope.column()*
+  Return the column property of this Scope object, or |v:null| if it could not
+  be found.
+
+Scope.endLine()                                              *Scope.endLine()*
+  Return the endLine property of this Scope object, or |v:null| if it could
+  not be found.
+
+Scope.endColumn()                                          *Scope.endColumn()*
+  Return the endColumn property of this Scope object, or |v:null| if it could
+  not be found.
+
+Scope.variables()                                          *Scope.variables()*
+  Return a |TypeVim.Promise| that resolves to a dict between this scope's
+  variable names/indices and their corresponding |dapper.nvim.Variable|
+  objects.
 
                                                       *dapper.nvim.StackFrame*
 Stores the scopes for a particular stack frame in a thread's callstack.
@@ -513,22 +568,39 @@ dapper#model#StackFrame#New({message_passer}, {stack_frame},
 
 StackFrame.id()                                              *StackFrame.id()*
   Return a unique identifier for the stack frame.
+  Throws ERROR(NotFound) if no id can be found.
 
 StackFrame.name()                                          *StackFrame.name()*
+  Return the name of the stack frame.
+  Throws ERROR(NotFound) if no name can be found.
 
 StackFrame.source()                                      *StackFrame.source()*
+  Return the DebugProtocol.Source associated with this stack frame.
+  Throws ERROR(NotFound) if no source can be found.
 
 StackFrame.line()                                          *StackFrame.line()*
+  Return the line number associated with this stack frame.
+  Throws ERROR(NotFound) if no line can be found.
 
 StackFrame.column()                                      *StackFrame.column()*
+  Return the column number associated with this stack frame.
+  Throws ERROR(NotFound) if no column can be found.
 
 StackFrame.endLine()                                    *StackFrame.endLine()*
+  Return the final line number associated with this stack frame.
+  Throws ERROR(NotFound) if no endLine can be found.
 
 StackFrame.endColumn()                                *StackFrame.endColumn()*
+  Return the final column number associated with this stack frame.
+  Throws ERROR(NotFound) if no endColumn can be found.
 
 StackFrame.moduleId()                                  *StackFrame.moduleId()*
+  Return the name of the module (e.g. Node.js module, external library, etc.)
+  associated with this stack frame.
+  Throws ERROR(NotFound) if no moduleId can be found.
 
 StackFrame.presentationHint()                  *StackFrame.presentationHint()*
+  Throws ERROR(NotFound) if no presentationHint can be found.
 
 StackFrame.scopes()                                      *StackFrame.scopes()*
   Return a list of the names of all scopes accessible from this StackFrame.
@@ -712,6 +784,267 @@ dapper#config#VSCodeAttributes#New([prelaunch] [postlaunch] [console_opt]
   [console_opt] are "internalConsoleOptions"; and [debug_server] is a
   [debugServer] port number.
 
+                                                        *dapper.nvim.Variable*
+Represent the contents of a variable.
+
+Variable.name()                                              *Variable.name()*
+  Return the name of this variable, or |v:null| if it could not be found.
+
+Variable.value()                                            *Variable.value()*
+  Return the value of this variable, as a single string, or |v:null| if it
+  could not be found.
+
+Variable.type()                                              *Variable.type()*
+  Return the type of this variable, or |v:null| if it could not be found.
+
+Variable.presentationHint()                      *Variable.presentationHint()*
+  Return a hint as to how this variable should be presented in the UI, or
+  |v:null| if it could not be found.
+
+Variable.evaluateName()                              *Variable.evaluateName()*
+  Return an expression representing this Variable that is usable in a
+  DebugProtocol.EvaluateRequest, or |v:null| if it could not be found.
+
+Variable.variablesReference()                  *Variable.variablesReference()*
+  Return the "variablesReference" identifier of this variable, or |v:null| if
+  it could not be found. A nonzero return value indicates that this is a
+  "structured" Variable with child variables, and that the return value is
+  usable in a VariablesRequest.
+
+Variable.namedVariables()                          *Variable.namedVariables()*
+  Return the number of named child variables held by this variable, if it is a
+  "structured" variable, or |v:null| if it could not be found.
+
+Variable.indexedVariables()                      *Variable.indexedVariables()*
+  Return the number of indexed child variables held by this variable, if it is
+  a "structured" variable, or |v:null| if it could not be found.
+
+Variable.HasChildren()                                *Variable.HasChildren()*
+  Return true if this is a "structured" Variable with children, and false
+  otherwise.
+
+Variable.ChildNames()                                  *Variable.ChildNames()*
+  Return a |TypeVim.Promise| that resolves with a list of the names of all
+  named variable children of this variable, if any.
+
+Variable.Children()                                      *Variable.Children()*
+  Return a |TypeVim.Promise| that resolves to a dict between names/indices of
+  variables, and the child variables themselves.
+
+Variable.Child({name_or_idx})                               *Variable.Child()*
+  Return a |TypeVim.Promise| that resolves to the child Variable having the
+  given {name_or_idx}.
+
+  Throws ERROR(NotFound) if no child variable with the given {name_or_idx}
+  could be found.
+  Throws ERROR(WrongType) if {name_or_idx} is not a string.
+
+                                                  *dapper.nvim.VariableLookup*
+Helper class used to asynchronously retrieve a |dapper.nvim.Scope| or a
+particular |dapper.nvim.Variable| from within a |dapper.nvim.StackFrame|; in
+the latter case, the variable might be nested deeply within other structured
+variables.
+
+Meant mainly for use with |dapper.nvim.VariablesBuffer|. Made necessary by the
+VariablesRequest "drill-down" procedure needed to retrieve children of a
+structured variable.
+
+dapper#model#VariableLookup#Interface()           *VariableLookup.Interface()*
+  Returns the interface that VariableLookup implements.
+
+dapper#model#VariableLookup#New({message_passer}, {stack_frame})
+                                                        *VariableLookup.New()*
+  Construct a VariableLookup object, used for accessing the Model
+  representations of some item represented in {stack_frame}.
+
+  {stack_frame} is a |dapper.nvim.StackFrame|. {message_passer} is an object
+  that implements the |dapper.nvim.MiddleTalker| interface.
+
+  Throws ERROR(BadValue) if {stack_frame} or {message_passer} are not dicts.
+  Throws ERROR(WrongType) if {stack_frame} is not a |dapper.nvim.StackFrame|,
+  or if {message_passer} does not implement the MiddleTalker interface.
+
+VariableLookup.VariableFromPath({lookup_path})
+                                           *VariableLookup.VariableFromPath()*
+  Return a Promise that resolves to a |dapper.nvim.Variable|, or a
+  |dapper.nvim.Scope|, corresponding to the given {lookup_path}, from the
+  wrapped |dapper.nvim.StackFrame|.
+
+  The {lookup_path} is hierarchical and is analogous to a filepath, with the
+  very first element being the name of a scope, the next element being the
+  name of a variable within that scope, the next being a member variable in
+  the preceding variable, and so on. The last element in the {lookup_path} is
+  the Scope/Variable to be returned.
+
+  If {lookup_path} is empty, the returned Promise resolves to a dict between
+  all reachable scope names and their corresponding |dapper.nvim.Scope|
+  objects.
+
+  If the requested variable could not be found, the returned Promise will
+  reject with the text of an ERROR(NotFound) exception.
+
+  Throws ERROR(NotFound) if the given scope could not be found.
+  Throws ERROR(WrongType) if {lookup_path} is not a list of strings.
+
+                                                 *dapper.nvim.VariablesBuffer*
+Shows variables accessible from the current stack frame, organized by their
+parent scope.
+
+dapper#view#VariablesBuffer#New({message_passer}, [stack_frame])
+                                                       *VariablesBuffer.New()*
+  Construct a VariablesBuffer from a {message_passer} and, optionally, the
+  |dapper.nvim.StackFrame| object that the VariablesBuffer should show.
+
+  [stack_frame] is {} if omitted.
+
+  Throws ERROR(BadValue) if {message_passer} or [stack_frame] are not dicts.
+  Throws ERROR(WrongType) if {message_passer} does not implement a
+  |dapper.nvim.MiddleTalker| interface, or if [stack_frame] is nonempty and is
+  not a |dapper.nvim.StackFrame|.
+
+VariablesBuffer.stackFrame()                    *VariablesBuffer.stackFrame()*
+  Return the stack frame object whose scopes and variables this buffer shows.
+
+VariablesBuffer.Push({stack_frame})                   *VariablesBuffer.Push()*
+  Display the scopes (and the variables) accessible from the given
+  {stack_frame}. The buffer will update when the given
+  |dapper.nvim.StackFrame| is receives DebugProtocol.VariablesResponse updates
+  from the debug adapter, or throw an appropriate error message if the request
+  fails entirely.
+
+  Throws ERROR(BadValue) if {stack_frame} is not a dict.
+  Throws ERROR(WrongType) if {stack_frame} is not a |dapper.nvim.StackFrame|.
+
+                                                *dapper.nvim.VariablesPrinter*
+An object for printing the contents of scopes and variables.
+
+Provides functions for printing, collapsing, and expanding scoped blocks of
+text: in this case, actual variable scopes and the variables therein. Meant
+manipulate in this case, actual variable scopes and the variables therein.
+Also provides functions for checking to see which items the user is trying to
+modify. Meant to be used as a member of a VariablesBuffer.
+
+Most member functions take in a `{lookup_path_of_var}` See
+|dapper.nvim.VariableLookup| for information on how this argument should be
+structured.
+
+dapper#view#VariablesPrinter#New({message_passer}, {buffer}, {var_lookup})
+                                                      *VariablesPrinter.New()*
+  Construct a VariablesPrinter.
+
+  {message_passer} is an object satisfying the |dapper.nvim.MiddleTalker|
+  interface. {buffer} is the |TypeVim.Buffer| object that this object will
+  manipulate. {var_lookup} is a |dapper.nvim.VariableLookup| object.
+
+  Throws ERROR(BadValue) if {message_passer}, {buffer}, or {var_lookup} are
+  not dicts.
+  Throws ERROR(WrongType) if {message_passer} does not implement a
+  |dapper.nvim.MiddleTalker| interface, {buffer} is not a |TypeVim.Buffer|, or
+  {var_lookup} does not implement a |dapper.nvim.VariableLookup| interface.
+
+VariablesPrinter.GetRange({lookup_path_of_var})  *VariablesPrinter.GetRange()*
+  Get the range of lines in the managed buffer in which the given variable is
+  printed. Takes in a {lookup_path_of_var}.
+
+  Returns a two-element list: the first and last line containing the requested
+  variable, inclusive.
+
+  Throws ERROR(BadValue) if {lookup_path_of_var} contains values that aren't
+  strings, or is empty.
+  Throws ERROR(NotFound) if no matching variable could be found. This may also
+  occur if the requested variable is hidden in a collapsed block.
+  Throws ERROR(WrongType) if {lookup_path_of_var} is not a list.
+
+VariablesPrinter.VarFromCursor({curpos}, [return_as_lookup_path])
+                                            *VariablesPrinter.VarFromCursor()*
+  Given a cursor position in the managed buffer (as returned by `getpos('.')`
+  or by |getcurpos()|), return the variable or scope in which that cursor
+  position lay.
+
+  If [return_as_lookup_path] is 1, the requested scope or variable will be
+  returned as a lookup path. If it's 0, this function will return a
+  |dapper.nvim.Scope| or |dapper.nvim.Variable|, as appropriate.
+
+  [return_as_lookup_path] is 0 if omitted.
+  Throws ERROR(BadValue) if the given {curpos} is not a four- or five-element
+  list whose second element is a number.
+  Throws ERROR(NotFound) if the given {curpos} does not correspond to any
+  scope or variable in the managed buffer.
+  Throws ERROR(WrongType) if the given {curpos} is not a list, or if
+  [return_as_lookup_path] is not a bool.
+
+VariablesPrinter.ExpandEntry({var_or_scope}, {lookup_path_of_var},
+  [rec_depth])                                *VariablesPrinter.ExpandEntry()*
+  Expand the given scope or variable in the managed buffer. If the expansion
+  was successful, return 1. If it was not (e.g. the variable was already
+  expanded, or the variable is not a "structured" variable that can be
+  expanded) return 0.
+
+  If the given {var_or_scope} is an unstructured variable, simply update that
+  variable's value in the managed buffer. [rec_depth] will have no effect.
+
+  [rec_depth] is the number of "levels deep" to which {var_or_scope} and its
+  children should be printed. If equal to 1, only {var_or_scope} will be
+  printed in a "collapsed" state. If equal to 2, {var_or_scope} will be
+  printed, and its immediate children will be printed in a "collapsed" state,
+  and so on.
+
+  [rec_depth] is 3 if omitted.
+  Throws ERROR(BadValue) if {lookup_path_of_var} contains values that aren't
+  strings, or if [rec_depth] is not a positive number.
+  Throws ERROR(NotFound) if {lookup_path_of_var} corresponds to no known scope
+  or variable.
+  Throws ERROR(WrongType) if the given {lookup_path_of_var} is not a list.
+
+VariablesPrinter.CollapseEntry({lookup_path_of_var})
+                                            *VariablesPrinter.CollapseEntry()*
+  Collapse the given scope or variable in the managed buffer. If the collapse
+  was successful, return 1. If it was not (e.g. the variable was already
+  collapsed, or the variable is not a "structured" variable that can be
+  collapsed) return 0.
+
+  Throws ERROR(BadValue) if {lookup_path_of_var} contains values that aren't
+  strings.
+  Throws ERROR(NotFound) if {lookup_path_of_var} corresponds to no known scope
+  or variable.
+  Throws ERROR(WrongType) if the given {lookup_path_of_var} is not a list.
+
+VariablesPrinter.UpdateValue({lookup_path}, {new_props})
+                                              *VariablesPrinter.UpdateValue()*
+  Update the value of a |dapper.nvim.Variable| in the managed buffer.
+
+  {new_props} is a dictionary that may contain:
+  value: A string, the new value of the variable.
+  type?: An optional string, the variable's new type.
+  namedVariables?: An optional number, the number of named child variables.
+  indexedVariables?: An optional number, the number of indexed child
+    variables.
+
+  {new_props} may also be a |dapper.nvim.Variable|, in which case it will be
+  converted into a dictionary matching the structure above.
+
+  Properties with keys not matching the above are silently ignored. If
+  {lookup_path} corresponds to a |dapper.nvim.Scope|, the `value` key has no
+  effect. Unspecified properties are not modified.
+
+  Throws ERROR(BadValue) if {lookup_path} contains values that aren't strings,
+  or if {lookup_path} is empty, or if {new_props} is not a dict.
+  Throws ERROR(NotFound) if {lookup_path} corresponds to no known scope or
+  variable.
+  Throws ERROR(WrongType) if the given {lookup_path} is not a list, or if
+  {new_props} does not conform to the interface described above.
+
+VariablesPrinter._LogFailure({update_type}, [more])
+                                              *VariablesPrinter._LogFailure()*
+  Show/Log information about a failed asynchronous buffer update.
+
+  {update_type} is the type of the failed update (e.g. asynchronous entry
+  expansion, update variable value, etc.). [more] is any other relevant
+  information, e.g. a |v:exception|, and can be of any type.
+
+  [more] is "" if omitted.
+  Throws ERROR(WrongType) if {update_type} is not a string.
+
 ==============================================================================
 FUNCTIONS                                              *dapper.nvim-functions*
 
@@ -745,6 +1078,15 @@ dapper#interface#UpdatePusher()              *dapper#interface#UpdatePusher()*
   Return an interface for an "update pusher" object, an object that may exist
   in a tree, which may accept updates from a parent and push updates to
   children.
+
+dapper#model#Variable#New({message_passer}, {variable})
+                                                 *dapper#model#Variable#New()*
+  Construct a Variable object from a {message_passer} and a {variable}.
+
+  Throws ERROR(BadValue) if {message_passer} or {variable} are not dicts.
+  Throws ERROR(WrongType) if {message_passer} does not implement a
+  |dapper.nvim.MiddleTalker| interface, or if {variable} is not a
+  DebugProtocol.Variable.
 
 dapper#view#StackTraceBuffer#GetRange({index})
                                      *dapper#view#StackTraceBuffer#GetRange()*

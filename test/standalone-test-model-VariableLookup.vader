@@ -14,7 +14,7 @@ Execute (VariableLookup: Setup):
   let g:st = AwaitPromise(g:thread.stackTrace(), g:timeout_len, 1)
   let g:sf = AwaitPromise(g:st.frame(0), g:timeout_len, 1)
 
-  let g:vl = dapper#model#VariableLookup#New(g:sf, g:dapper_middletalker)
+  let g:vl = dapper#model#VariableLookup#New(g:dapper_middletalker, g:sf)
 
 Execute (VariableLookup: Nonexistent Scope):
   AssertThrows call g:vl.VariableFromPath(['Locl'])
