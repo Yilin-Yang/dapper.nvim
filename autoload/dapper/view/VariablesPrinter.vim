@@ -588,6 +588,7 @@ function! dapper#view#VariablesPrinter#ExpandEntry(
   else  " is Variable
     let l:var = dapper#view#VariablesPrinter#VariableFromString(l:start_line)
     if l:var.unstructured
+
       call l:self.UpdateValue(a:lookup_path, a:var_or_scope)
       return 0
     endif
@@ -646,6 +647,9 @@ endfunction
 " - indexedVariables?: An optional number, the number of indexed child
 "   variables.
 "
+" {new_props} may also be a @dict(Variable), in which case it will be
+" converted into a dictionary matching the structure above.
+"
 " Properties with keys not matching the above are silently ignored. If
 " {lookup_path} corresponds to a @dict(Scope), the `value` key has no effect.
 " Unspecified properties are not modified.
@@ -657,7 +661,19 @@ function! dapper#view#VariablesPrinter#UpdateValue(
     \ lookup_path, new_props) dict abort
   call s:CheckType(l:self)
   call maktaba#ensure#IsList(a:lookup_path)
-  call typevim#ensure#Implements(a:new_props, s:new_props_interface)
+  if !typevim#value#Implements(a:new_props, s:new_props_interface)
+    let l:given_var = typevim#ensure#IsType(a:new_props, 'Variable')
+    let l:new_props = {}
+    for l:prop in ['value', 'type', 'namedVariables', 'indexedVariables']
+      let l:new_props[l:prop] = l:given_var[l:prop]()
+      if l:new_props[l:prop] is v:null
+        unlet l:new_props[l:prop]
+      endif
+    endfor
+    call typevim#ensure#Implements(l:new_props, s:new_props_interface)
+  else
+    let l:new_props = a:new_props
+  endif
   if empty(a:lookup_path)
     throw maktaba#error#BadValue('Gave empty lookup path in call to UpdateValue!')
   else
@@ -668,22 +684,22 @@ function! dapper#view#VariablesPrinter#UpdateValue(
   if l:is_scope
     let l:parsed_scope = dapper#view#VariablesPrinter#ScopeFromString(l:header)
     let l:info = ''
-    if has_key(a:new_props, 'namedVariables')
-      let l:info .= a:new_props.namedVariables.' named'
+    if has_key(l:new_props, 'namedVariables')
+      let l:info .= l:new_props.namedVariables.' named'
     endif
-    if has_key(a:new_props, 'indexedVariables')
+    if has_key(l:new_props, 'indexedVariables')
       let l:info .= (empty(l:info) ? '' : ', ')
-                  \ . a:new_props.indexedVariables . 'indexed'
+                  \ . l:new_props.indexedVariables . 'indexed'
     endif
     if !empty(l:info) | let l:parsed_scope.info = l:info | endif
     let l:header = dapper#view#VariablesPrinter#StringFromScope(
         \ l:parsed_scope, l:parsed_scope.expanded)
   else  " is variable
     let l:parsed_var = dapper#view#VariablesPrinter#VariableFromString(l:header)
-    let l:parsed_var.value = a:new_props.value
+    let l:parsed_var.value = l:new_props.value
     let l:prefix = '-'
     if !l:parsed_var.unstructured
-      l:prefix = l:parsed_var.expanded ? 'v' : '>'
+      let l:prefix = l:parsed_var.expanded ? 'v' : '>'
     endif
     let l:header = dapper#view#VariablesPrinter#StringFromVariable(
         \ l:parsed_var, l:prefix)
