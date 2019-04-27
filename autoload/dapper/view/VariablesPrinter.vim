@@ -407,7 +407,7 @@ function! dapper#view#VariablesPrinter#GetRange(lookup_path_of_var) dict abort
   endif
   let l:scope_end = l:buffer.search(s:SCOPE_PATTERN, 'W', l:scope_start)
   if !l:scope_end  " hit end of buffer during search
-    let l:scope_end = l:buffer.NumLines()
+    let l:scope_end = l:buffer.NumLines() - 1
   else
     let l:scope_end -= 1
   endif
@@ -481,15 +481,33 @@ function! dapper#view#VariablesPrinter#VarFromCursor(curpos, ...) dict abort
   let l:line_no = maktaba#ensure#IsNumber(a:curpos[1])
   let l:return_as_lookup_path = typevim#ensure#IsBool(get(a:000, 0, 0))
 
+  " if it's the first line in the buffer, with the <variables> tag,
+  " increment by one. if it's the very last line, with the </variables> tag,
+  " decrement by one.
+  if l:line_no ==# 1
+    let l:line_no += 1
+  elseif l:line_no ==# l:self._buffer.NumLines()
+    let l:line_no -= 1
+  endif
   let l:line = l:self._buffer.GetLines(l:line_no)[0]
 
   let l:var = dapper#view#VariablesPrinter#VariableFromString(l:line)
   if empty(l:var)  " is a scope
     let l:scope = dapper#view#VariablesPrinter#ScopeFromString(l:line)
+    if empty(l:scope)  " actually, not even a scope; there's just nothing
+      throw maktaba#error#NotFound(
+          \ 'Given curpos does not correspond to any scope: %s',
+          \ typevim#PrintShallow(a:curpos))
+    endif
     return l:return_as_lookup_path ?
         \ [l:scope.name] : l:self._var_lookup.VariableFromPath([l:scope.name])
   endif
   " is a variable
+  if empty(l:var)
+    throw maktaba#error#NotFound(
+        \ 'Given curpos does not correspond to any var: %s',
+        \ typevim#PrintShallow(a:curpos))
+  endif
   let l:lookup_path = s:BacktrackLookupPath(
       \ l:self._buffer, [l:var.name], l:line_no, len(l:var.indentation) / 2)
   return l:return_as_lookup_path ?

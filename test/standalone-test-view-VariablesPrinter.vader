@@ -98,6 +98,7 @@ Execute (VariablesPrinter: Parse Scope w/ Info):
       \ }, g:parsed
 
 Given (Buffer Contents):
+  <variables>
   v Local : 5 named, 8 indexed
     - foo, int: 123
     - bar, float: 3.14
@@ -111,6 +112,7 @@ Given (Buffer Contents):
     v quoz, Foo, {class}:
       - foo_, int, {property}: 567
       - bar_, string, {property}: "goodbye, world"
+  </variables>
 
 Execute (VariablesPrinter: Set Up, Create Buffer, Printer Object):
   let g:var_lookup = {
@@ -123,13 +125,13 @@ Execute (VariablesPrinter: Set Up, Create Buffer, Printer Object):
 Execute (VariablesPrinter: GetRange, Scope):
   call g:buffer.SetBuffer(bufnr('%'))
   let g:range = g:vp.GetRange(['Local'])
-  AssertEqual [1, 6], g:range
+  AssertEqual [2, 7], g:range
 
   let g:range = g:vp.GetRange(['Middle'])
-  AssertEqual [7, 7], g:range
+  AssertEqual [8, 8], g:range
 
   let g:range = g:vp.GetRange(['Global'])
-  AssertEqual [8, 13], g:range
+  AssertEqual [9, 14], g:range
 
 Execute (VariablesPrinter: GetRange, Scope That Doesn't Exist):
   call g:buffer.SetBuffer(bufnr('%'))
@@ -140,27 +142,27 @@ Execute (VariablesPrinter: GetRange, Scope That Doesn't Exist):
 Execute (VariablesPrinter: GetRange, Unstructured Variable):
   call g:buffer.SetBuffer(bufnr('%'))
   let g:range = g:vp.GetRange(['Local', 'foo'])
-  AssertEqual [2, 2], g:range
+  AssertEqual [3, 3], g:range
 
 Execute (VariablesPrinter: GetRange, Nested Unstructured Variable):
   call g:buffer.SetBuffer(bufnr('%'))
   let g:range = g:vp.GetRange(['Global', 'foo'])
-  AssertEqual [9, 9], g:range
+  AssertEqual [10, 10], g:range
 
 Execute (VariablesPrinter: GetRange, Nested Structured Member Variable):
   call g:buffer.SetBuffer(bufnr('%'))
   let g:range = g:vp.GetRange(['Global', 'quoz', 'bar_'])
-  AssertEqual [13, 13], g:range
+  AssertEqual [14, 14], g:range
 
 Execute (VariablesPrinter: GetRange, Nested Structured Variable):
   call g:buffer.SetBuffer(bufnr('%'))
   let g:range = g:vp.GetRange(['Global', 'quoz'])
-  AssertEqual [11, 13], g:range
+  AssertEqual [12, 14], g:range
 
 Execute (VariablesPrinter: GetRange, Variable Range Terminates with Scope):
   call g:buffer.SetBuffer(bufnr('%'))
   let g:range = g:vp.GetRange(['Local', 'quoz'])
-  AssertEqual [4, 6], g:range
+  AssertEqual [5, 7], g:range
 
 Execute (VariablesPrinter: GetRange, Variable That Doesn't Exist):
   call g:buffer.SetBuffer(bufnr('%'))
@@ -188,7 +190,7 @@ Execute (VariablesPrinter: VarFromCursor, Nested Variable @ Buffer Bottom):
 
 Execute (VariablesPrinter: VarFromCursor, "Top-Level" Variable):
   call g:buffer.SetBuffer(bufnr('%'))
-  normal! 2G
+  normal! 3G
   let g:path = g:vp.VarFromCursor(getcurpos(), 1)
   AssertEqual ['Local', 'foo'], g:path
 
@@ -197,6 +199,7 @@ Execute (VariablesPrinter: CollapseEntry, Local):
   let g:success = g:vp.CollapseEntry(['Local'])
   AssertEqual 1, g:success
 Expect:
+  <variables>
   > Local : 5 named, 8 indexed
   > Middle : 8 named, 8 indexed
   v Global : 5 named, 8 indexed
@@ -205,12 +208,14 @@ Expect:
     v quoz, Foo, {class}:
       - foo_, int, {property}: 567
       - bar_, string, {property}: "goodbye, world"
+  </variables>
 
 Execute (VariablesPrinter: CollapseEntry, Already Collapsed):
   call g:buffer.SetBuffer(bufnr('%'))
   let g:success = g:vp.CollapseEntry(['Middle'])
   AssertEqual 0, g:success
 Expect:
+  <variables>
   v Local : 5 named, 8 indexed
     - foo, int: 123
     - bar, float: 3.14
@@ -224,12 +229,14 @@ Expect:
     v quoz, Foo, {class}:
       - foo_, int, {property}: 567
       - bar_, string, {property}: "goodbye, world"
+  </variables>
 
 Execute (VariablesPrinter: CollapseEntry, Unstructured Variable):
   call g:buffer.SetBuffer(bufnr('%'))
   let g:success = g:vp.CollapseEntry(['Local', 'foo'])
   AssertEqual 0, g:success
 Expect:
+  <variables>
   v Local : 5 named, 8 indexed
     - foo, int: 123
     - bar, float: 3.14
@@ -243,12 +250,14 @@ Expect:
     v quoz, Foo, {class}:
       - foo_, int, {property}: 567
       - bar_, string, {property}: "goodbye, world"
+  </variables>
 
 Execute (VariablesPrinter: CollapseEntry, Unstructured, Nested Variable):
   call g:buffer.SetBuffer(bufnr('%'))
   let g:success = g:vp.CollapseEntry(['Local', 'quoz', 'bar_'])
   AssertEqual 0, g:success
 Expect:
+  <variables>
   v Local : 5 named, 8 indexed
     - foo, int: 123
     - bar, float: 3.14
@@ -262,12 +271,14 @@ Expect:
     v quoz, Foo, {class}:
       - foo_, int, {property}: 567
       - bar_, string, {property}: "goodbye, world"
+  </variables>
 
 Execute (VariablesPrinter: CollapseEntry, Structured Variable):
   call g:buffer.SetBuffer(bufnr('%'))
   let g:success = g:vp.CollapseEntry(['Local', 'quoz'])
   AssertEqual 1, g:success
 Expect:
+  <variables>
   v Local : 5 named, 8 indexed
     - foo, int: 123
     - bar, float: 3.14
@@ -279,6 +290,7 @@ Expect:
     v quoz, Foo, {class}:
       - foo_, int, {property}: 567
       - bar_, string, {property}: "goodbye, world"
+  </variables>
 
 Given (Empty Buffer):
 
