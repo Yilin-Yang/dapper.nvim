@@ -85,8 +85,7 @@ endfunction
 ""
 " @public
 " @dict Scope
-" Return the name of this Scope object.
-" @throws NotFound if no name property could be found.
+" Return the name of this Scope object, or |v:null| if it could not be found.
 function! dapper#model#Scope#name() dict abort
   call s:CheckType(l:self)
   return s:ReturnPropIfPresent(l:self, 'name')
@@ -95,8 +94,8 @@ endfunction
 ""
 " @public
 " @dict Scope
-" Return the namedVariables property of this Scope object.
-" @throws NotFound if no namedVariables property could be found.
+" Return the namedVariables property of this Scope object, or |v:null| if it
+" could not be found..
 function! dapper#model#Scope#namedVariables() dict abort
   call s:CheckType(l:self)
   return s:ReturnPropIfPresent(l:self, 'namedVariables')
@@ -105,8 +104,8 @@ endfunction
 ""
 " @public
 " @dict Scope
-" Return the indexedVariables property of this Scope object.
-" @throws NotFound if no indexedVariables property could be found.
+" Return the indexedVariables property of this Scope object, or |v:null| if it
+" could not be found.
 function! dapper#model#Scope#indexedVariables() dict abort
   call s:CheckType(l:self)
   return s:ReturnPropIfPresent(l:self, 'indexedVariables')
@@ -115,8 +114,8 @@ endfunction
 ""
 " @public
 " @dict Scope
-" Return the expensive property of this Scope object.
-" @throws NotFound if no expensive property could be found.
+" Return the expensive property of this Scope object, or |v:null| if it could
+" not be found.
 function! dapper#model#Scope#expensive() dict abort
   call s:CheckType(l:self)
   return s:ReturnPropIfPresent(l:self, 'expensive')
@@ -125,8 +124,8 @@ endfunction
 ""
 " @public
 " @dict Scope
-" Return the source property of this Scope object.
-" @throws NotFound if no source property could be found.
+" Return the source property of this Scope object, or |v:null| if it could not
+" be found.
 function! dapper#model#Scope#source() dict abort
   call s:CheckType(l:self)
   return s:ReturnPropIfPresent(l:self, 'source')
@@ -135,8 +134,8 @@ endfunction
 ""
 " @public
 " @dict Scope
-" Return the line property of this Scope object.
-" @throws NotFound if no line property could be found.
+" Return the line property of this Scope object, or |v:null| if it could not
+" be found.
 function! dapper#model#Scope#line() dict abort
   call s:CheckType(l:self)
   return s:ReturnPropIfPresent(l:self, 'line')
@@ -145,8 +144,8 @@ endfunction
 ""
 " @public
 " @dict Scope
-" Return the column property of this Scope object.
-" @throws NotFound if no column property could be found.
+" Return the column property of this Scope object, or |v:null| if it could not
+" be found.
 function! dapper#model#Scope#column() dict abort
   call s:CheckType(l:self)
   return s:ReturnPropIfPresent(l:self, 'column')
@@ -155,8 +154,8 @@ endfunction
 ""
 " @public
 " @dict Scope
-" Return the endLine property of this Scope object.
-" @throws NotFound if no endLine property could be found.
+" Return the endLine property of this Scope object, or |v:null| if it could
+" not be found.
 function! dapper#model#Scope#endLine() dict abort
   call s:CheckType(l:self)
   return s:ReturnPropIfPresent(l:self, 'endLine')
@@ -165,8 +164,8 @@ endfunction
 ""
 " @public
 " @dict Scope
-" Return the endColumn property of this Scope object.
-" @throws NotFound if no endColumn property could be found.
+" Return the endColumn property of this Scope object, or |v:null| if it could
+" not be found.
 function! dapper#model#Scope#endColumn() dict abort
   call s:CheckType(l:self)
   return s:ReturnPropIfPresent(l:self, 'endColumn')

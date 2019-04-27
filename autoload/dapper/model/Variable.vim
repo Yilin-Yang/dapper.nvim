@@ -77,8 +77,7 @@ endfunction
 ""
 " @public
 " @dict Variable
-" Return the name of this variable.
-" @throws NotFound if no name could be found.
+" Return the name of this variable, or |v:null| if it could not be found.
 function! dapper#model#Variable#name() dict abort
   call s:CheckType(l:self)
   return s:ReturnPropIfPresent(l:self, 'name')
@@ -87,8 +86,8 @@ endfunction
 ""
 " @public
 " @dict Variable
-" Return the value of this variable, as a single string.
-" @throws NotFound if no value could be found.
+" Return the value of this variable, as a single string, or |v:null| if it
+" could not be found.
 function! dapper#model#Variable#value() dict abort
   call s:CheckType(l:self)
   return s:ReturnPropIfPresent(l:self, 'value')
@@ -97,8 +96,7 @@ endfunction
 ""
 " @public
 " @dict Variable
-" Return the type of this variable.
-" @throws NotFound if no type could be found.
+" Return the type of this variable, or |v:null| if it could not be found.
 function! dapper#model#Variable#type() dict abort
   call s:CheckType(l:self)
   return s:ReturnPropIfPresent(l:self, 'type')
@@ -107,8 +105,8 @@ endfunction
 ""
 " @public
 " @dict Variable
-" Return a hint as to how this variable should be presented in the UI.
-" @throws NotFound if no presentationHint could be found.
+" Return a hint as to how this variable should be presented in the UI, or
+" |v:null| if it could not be found.
 function! dapper#model#Variable#presentationHint() dict abort
   call s:CheckType(l:self)
   return s:ReturnPropIfPresent(l:self, 'presentationHint')
@@ -118,8 +116,7 @@ endfunction
 " @public
 " @dict Variable
 " Return an expression representing this Variable that is usable in a
-" DebugProtocol.EvaluateRequest.
-" @throws NotFound if no evaluateName could be found.
+" DebugProtocol.EvaluateRequest, or |v:null| if it could not be found.
 function! dapper#model#Variable#evaluateName() dict abort
   call s:CheckType(l:self)
   return s:ReturnPropIfPresent(l:self, 'evaluateName')
@@ -128,10 +125,10 @@ endfunction
 ""
 " @public
 " @dict Variable
-" Return the "variablesReference" identifier of this variable. A nonzero
-" return value indicates that this is a "structured" Variable with child
-" variables, and that the return value is usable in a VariablesRequest.
-" @throws NotFound if no variablesReference could be found.
+" Return the "variablesReference" identifier of this variable, or |v:null| if
+" it could not be found. A nonzero return value indicates that this is a
+" "structured" Variable with child variables, and that the return value is
+" usable in a VariablesRequest.
 function! dapper#model#Variable#variablesReference() dict abort
   call s:CheckType(l:self)
   return s:ReturnPropIfPresent(l:self, 'variablesReference')
@@ -141,8 +138,7 @@ endfunction
 " @public
 " @dict Variable
 " Return the number of named child variables held by this variable, if it is a
-" "structured" variable..
-" @throws NotFound if no namedVariables could be found.
+" "structured" variable, or |v:null| if it could not be found.
 function! dapper#model#Variable#namedVariables() dict abort
   call s:CheckType(l:self)
   return s:ReturnPropIfPresent(l:self, 'namedVariables')
@@ -152,8 +148,7 @@ endfunction
 " @public
 " @dict Variable
 " Return the number of indexed child variables held by this variable, if it is
-" a "structured" variable.
-" @throws NotFound if no indexedVariables could be found.
+" a "structured" variable, or |v:null| if it could not be found.
 function! dapper#model#Variable#indexedVariables() dict abort
   call s:CheckType(l:self)
   return s:ReturnPropIfPresent(l:self, 'indexedVariables')
