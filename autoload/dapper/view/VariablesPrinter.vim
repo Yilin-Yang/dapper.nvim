@@ -75,9 +75,9 @@ function! s:DictVariableToStruct(child_of, variable, ...) abort
   call typevim#ensure#IsType(a:variable, 'Variable')
   let l:expanded = typevim#ensure#IsBool(get(a:000, 0, 0))
   let l:to_return = {
-      \ 'indentation': typevim#object#GetIndentBlock(len(a:child_of)),
+      \ 'indentation': typevim#object#GetIndentBlock(len(a:child_of) - 1),
       \ 'expanded': 0,
-      \ 'unstructured': a:variable.HasChildren(),
+      \ 'unstructured': !a:variable.HasChildren(),
       \ 'name': a:variable.name(),
       \ 'type': '',
       \ 'presentation_hint': '',
@@ -325,7 +325,7 @@ function! dapper#view#VariablesPrinter#_PrintCollapsedChildren(
           \ dapper#view#VariablesPrinter#StringFromScope(l:parent, 0)
     else
       let l:parent_str =
-          \ dapper#view#VariablesPrinter#StringFromVariable(a:child_of, 'v')
+          \ dapper#view#VariablesPrinter#StringFromVariable(l:parent, 'v')
     endif
     call l:self._buffer.ReplaceLines(
         \ l:parent_start, l:parent_start, [l:parent_str])
@@ -335,12 +335,15 @@ function! dapper#view#VariablesPrinter#_PrintCollapsedChildren(
   let l:name_and_var = sort(items(a:children),
                           \ function('typevim#value#CompareKeys'))
 
+  " the path to the given var_or_scope
+  let l:path_to_given = a:child_of + [a:var_or_scope.name()]
+
   let l:print_after = l:parent_end
   for [l:name, l:var] in l:name_and_var
     call maktaba#ensure#IsString(l:name)
     call typevim#ensure#IsType(l:var, 'Variable')
     let l:has_children = l:var.HasChildren()
-    let l:var_struct = s:DictVariableToStruct(l:var)
+    let l:var_struct = s:DictVariableToStruct(l:path_to_given, l:var)
     if l:has_children
       let l:var_str =
           \ dapper#view#VariablesPrinter#StringFromVariable(l:var_struct, '>')
@@ -353,7 +356,7 @@ function! dapper#view#VariablesPrinter#_PrintCollapsedChildren(
     " will be able to find an entry to update
     call l:self._buffer.InsertLines(l:print_after, [l:var_str])
 
-    let l:var_path = [a:child_of] + [l:var.name()]
+    let l:var_path = a:child_of + [l:var.name()]
     if a:rec_depth ># 1 && l:has_children
       call l:var.Children().Then(
           \ function(l:self._PrintCollapsedChildren,
@@ -552,7 +555,7 @@ function! dapper#view#VariablesPrinter#ExpandEntry(
   let [l:start, l:end] = l:self.GetRange(a:lookup_path)
   let l:start_line = l:self._buffer.GetLines(l:start)[0]
 
-  if len(a:lookup_path ==# 1)  " is Scope
+  if len(a:lookup_path) ==# 1  " is Scope
     let l:scope = dapper#view#VariablesPrinter#ScopeFromString(l:start_line)
     if l:scope.expanded | return 0 | endif
     let l:expanded_str =

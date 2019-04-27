@@ -1,3 +1,6 @@
+Include: AwaitTimeout.vader
+Include: StartMockDebugAdapter.vader
+
 Execute (VariablesPrinter: Parse Structured Variable):
   let g:parsed = dapper#view#VariablesPrinter#VariableFromString(
       \ '  v quoz, Foo, {class}:')
@@ -276,3 +279,29 @@ Expect:
     v quoz, Foo, {class}:
       - foo_, int, {property}: 567
       - bar_, string, {property}: "goodbye, world"
+
+Given (Empty Buffer):
+
+Execute (VariablesPrinter: Initialize Mock Debug Adapter, Retrieve Callstack, Local Scope):
+  call AwaitTimeout({ -> ReceivedMessage('LaunchResponse')}, 4000, 1)
+  call g:dapper_model.Update()
+  call AwaitTimeout({ -> ReceivedMessage('ThreadsResponse')}, 3000, 1)
+  let g:thread = g:dapper_model.thread(1)
+  let g:callstack = AwaitPromise(g:thread.stackTrace(), 4000)
+  let g:frame = AwaitPromise(g:callstack.frame(0), 4000)
+  AssertEqual '#(0)', g:frame.name(), 'Failed to retrieve stackframe'
+  let g:scope = AwaitPromise(g:frame.scope('Local'), 4000)
+  
+Execute (VariablesPrinter: Print Local Scope):
+  call g:buffer.SetBuffer(bufnr('%'))
+  call g:buffer.ReplaceLines(1, -1,
+      \ ['<variables>', '> Local : ', '</variables>']
+      \ )
+  call g:vp.ExpandEntry(['Local'], g:scope)
+  sleep 100m
+Expect:
+  v Local : 4 named
+    - local_0_i, int: 123
+    - local_0_f, float: 3.14
+    - local_0_s, string: hello world
+    > local_0_o, Object, {class}:
