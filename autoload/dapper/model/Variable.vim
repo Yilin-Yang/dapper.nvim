@@ -175,11 +175,7 @@ function! dapper#model#Variable#_UpdateFromMsg(msg) dict abort
     let l:self._names_to_children = {}
   endif
   if a:msg.vim_msg_typename !=# 'VariablesResponse'
-    let l:name = ''
-    try
-      let l:name = l:self.name()
-    catch /ERROR(NotFound)/
-    endtry
+    let l:name = l:self.name()
     call l:self._message_passer.NotifyReport(
         \ 'error',
         \ 'Variable '.l:name.' got a non-VariablesResponse!',
@@ -203,11 +199,7 @@ endfunction
 function! dapper#model#Variable#_HandleFailedReq(msg) dict abort
   call s:CheckType(l:self)
   call typevim#ensure#Implements(a:msg, dapper#dap#ProtocolMessage())
-  let l:name = ''
-  try
-    let l:name = l:self.name()
-  catch /ERROR(NotFound)/
-  endtry
+  let l:name = l:self.name()
   call l:self._message_passer.NotifyReport(
       \ 'error',
       \ 'Attempt to populate variable '.l:name.' failed!',
@@ -225,11 +217,7 @@ endfunction
 " otherwise.
 function! dapper#model#Variable#HasChildren() dict abort
   call s:CheckType(l:self)
-  try
-    return l:self.variablesReference() !=# 0
-  catch /ERROR(NotFound)/
-    return 0
-  endtry
+  return l:self.variablesReference() !=# 0
 endfunction
 
 ""

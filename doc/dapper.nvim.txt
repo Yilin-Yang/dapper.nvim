@@ -567,40 +567,39 @@ dapper#model#StackFrame#New({message_passer}, {stack_frame},
   implement a |dapper.nvim.MiddleTalker| interface.
 
 StackFrame.id()                                              *StackFrame.id()*
-  Return a unique identifier for the stack frame.
-  Throws ERROR(NotFound) if no id can be found.
+  Return a unique identifier for the stack frame, or |v:null| if none could be
+  found.
 
 StackFrame.name()                                          *StackFrame.name()*
-  Return the name of the stack frame.
-  Throws ERROR(NotFound) if no name can be found.
+  Return the name of the stack frame, or |v:null| if none could be found.
 
 StackFrame.source()                                      *StackFrame.source()*
-  Return the DebugProtocol.Source associated with this stack frame.
-  Throws ERROR(NotFound) if no source can be found.
+  Return the DebugProtocol.Source associated with this stack frame, or
+  |v:null| if none could be found.
 
 StackFrame.line()                                          *StackFrame.line()*
-  Return the line number associated with this stack frame.
-  Throws ERROR(NotFound) if no line can be found.
+  Return the line number associated with this stack frame, or |v:null| if none
+  could be found.
 
 StackFrame.column()                                      *StackFrame.column()*
-  Return the column number associated with this stack frame.
-  Throws ERROR(NotFound) if no column can be found.
+  Return the column number associated with this stack frame, or |v:null| if
+  none could be found.
 
 StackFrame.endLine()                                    *StackFrame.endLine()*
-  Return the final line number associated with this stack frame.
-  Throws ERROR(NotFound) if no endLine can be found.
+  Return the final line number associated with this stack frame, or |v:null|
+  if none could be found.
 
 StackFrame.endColumn()                                *StackFrame.endColumn()*
-  Return the final column number associated with this stack frame.
-  Throws ERROR(NotFound) if no endColumn can be found.
+  Return the final column number associated with this stack frame, or |v:null|
+  if none could be found.
 
 StackFrame.moduleId()                                  *StackFrame.moduleId()*
   Return the name of the module (e.g. Node.js module, external library, etc.)
-  associated with this stack frame.
-  Throws ERROR(NotFound) if no moduleId can be found.
+  associated with this stack frame, or |v:null| if none could be found.
 
 StackFrame.presentationHint()                  *StackFrame.presentationHint()*
-  Throws ERROR(NotFound) if no presentationHint can be found.
+  Return a presentation hint for this Stack Frame, or |v:null| if none could
+  be found.
 
 StackFrame.scopes()                                      *StackFrame.scopes()*
   Return a list of the names of all scopes accessible from this StackFrame.

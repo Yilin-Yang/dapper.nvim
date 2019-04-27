@@ -80,23 +80,21 @@ function! s:ValidateScopes(self, scopes) abort
 endfunction
 
 ""
-" Return {property} of {self}, if present. Else, throw an ERROR(NotFound).
+" Return {property} of {self}, if present, or |v:null|, if not found.
 function! s:ReturnPropIfPresent(self, property) abort
   call s:CheckType(a:self)
   call maktaba#ensure#IsString(a:property)
   if has_key(a:self._stack_frame, a:property)
     return a:self._stack_frame[a:property]
   endif
-  throw maktaba#error#NotFound(
-      \ 'Could not find property %s in StackFrame; it might be optional?',
-      \ a:property)
+  return v:null
 endfunction
 
 ""
 " @public
 " @dict StackFrame
-" Return a unique identifier for the stack frame.
-" @throws NotFound if no id can be found.
+" Return a unique identifier for the stack frame, or |v:null| if none could be
+" found.
 function! dapper#model#StackFrame#id() dict abort
   call s:CheckType(l:self)
   return s:ReturnPropIfPresent(l:self, 'id')
@@ -105,8 +103,7 @@ endfunction
 ""
 " @public
 " @dict StackFrame
-" Return the name of the stack frame.
-" @throws NotFound if no name can be found.
+" Return the name of the stack frame, or |v:null| if none could be found.
 function! dapper#model#StackFrame#name() dict abort
   call s:CheckType(l:self)
   return s:ReturnPropIfPresent(l:self, 'name')
@@ -115,8 +112,8 @@ endfunction
 ""
 " @public
 " @dict StackFrame
-" Return the DebugProtocol.Source associated with this stack frame.
-" @throws NotFound if no source can be found.
+" Return the DebugProtocol.Source associated with this stack frame, or
+" |v:null| if none could be found.
 function! dapper#model#StackFrame#source() dict abort
   call s:CheckType(l:self)
   return s:ReturnPropIfPresent(l:self, 'source')
@@ -125,8 +122,8 @@ endfunction
 ""
 " @public
 " @dict StackFrame
-" Return the line number associated with this stack frame.
-" @throws NotFound if no line can be found.
+" Return the line number associated with this stack frame, or |v:null| if none
+" could be found.
 function! dapper#model#StackFrame#line() dict abort
   call s:CheckType(l:self)
   return s:ReturnPropIfPresent(l:self, 'line')
@@ -135,8 +132,8 @@ endfunction
 ""
 " @public
 " @dict StackFrame
-" Return the column number associated with this stack frame.
-" @throws NotFound if no column can be found.
+" Return the column number associated with this stack frame, or |v:null| if
+" none could be found.
 function! dapper#model#StackFrame#column() dict abort
   call s:CheckType(l:self)
   return s:ReturnPropIfPresent(l:self, 'column')
@@ -145,8 +142,8 @@ endfunction
 ""
 " @public
 " @dict StackFrame
-" Return the final line number associated with this stack frame.
-" @throws NotFound if no endLine can be found.
+" Return the final line number associated with this stack frame, or |v:null|
+" if none could be found.
 function! dapper#model#StackFrame#endLine() dict abort
   call s:CheckType(l:self)
   return s:ReturnPropIfPresent(l:self, 'endLine')
@@ -155,8 +152,8 @@ endfunction
 ""
 " @public
 " @dict StackFrame
-" Return the final column number associated with this stack frame.
-" @throws NotFound if no endColumn can be found.
+" Return the final column number associated with this stack frame, or |v:null|
+" if none could be found.
 function! dapper#model#StackFrame#endColumn() dict abort
   call s:CheckType(l:self)
   return s:ReturnPropIfPresent(l:self, 'endColumn')
@@ -166,8 +163,7 @@ endfunction
 " @public
 " @dict StackFrame
 " Return the name of the module (e.g. Node.js module, external library, etc.)
-" associated with this stack frame.
-" @throws NotFound if no moduleId can be found.
+" associated with this stack frame, or |v:null| if none could be found.
 function! dapper#model#StackFrame#moduleId() dict abort
   call s:CheckType(l:self)
   return s:ReturnPropIfPresent(l:self, 'moduleId')
@@ -176,7 +172,8 @@ endfunction
 ""
 " @public
 " @dict StackFrame
-" @throws NotFound if no presentationHint can be found.
+" Return a presentation hint for this Stack Frame, or |v:null| if none could
+" be found.
 function! dapper#model#StackFrame#presentationHint() dict abort
   call s:CheckType(l:self)
   return s:ReturnPropIfPresent(l:self, 'presentationHint')
