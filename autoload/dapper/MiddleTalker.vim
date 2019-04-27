@@ -313,7 +313,7 @@ endfunction
 ""
 " @public
 " @dict MiddleTalker
-" @usage {kind} {brief} [long] [alert] [other]
+" @usage {kind} {brief} [long] [other]
 " Pass a @dict(DapperReport) to the attached @dict(DebugLogger), while also
 " sending it to the appropriate subscribers.
 function! dapper#MiddleTalker#NotifyReport(kind, brief, ...) abort dict
@@ -328,7 +328,7 @@ endfunction
 
 ""
 " @dict MiddleTalker
-" @usage {kind} {brief} [long] [alert] [other]
+" @usage {kind} {brief} [long] [other]
 " Pass a @dict(DapperReport) to the attached @dict(DebugLogger). Used
 " internally for debug logging by MiddleTalker.
 function! dapper#MiddleTalker#__Log(kind, brief, ...) abort dict
