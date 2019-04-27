@@ -42,6 +42,7 @@ function! dapper#view#VariablesPrinter#New(message_passer, buffer, var_lookup) a
       \ 'VarFromCursor': typevim#make#Member('VarFromCursor'),
       \ 'ExpandEntry': typevim#make#Member('ExpandEntry'),
       \ 'CollapseEntry': typevim#make#Member('CollapseEntry'),
+      \ 'UpdateValue': typevim#make#Member('UpdateValue'),
       \ '_PrintCollapsedChildren': typevim#make#Member('_PrintCollapsedChildren'),
       \ '_PrintExpandedChild': typevim#make#Member('_PrintExpandedChild'),
       \ }
@@ -583,4 +584,33 @@ function! dapper#view#VariablesPrinter#CollapseEntry(lookup_path) dict abort
   endif
   call l:self._buffer.ReplaceLines(l:start, l:end, [l:collapsed_str])
   return 1
+endfunction
+
+""
+" @public
+" @dict VariablesPrinter
+" Update the value of a @dict(Variable) in the managed buffer.
+"
+" @throws BadValue if {lookup_path} contains values that aren't strings, or if {lookup_path} has only one entry, i.e. it's a path to a Scope.
+" @throws NotFound if {lookup_path} corresponds to no known scope or variable.
+" @throws WrongType if the given {lookup_path} is not a list, or if {new_value} is not a string.
+function! dapper#view#VariablesPrinter#UpdateValue(
+    \ lookup_path, new_value) dict abort
+  call s:CheckType(l:self)
+  call maktaba#ensure#IsList(a:lookup_path)
+  call maktaba#ensure#IsString(a:new_value)
+  if len(a:lookup_path <# 1)
+    throw maktaba#error#BadValue('Too few elements in lookup path: %s',
+                               \ typevim#PrintShallow(a:lookup_path))
+  endif
+  let [l:start, l:end] = l:self.GetRange(a:lookup_path)
+  let l:header = l:self._buffer.GetLines(l:start)[0]
+  let l:parsed_var = dapper#view#VariablesPrinter#VariableFromString(l:header)
+  let l:parsed_var.value = a:new_value
+  let l:prefix = '-'
+  if !l:parsed_var.unsutructured
+    l:prefix = l:parsed_var.expanded ? 'v' : '>'
+  endif
+  let l:header =
+      \ dapper#view#VariablesPrinter#StringFromVariable(l:parsed_var, l:prefix)
 endfunction
