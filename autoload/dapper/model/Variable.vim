@@ -64,16 +64,14 @@ function! s:CheckType(Obj) abort
 endfunction
 
 ""
-" Return {property} of {self}, if present. Else, throw an ERROR(NotFound).
+" Return {property} of {self}, if present. Else, return |v:null|.
 function! s:ReturnPropIfPresent(self, property) abort
   call s:CheckType(a:self)
   call maktaba#ensure#IsString(a:property)
   if has_key(a:self._variable, a:property)
     return a:self._variable[a:property]
   endif
-  throw maktaba#error#NotFound(
-      \ 'Could not find property %s in Variable; it might be optional?',
-      \ a:property)
+  return v:null
 endfunction
 
 ""

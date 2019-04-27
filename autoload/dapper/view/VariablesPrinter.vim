@@ -86,13 +86,16 @@ function! s:DictVariableToStruct(child_of, variable, ...) abort
   if !l:to_return.unstructured && l:expanded
     let l:to_return.expanded = 1
   endif
-  try | let l:to_return.type = a:variable.type()
-  catch /ERROR(NotFound)/
-  endtry
 
-  try | let l:to_return.presentation_hint = a:variable.presentationHint()
-  catch /ERROR(NotFound)/
-  endtry
+  let l:type = a:variable.type()
+  if l:type isnot v:null
+    let l:to_return.type = l:type
+  endif
+
+  let l:hint = a:variable.presentationHint()
+  if l:hint isnot v:null
+    let l:to_return.presentation_hint = l:hint
+  endif
 
   return l:to_return
 endfunction
@@ -115,16 +118,19 @@ function! s:DictScopeToStruct(scope, ...) abort
       \ 'info': '',
       \ }
   let l:info = ''
-  try | let l:info = a:scope.namedVariables().' named'
-  catch /ERROR(NotFound)/
-  endtry
-  try
+  let l:named = a:scope.namedVariables()
+  if l:named isnot v:null
+    let l:info = l:named.' named'
+  endif
+
+  let l:indexed = a:scope.indexedVariables()
+  if l:indexed isnot v:null
     let l:to_add =
-        \ (empty(l:info) ? '' : ', ') . a:scope.indexedVariables()
+        \ (empty(l:info) ? '' : ', ') . l:indexed
         \ . ' indexed'
     let l:info .= l:to_add
-  catch /ERROR(NotFound)/
-  endtry
+  endif
+
   let l:to_return.info = l:info
   return l:to_return
 endfunction
