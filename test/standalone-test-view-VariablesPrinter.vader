@@ -303,7 +303,7 @@ Execute (VariablesPrinter: Initialize Mock Debug Adapter, Retrieve Callstack, Lo
   let g:frame = AwaitPromise(g:callstack.frame(0), 4000)
   AssertEqual '#(0)', g:frame.name(), 'Failed to retrieve stackframe'
   let g:scope = AwaitPromise(g:frame.scope('Local'), 4000)
-  
+
 Execute (VariablesPrinter: Print Local Scope):
   call g:buffer.SetBuffer(bufnr('%'))
   call g:buffer.ReplaceLines(1, -1,
@@ -313,7 +313,7 @@ Execute (VariablesPrinter: Print Local Scope):
   sleep 100m
 Expect:
   <variables>
-  > Local : 4 named
+  v Local : 
     - local_0_f, float: 3.14
     - local_0_i, integer: 123
     v local_0_o, object: Object
@@ -324,6 +324,26 @@ Expect:
         - object__i, integer: 123
         > object__o, object: Object
         - object__s, string: hello world
+      - object__s, string: hello world
+    - local_0_s, string: hello world
+  </variables>
+
+Execute (VariablesPrinter: Print Local Scope, Smaller Recursion Depth):
+  call g:buffer.SetBuffer(bufnr('%'))
+  call g:buffer.ReplaceLines(1, -1,
+      \ ['<variables>', '> Local : ', '</variables>']
+      \ )
+  call g:vp.ExpandEntry(['Local'], g:scope, 2)
+  sleep 100m
+Expect:
+  <variables>
+  v Local : 
+    - local_0_f, float: 3.14
+    - local_0_i, integer: 123
+    v local_0_o, object: Object
+      - object__f, float: 3.14
+      - object__i, integer: 123
+      > object__o, object: Object
       - object__s, string: hello world
     - local_0_s, string: hello world
   </variables>

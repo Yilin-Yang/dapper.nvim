@@ -262,21 +262,23 @@ lockvar s:SCOPE_PATTERN
 
 ""
 " @dict VariablesPrinter
-" Asynchronously (and recursively) print the given {var_or_scope} into the
-" managed buffer underneath the given parent.
+" Asynchronously (and recursively) print the given {children} into the
+" managed buffer underneath the given parent {var_or_scope}. Also updates the
+" {var_or_scope}'s trailing "info" (i.e. the text that reads "5 numbered, 6
+" indexed", etc.), if possible.
 "
-" Assumes that the parent scope or variable has already been printed in the
+" Assumes that the parent {var_or_scope} has already been printed in the
 " managed buffer, i.e. a GetRange call to find the parent will not throw an
 " ERROR(NotFound).
 "
-" {child_of} is the lookup path of the parent of {var_or_scope}. In practice,
-" if {child_of} is nonempty, {var_or_scope} must be a @dict(Variable).
+" {child_of} is the lookup path of {var_or_scope}. In practice, if {child_of}
+" is nonempty, the variables in {chidren} must be @dict(Variable)s.
 "
 " {rec_depth} is the number of "levels deep" to which {var_or_scope} and its
-" children should be printed. If equal to 1, only {var_or_scope} will be
-" printed in a "collapsed" state. If equal to 2, {var_or_scope} will be
-" printed, and its immediate children will be printed in a "collapsed" state,
-" and so on.
+" children should be printed. If equal to 1, only {var_or_scope} and {children}
+" will be printed in a "collapsed" state. If equal to 2, {var_or_scope} will
+" be printed, its {children} will be printed, and the children's children will
+" be printed in a "collapsed" state, and so on.
 "
 " {children} is a dict between variable indices/names and corresponding
 " @dict(Variable) objects.
@@ -313,23 +315,18 @@ function! dapper#view#VariablesPrinter#_PrintCollapsedChildren(
   endif
 
   " if there's a parent, change its prefix from '>' to 'v'
-  if l:is_var  " will only have a parent if this is a variable
-    " try to parse parent as a Variable; if that fails, parse it as a Scope
-    let l:parent_line = l:self._buffer.GetLines(l:parent_start)[0]
+  if typevim#value#IsType(a:var_or_scope, 'Scope')
+    let l:parent = s:DictScopeToStruct(a:var_or_scope, 1)
+    let l:parent_str =
+        \ dapper#view#VariablesPrinter#StringFromScope(l:parent, 0)
+  else  " parent is Variable
     let l:parent =
-        \ dapper#view#VariablesPrinter#VariableFromString(l:parent_line)
-    if empty(l:parent)
-      let l:parent =
-          \ dapper#view#VariablesPrinter#ScopeFromString(l:parent_line)
-      let l:parent_str =
-          \ dapper#view#VariablesPrinter#StringFromScope(l:parent, 0)
-    else
-      let l:parent_str =
-          \ dapper#view#VariablesPrinter#StringFromVariable(l:parent, 'v')
-    endif
-    call l:self._buffer.ReplaceLines(
-        \ l:parent_start, l:parent_start, [l:parent_str])
+        \ s:DictVariableToStruct(a:child_of, a:var_or_scope, 1)
+    let l:parent_str =
+        \ dapper#view#VariablesPrinter#StringFromVariable(l:parent, 'v')
   endif
+  call l:self._buffer.ReplaceLines(
+      \ l:parent_start, l:parent_start, [l:parent_str])
 
   " sort children in alphabetical order by name
   let l:name_and_var = sort(items(a:children),
