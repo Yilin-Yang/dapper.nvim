@@ -312,8 +312,18 @@ Execute (VariablesPrinter: Print Local Scope):
   call g:vp.ExpandEntry(['Local'], g:scope)
   sleep 100m
 Expect:
-  v Local : 4 named
-    - local_0_i, int: 123
+  <variables>
+  > Local : 4 named
     - local_0_f, float: 3.14
+    - local_0_i, integer: 123
+    v local_0_o, object: Object
+      - object__f, float: 3.14
+      - object__i, integer: 123
+      v object__o, object: Object
+        - object__f, float: 3.14
+        - object__i, integer: 123
+        > object__o, object: Object
+        - object__s, string: hello world
+      - object__s, string: hello world
     - local_0_s, string: hello world
-    > local_0_o, Object, {class}:
+  </variables>
