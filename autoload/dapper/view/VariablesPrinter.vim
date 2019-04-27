@@ -615,29 +615,64 @@ endfunction
 " @dict VariablesPrinter
 " Update the value of a @dict(Variable) in the managed buffer.
 "
-" @throws BadValue if {lookup_path} contains values that aren't strings, or if {lookup_path} has only one entry, i.e. it's a path to a Scope.
+" {new_props} is a dictionary that may contain:
+" - value: A string, the new value of the variable.
+" - type?: An optional string, the variable's new type.
+" - namedVariables?: An optional number, the number of named child variables.
+" - indexedVariables?: An optional number, the number of indexed child
+"   variables.
+"
+" Properties with keys not matching the above are silently ignored. If
+" {lookup_path} corresponds to a @dict(Scope), the `value` key has no effect.
+" Unspecified properties are not modified.
+"
+" @throws BadValue if {lookup_path} contains values that aren't strings, or if {lookup_path} is empty, or if {new_props} is not a dict.
 " @throws NotFound if {lookup_path} corresponds to no known scope or variable.
-" @throws WrongType if the given {lookup_path} is not a list, or if {new_value} is not a string.
+" @throws WrongType if the given {lookup_path} is not a list, or if {new_props} does not conform to the interface described above.
 function! dapper#view#VariablesPrinter#UpdateValue(
-    \ lookup_path, new_value) dict abort
+    \ lookup_path, new_props) dict abort
   call s:CheckType(l:self)
   call maktaba#ensure#IsList(a:lookup_path)
-  call maktaba#ensure#IsString(a:new_value)
-  if len(a:lookup_path <# 1)
-    throw maktaba#error#BadValue('Too few elements in lookup path: %s',
-                               \ typevim#PrintShallow(a:lookup_path))
+  call typevim#ensure#Implements(a:new_props, s:new_props_interface)
+  if empty(a:lookup_path)
+    throw maktaba#error#BadValue('Gave empty lookup path in call to UpdateValue!')
+  else
+    let l:is_scope = len(a:lookup_path) ==# 1
   endif
   let [l:start, l:end] = l:self.GetRange(a:lookup_path)
   let l:header = l:self._buffer.GetLines(l:start)[0]
-  let l:parsed_var = dapper#view#VariablesPrinter#VariableFromString(l:header)
-  let l:parsed_var.value = a:new_value
-  let l:prefix = '-'
-  if !l:parsed_var.unsutructured
-    l:prefix = l:parsed_var.expanded ? 'v' : '>'
+  if l:is_scope
+    let l:parsed_scope = dapper#view#VariablesPrinter#ScopeFromString(l:header)
+    let l:info = ''
+    if has_key(a:new_props, 'namedVariables')
+      let l:info .= a:new_props.namedVariables.' named'
+    endif
+    if has_key(a:new_props, 'indexedVariables')
+      let l:info .= (empty(l:info) ? '' : ', ')
+                  \ . a:new_props.indexedVariables . 'indexed'
+    endif
+    if !empty(l:info) | let l:parsed_scope.info = l:info | endif
+    let l:header = dapper#view#VariablesPrinter#StringFromScope(
+        \ l:parsed_scope, l:parsed_scope.expanded)
+  else  " is variable
+    let l:parsed_var = dapper#view#VariablesPrinter#VariableFromString(l:header)
+    let l:parsed_var.value = a:new_props.value
+    let l:prefix = '-'
+    if !l:parsed_var.unstructured
+      l:prefix = l:parsed_var.expanded ? 'v' : '>'
+    endif
+    let l:header = dapper#view#VariablesPrinter#StringFromVariable(
+        \ l:parsed_var, l:prefix)
   endif
-  let l:header =
-      \ dapper#view#VariablesPrinter#StringFromVariable(l:parsed_var, l:prefix)
+  call l:self._buffer.ReplaceLines(l:start, l:start, [l:header])
 endfunction
+let s:new_props_interface = {
+    \ 'value': typevim#String(),
+    \ 'type?': typevim#String(),
+    \ 'namedVariables?': typevim#Number(),
+    \ 'indexedVariables?': typevim#Number(),
+    \ }
+call typevim#make#Interface('NewPropsInterface', s:new_props_interface)
 
 ""
 " @public
