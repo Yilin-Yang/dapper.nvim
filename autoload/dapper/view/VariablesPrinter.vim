@@ -43,14 +43,14 @@ function! dapper#view#VariablesPrinter#New(message_passer, buffer, var_lookup) a
       \ 'ExpandEntry': typevim#make#Member('ExpandEntry'),
       \ 'CollapseEntry': typevim#make#Member('CollapseEntry'),
       \ 'UpdateValue': typevim#make#Member('UpdateValue'),
+      \ '_LogFailure': typevim#make#Member('_LogFailure'),
       \ '_PrintCollapsedChildren': typevim#make#Member('_PrintCollapsedChildren'),
-      \ '_PrintExpandedChild': typevim#make#Member('_PrintExpandedChild'),
       \ }
 
+  let l:new._LogFailure =
+      \ typevim#object#Bind(l:new._LogFailure, l:new)
   let l:new._PrintCollapsedChildren =
       \ typevim#object#Bind(l:new._PrintCollapsedChildren, l:new)
-  let l:new._PrintExpandedChild =
-      \ typevim#object#Bind(l:new._PrintExpandedChild, l:new)
 
   return typevim#make#Class(s:typename, l:new)
 endfunction
@@ -286,10 +286,11 @@ lockvar s:SCOPE_PATTERN
 " @throws WrongType if {var_or_scope} is not a @dict(Variable) or a @dict(Scope), {child_of} is not a list, or {rec_depth} is not a number, or {children} is not a dict.
 function! dapper#view#VariablesPrinter#_PrintCollapsedChildren(
     \ child_of, rec_depth, var_or_scope, children) dict abort
-  let l:rec_depth = maktaba#ensure#IsNumber(get(a:000, 0, 3))
-  if l:rec_depth <# 1
+  call maktaba#ensure#IsNumber(a:rec_depth)
+  if a:rec_depth <# 1
     throw maktaba#error#BadValue(
-        \ 'rec_depth in PrintVariable must be positive, gave: %d', l:rec_depth)
+        \ 'rec_depth in PrintCollapsedChildren must be positive, gave: %d',
+        \ a:rec_depth)
   endif
   if !maktaba#value#IsDict(a:var_or_scope)
     throw maktaba#error#BadValue('Given var_or_scope is not a dict: %s',
@@ -356,7 +357,8 @@ function! dapper#view#VariablesPrinter#_PrintCollapsedChildren(
     if a:rec_depth ># 1 && l:has_children
       call l:var.Children().Then(
           \ function(l:self._PrintCollapsedChildren,
-            \ [l:var_path, a:rec_depth - 1, l:var]))
+            \ [l:var_path, a:rec_depth - 1, l:var]),
+          \ function(l:self._LogFailure, ['"expand entry"']))
     endif
     let l:print_after += 1
   endfor
@@ -526,14 +528,27 @@ endfunction
 " expanded, or the variable is not a "structured" variable that can be
 " expanded) return 0.
 "
-" If the given scope/variable lay within another collapsed scope/variable,
-" this function will recursively expand all "parent" scopes/variables.
+" If the given {var_or_scope} is an unstructured variable, simply update that
+" variable's value in the managed buffer. [rec_depth] will have no effect.
 "
-" @throws BadValue if {lookup_path_of_var} contains values that aren't strings.
+" [rec_depth] is the number of "levels deep" to which {var_or_scope} and its
+" children should be printed. If equal to 1, only {var_or_scope} will be
+" printed in a "collapsed" state. If equal to 2, {var_or_scope} will be
+" printed, and its immediate children will be printed in a "collapsed" state,
+" and so on.
+"
+" @default rec_depth=3
+" @throws BadValue if {lookup_path_of_var} contains values that aren't strings, or if [rec_depth] is not a positive number.
 " @throws NotFound if {lookup_path_of_var} corresponds to no known scope or variable.
 " @throws WrongType if the given {lookup_path_of_var} is not a list.
-function! dapper#view#VariablesPrinter#ExpandEntry(lookup_path) dict abort
+function! dapper#view#VariablesPrinter#ExpandEntry(
+    \ lookup_path, var_or_scope, ...) dict abort
   call s:CheckType(l:self)
+  let l:rec_depth = maktaba#ensure#IsNumber(get(a:000, 0, 3))
+  if l:rec_depth <# 1
+    throw maktaba#error#BadValue(
+        \ 'rec_depth in ExpandEntry must be positive, gave: %d', l:rec_depth)
+  endif
   let [l:start, l:end] = l:self.GetRange(a:lookup_path)
   let l:start_line = l:self._buffer.GetLines(l:start)[0]
 
@@ -542,15 +557,24 @@ function! dapper#view#VariablesPrinter#ExpandEntry(lookup_path) dict abort
     if l:scope.expanded | return 0 | endif
     let l:expanded_str =
         \ dapper#view#VariablesPrinter#StringFromScope(l:scope, 1)
-    " TODO and expand the children
+    call a:var_or_scope.variables().Then(
+        \ function(l:self._PrintCollapsedChildren,
+          \ [a:lookup_path, l:rec_depth, a:var_or_scope]),
+        \ function(l:self._LogFailure, ['"expand Scope"']))
   else  " is Variable
     let l:var = dapper#view#VariablesPrinter#VariableFromString(l:start_line)
-    if l:var.expanded || l:var.unstructured | return 0 | endif
+    if l:var.unstructured
+      call l:self.UpdateValue(a:lookup_path, a:var_or_scope)
+      return 0
+    endif
+    if l:var.expanded | return 0 | endif
     let l:expanded_str =
         \ dapper#view#VariablesPrinter#StringFromVariable(l:var, 'v')
-    " TODO and expland the children
+    call a:var_or_scope.Children().Then(
+        \ function(l:self._PrintCollapsedChildren,
+          \ [a:lookup_path, l:rec_depth, a:var_or_scope]),
+        \ function(l:self._LogFailure, ['"expand Variable"']))
   endif
-  " TODO
   call l:self._buffer.ReplaceLines(l:start, l:end, [l:expanded_str])
   return 1
 endfunction
@@ -613,4 +637,23 @@ function! dapper#view#VariablesPrinter#UpdateValue(
   endif
   let l:header =
       \ dapper#view#VariablesPrinter#StringFromVariable(l:parsed_var, l:prefix)
+endfunction
+
+""
+" @public
+" @dict VariablesPrinter
+" Show/Log information about a failed asynchronous buffer update.
+"
+" {update_type} is the type of the failed update (e.g. asynchronous entry
+" expansion, update variable value, etc.). [more] is any other relevant
+" information, e.g. a |v:exception|, and can be of any type.
+"
+" @default more=""
+" @throws WrongType if {update_type} is not a string.
+function! dapper#view#VariablesPrinter#_LogFailure(update_type, ...) dict abort
+  call maktaba#ensure#IsString(a:update_type)
+  let l:more = get(a:000, 0, '')
+  call l:self._message_passer.NotifyReport(
+      \ 'warn', printf('VariablesBuffer %s update failed!', a:update_type),
+      \ l:more)
 endfunction
