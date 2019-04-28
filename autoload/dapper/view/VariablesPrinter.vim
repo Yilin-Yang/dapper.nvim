@@ -43,6 +43,7 @@ function! dapper#view#VariablesPrinter#New(message_passer, buffer, var_lookup) a
       \ 'ExpandEntry': typevim#make#Member('ExpandEntry'),
       \ 'CollapseEntry': typevim#make#Member('CollapseEntry'),
       \ 'UpdateValue': typevim#make#Member('UpdateValue'),
+      \ 'PrintScopes': typevim#make#Member('PrintScopes'),
       \ '_LogFailure': typevim#make#Member('_LogFailure'),
       \ '_PrintCollapsedChildren': typevim#make#Member('_PrintCollapsedChildren'),
       \ }
@@ -712,6 +713,48 @@ let s:new_props_interface = {
     \ 'indexedVariables?': typevim#Number(),
     \ }
 call typevim#make#Interface('NewPropsInterface', s:new_props_interface)
+
+""
+" @public
+" @dict VariablesBuffer
+" Print each scope in {scopes} as a collapsed item at the top of the
+" managed buffer, after the leading `<variables>` tag, making asynchronous
+" requests to expand each one.
+"
+" {scopes} is a list of strings, with each string being the name of a
+" @dict(Scope) in the stack frame being shown.
+"
+" @default rec_depth=3
+" @throws WrongType if {scopes} is a not list of strings, or [rec_depth] is not a number.
+function! dapper#view#VariablesPrinter#PrintScopes(scopes, ...) dict abort
+  call s:CheckType(l:self)
+  call maktaba#ensure#IsList(a:scopes)
+  let l:rec_depth = maktaba#ensure#IsNumber(get(a:000, 0, 3))
+  let l:var_lookup = l:self._var_lookup
+  let l:names_and_scopes = []
+  for l:scope in a:scopes
+    let l:name_and_scope = [maktaba#ensure#IsString(l:scope)]
+    call add(l:name_and_scope, l:var_lookup.scope(l:scope))
+  endfor
+
+  call sort(l:names_and_scopes, function('typevim#value#CompareKeys'))
+  let l:print_after = 1
+  let l:buffer = l:self._buffer
+  for [l:name, l:scope_promise] in l:names_and_scopes
+    let l:scope_header =
+        \ dapper#view#VariablesPrinter#StringFromScope(
+            \ {'expanded': 0, 'name': l:name, 'info': ''})
+    call l:buffer.InsertLines(l:print_after, [l:scope_header])
+    call l:scope_promise.Then(
+        \ function('s:ExpandScope', [l:self, [l:name], l:rec_depth]),
+        \ function(l:self._LogFailure, ['"expand all Scopes"']))
+    let l:print_after += 1
+  endfor
+endfunction
+
+function! s:ExpandScope(printer, lookup_path, rec_depth, scope) abort
+  call a:printer._PrintCollapsedChildren(a:lookup_path, a:scope, a:rec_depth)
+endfunction
 
 ""
 " @public

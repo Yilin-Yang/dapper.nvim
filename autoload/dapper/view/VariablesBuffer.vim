@@ -33,6 +33,11 @@ function! dapper#view#VariablesBuffer#New(message_passer, ...) abort
           \ a:message_passer,
           \ {'bufname': '[dapper.nvim] Variables, '.s:counter})
 
+  " TODO what if we push a new StackFrame while a variable expansion is still
+  " pending?
+
+  " DigDown and _MakeChild are noops; VariablesBuffer is a terminal node (a
+  " 'leaf') in the DapperBuffer tree.
   let l:new = {
       \ '_stack_frame': l:stack_frame,
       \ '_names_to_scopes': {},
@@ -41,14 +46,12 @@ function! dapper#view#VariablesBuffer#New(message_passer, ...) abort
       \ '_ResetBuffer': typevim#make#Member('_ResetBuffer'),
       \ 'stackFrame': typevim#make#Member('stackFrame'),
       \ 'Push': typevim#make#Member('Push'),
-      \ '_PrintFailedResponse': typevim#make#Member('_PrintFailedResponse'),
       \ 'GetRange': typevim#make#Member('GetRange'),
       \ 'SetMappings': typevim#make#Member('SetMappings'),
-      \ 'ClimbUp': typevim#make#Member('ClimbUp'),
-      \ 'DigDown': typevim#make#Member('DigDown'),
-      \ '_MakeChild': typevim#make#Member('_MakeChild'),
-      \ '_GetSelected': typevim#make#Member('_GetSelected'),
-      \ '_ShowVariables': typevim#make#Member('_ShowVariables'),
+      \ 'ExpandSelected': typevim#make#Member('ExpandSelected'),
+      \ 'CollapseSelected': typevim#make#Member('CollapseSelected'),
+      \ 'DigDown': { -> 0},
+      \ '_MakeChild': { -> 0},
       \ }
   call typevim#make#Derived(s:typename, l:base, l:new)
 
@@ -59,8 +62,6 @@ function! dapper#view#VariablesBuffer#New(message_passer, ...) abort
         \ dapper#view#VariablesPrinter#New(a:message_passer, l:new._lookup)
   endif
 
-  let l:new._PrintFailedResponse =
-      \ typevim#object#Bind(l:new._PrintFailedResponse, l:new)
   let l:new._ShowVariables =
       \ typevim#object#Bind(l:new._ShowVariables, l:new)
   call l:new._ResetBuffer()
@@ -93,7 +94,7 @@ endfunction
 " @public
 " @dict VariablesBuffer
 " Display the scopes (and the variables) accessible from the given
-" {stack_frame}. The buffer will update when the given @dict(StackFrame) is
+" {stack_frame}. The buffer will update when the given @dict(StackFrame)
 " receives DebugProtocol.VariablesResponse updates from the debug adapter, or
 " throw an appropriate error message if the request fails entirely.
 "
@@ -104,38 +105,66 @@ function! dapper#view#VariablesBuffer#Push(stack_frame) dict abort
   let l:self._stack_frame = typevim#ensure#IsType(a:stack_frame, 'StackFrame')
   let l:self._var_lookup =
       \ dapper#model#VariableLookup#New(l:self._message_passer, a:stack_frame)
-  let l:self._printer =
-      \ dapper#view#VariablesPrinter#New(l:self._message_passer, )
-  " TODO replace member variables using new stack frame
-  " TODO mark existing Scopes as obsolete until they're replaced?
+  let l:self._printer = dapper#view#VariablesPrinter#New(
+      \ l:self._message_passer, l:self._var_lookup)
+
   let l:self._names_to_scopes = {}
   let l:scopes = a:stack_frame.scopes()
-  for l:scope in l:scopes
-    let l:scope_promise = a:stack_frame.scope(l:scope)
-    call l:scope_promise.Then(
-        \ l:self._ShowVariables,
-        \ l:self._PrintFailedResponse)
-    call l:self._Log(
-        \ 'debug',
-        \ 'Will print VariablesResponse(s) in this buffer',
-        \ l:scope_promise,
-        \ l:self
-        \ )
-  endfor
+
+  " TODO configurable default recursion depth
+  call l:self._printer.PrintScopes(l:scopes)
 endfunction
 
 ""
+" @public
 " @dict VariablesBuffer
-" Display the given {scope}, and its variables, in the buffer. Scopes will be
-" sorted in alphabetical order by their name.
-"
-" @throws BadValue if {scope} is not a dict.
-" @throws WrongType if {scope} is not a @dict(Scope).
-function! dapper#view#VariablesBuffer#_ShowVariables(scope) dict abort
+" See @function(dapper#view#VariablesPrinter#GetRange).
+function! dapper#view#VariablesBuffer#GetRange(lookup_path_of_var) dict abort
   call s:CheckType(l:self)
-  call typevim#ensure#IsType(a:scope, 'Scope')
-  " TODO
-  " retrieve the line range of the given Scope
-  " if it exists, replace it; if it doesn't, insert it at the appropriate
-  " position
+  call l:self._printer.GetRange(a:lookup_path_of_var)
+endfunction
+
+function! dapper#view#VariablesBuffer#SetMappings() dict abort
+  call s:CheckType(l:self)
+  call setbufvar(l:self.bufnr(), 'dapper_buffer', l:self)
+  execute 'nnoremap <buffer> '.s:plugin.flags.climb_up_mapping.Get().' '
+      \ . ':call b:dapper_buffer.ClimbUp()<cr>'
+
+  " TODO separate mapping for 'expand variable' that defauls to the same as
+  " DigDown?
+  execute 'nnoremap <buffer> '.s:plugin.flags.dig_down_mapping.Get().' '
+      \ . ':call b:dapper_buffer.ExpandSelected()<cr>'
+endfunction
+
+""
+" @public
+" @dict VariablesBuffer
+" Expand (or merely update) the currently selected @dict(Scope) or
+" @dict(Variable) inside the current buffer.
+function! dapper#view#VariablesBuffer#ExpandSelected() dict abort
+  call s:CheckType(l:self)
+  let l:lookup_path_of_selected = l:self._printer.VarFromCursor(getcurpos(), 1)
+  let l:var_or_scope_promise =
+      \ l:self._var_lookup.VariableFromPath(l:lookup_path_of_selected)
+
+  " TODO configurable 'expansion depth'?
+  call l:var_or_scope_promise.Then(
+      \ function('s:ExpandSelectedWrapper',
+          \ [l:self._printer, l:lookup_path_of_selected, 1]),
+      \ function(l:self._printer._LogFailure, ['"expand selected"']))
+endfunction
+
+function! s:ExpandSelectedWrapper(printer, path, rec_depth, var_or_scope) abort
+  call a:printer.ExpandEntry(a:path, a:var_or_scope, a:rec_depth)
+endfunction
+
+""
+" @public
+" @dict VariablesBuffer
+" Collapse the currently selected @dict(Scope) or @dict(Variable) inside the
+" current buffer.
+function! dapper#view#VariablesBuffer#CollapseSelected() dict abort
+  call s:CheckType(l:self)
+  call l:self._printer.CollapseEntry(
+      \ l:self._printer.VarFromCursor(getcurpos(), 1))
 endfunction
