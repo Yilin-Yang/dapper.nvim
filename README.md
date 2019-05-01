@@ -135,6 +135,11 @@ dapper.nvim uses [mocha](https://mochajs.org/) as its testing library. `yarn
 install` should also install mocha, and all necessary dependencies for running
 it.
 
+`./clone_node_dap.sh` may fail if your nodejs installation is newer than major
+verrsion 8. This doesn't actually seem like a hard requirement; if this occurs,
+try changing `"node": "^8.9.3"` inside of `node_modules/vscode-mock-debug/package.json`
+to `"node": ">=8.9.3"`, and then run `yarn install` in that directory.
+
 Note that, since the Debug Adapter Protocol (and dapper.nvim, by extension) rely
 heavily on inter-process communication (e.g. launching debug adapters in the
 background, terminating those adapters after tests are complete), it's possible
