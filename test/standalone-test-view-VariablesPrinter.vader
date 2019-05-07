@@ -304,132 +304,142 @@ Execute (VariablesPrinter: Initialize Mock Debug Adapter, Retrieve Callstack, Lo
   AssertEqual '#(0)', g:frame.name(), 'Failed to retrieve stackframe'
   let g:scope = AwaitPromise(g:frame.scope('Local'), 4000)
 
-Execute (VariablesPrinter: Print Local Scope):
-  call g:buffer.SetBuffer(bufnr('%'))
-  call g:buffer.ReplaceLines(1, -1,
-      \ ['<variables>', '> Local : ', '</variables>']
-      \ )
-  call g:vp.ExpandEntry(['Local'], g:scope)
-  sleep 100m
-Expect:
-  <variables>
-  v Local : 
-    - local_0_f, float: 3.14
-    - local_0_i, integer: 123
-    v local_0_o, object: Object
-      - object__f, float: 3.14
-      - object__i, integer: 123
-      v object__o, object: Object
-        - object__f, float: 3.14
-        - object__i, integer: 123
-        > object__o, object: Object
-        - object__s, string: hello world
-      - object__s, string: hello world
-    - local_0_s, string: hello world
-  </variables>
+" Execute (VariablesPrinter: Print Local Scope):
+"   call g:buffer.SetBuffer(bufnr('%'))
+"   call g:buffer.ReplaceLines(1, -1,
+"       \ ['<variables>', '> Local : ', '</variables>']
+"       \ )
+"   call g:vp.ExpandEntry(['Local'], g:scope)
+"   sleep 100m
+" Expect:
+"   <variables>
+"   v Local : 
+"     - local_0_f, float: 3.14
+"     - local_0_i, integer: 123
+"     v local_0_o, object: Object
+"       - object__f, float: 3.14
+"       - object__i, integer: 123
+"       v object__o, object: Object
+"         - object__f, float: 3.14
+"         - object__i, integer: 123
+"         > object__o, object: Object
+"         - object__s, string: hello world
+"       - object__s, string: hello world
+"     - local_0_s, string: hello world
+"   </variables>
 
-Execute (VariablesPrinter: Print Local Scope, Smaller Recursion Depth):
-  call g:buffer.SetBuffer(bufnr('%'))
-  call g:buffer.ReplaceLines(1, -1,
-      \ ['<variables>', '> Local : ', '</variables>']
-      \ )
-  call g:vp.ExpandEntry(['Local'], g:scope, 2)
-  sleep 100m
-Expect:
-  <variables>
-  v Local : 
-    - local_0_f, float: 3.14
-    - local_0_i, integer: 123
-    v local_0_o, object: Object
-      - object__f, float: 3.14
-      - object__i, integer: 123
-      > object__o, object: Object
-      - object__s, string: hello world
-    - local_0_s, string: hello world
-  </variables>
+" Execute (VariablesPrinter: Print Local Scope, Smaller Recursion Depth):
+"   call g:buffer.SetBuffer(bufnr('%'))
+"   call g:buffer.ReplaceLines(1, -1,
+"       \ ['<variables>', '> Local : ', '</variables>']
+"       \ )
+"   call g:vp.ExpandEntry(['Local'], g:scope, 2)
+"   sleep 100m
+" Expect:
+"   <variables>
+"   v Local : 
+"     - local_0_f, float: 3.14
+"     - local_0_i, integer: 123
+"     v local_0_o, object: Object
+"       - object__f, float: 3.14
+"       - object__i, integer: 123
+"       > object__o, object: Object
+"       - object__s, string: hello world
+"     - local_0_s, string: hello world
+"   </variables>
 
-Execute (VariablesPrinter: Print Local Scope, Then Expand):
-  call g:buffer.SetBuffer(bufnr('%'))
-  call g:buffer.ReplaceLines(1, -1,
-      \ ['<variables>', '> Local : ', '</variables>']
-      \ )
-  call g:vp.ExpandEntry(['Local'], g:scope)
-  sleep 100m
-  call g:vp.ExpandEntry(['Local', 'local_0_o', 'object__o'], g:scope)
-  sleep 100m
-Expect:
-  <variables>
-  v Local : 
-    - local_0_f, float: 3.14
-    - local_0_i, integer: 123
-    v local_0_o, object: Object
-      - object__f, float: 3.14
-      - object__i, integer: 123
-      v object__o, object: Object
-        - object__f, float: 3.14
-        - object__i, integer: 123
-        > object__o, object: Object
-        - object__s, string: hello world
-      - object__s, string: hello world
-    - local_0_s, string: hello world
-  </variables>
+" Execute (VariablesPrinter: Print Local Scope, Then Expand):
+"   call g:buffer.SetBuffer(bufnr('%'))
+"   call g:buffer.ReplaceLines(1, -1,
+"       \ ['<variables>', '> Local : ', '</variables>']
+"       \ )
+"   call g:vp.ExpandEntry(['Local'], g:scope)
+"   sleep 100m
+"   call g:vp.ExpandEntry(['Local', 'local_0_o', 'object__o'], g:scope)
+"   sleep 100m
+" Expect:
+"   <variables>
+"   v Local : 
+"     - local_0_f, float: 3.14
+"     - local_0_i, integer: 123
+"     v local_0_o, object: Object
+"       - object__f, float: 3.14
+"       - object__i, integer: 123
+"       v object__o, object: Object
+"         - object__f, float: 3.14
+"         - object__i, integer: 123
+"         > object__o, object: Object
+"         - object__s, string: hello world
+"       - object__s, string: hello world
+"     - local_0_s, string: hello world
+"   </variables>
 
-Execute (VariablesPrinter: ExpandEntry to Update a Single Variable):
-  call g:buffer.SetBuffer(bufnr('%'))
-  call g:buffer.ReplaceLines(1, -1,
-      \ ['<variables>', '> Local : ', '</variables>']
-      \ )
-  call g:vp.ExpandEntry(['Local'], g:scope, 2)
-  sleep 100m
-  call g:buffer.ReplaceLines(3, 3, ['  - local_0_f, float: 6.28'])
-  " updating should restore the original value
-  " rec_depth should have no effect
-  let g:variables = AwaitPromise(g:scope.variables(), 4000)
-  call g:vp.ExpandEntry(['Local', 'local_0_f'], g:variables.local_0_f, 20)
-Expect:
-  <variables>
-  v Local : 
-    - local_0_f, float: 3.14
-    - local_0_i, integer: 123
-    v local_0_o, object: Object
-      - object__f, float: 3.14
-      - object__i, integer: 123
-      > object__o, object: Object
-      - object__s, string: hello world
-    - local_0_s, string: hello world
-  </variables>
+" Execute (VariablesPrinter: ExpandEntry to Update a Single Variable):
+"   call g:buffer.SetBuffer(bufnr('%'))
+"   call g:buffer.ReplaceLines(1, -1,
+"       \ ['<variables>', '> Local : ', '</variables>']
+"       \ )
+"   call g:vp.ExpandEntry(['Local'], g:scope, 2)
+"   sleep 100m
+"   call g:buffer.ReplaceLines(3, 3, ['  - local_0_f, float: 6.28'])
+"   " updating should restore the original value
+"   " rec_depth should have no effect
+"   let g:variables = AwaitPromise(g:scope.variables(), 4000)
+"   call g:vp.ExpandEntry(['Local', 'local_0_f'], g:variables.local_0_f, 20)
+" Expect:
+"   <variables>
+"   v Local : 
+"     - local_0_f, float: 3.14
+"     - local_0_i, integer: 123
+"     v local_0_o, object: Object
+"       - object__f, float: 3.14
+"       - object__i, integer: 123
+"       > object__o, object: Object
+"       - object__s, string: hello world
+"     - local_0_s, string: hello world
+"   </variables>
 
-Execute (VariablesPrinter: ExpandEntry to Update a Single Variable, w/ Explicit Value):
-  call g:buffer.SetBuffer(bufnr('%'))
-  call g:buffer.ReplaceLines(1, -1,
-      \ ['<variables>', '> Local : ', '</variables>']
-      \ )
-  call g:vp.ExpandEntry(['Local'], g:scope, 2)
-  sleep 100m
-  call g:buffer.ReplaceLines(3, 3, ['  - local_0_f, float: 6.28'])
-  " updating should restore the original value
-  " rec_depth should have no effect
-  call g:vp.ExpandEntry(['Local', 'local_0_f'], {'value': '2.34'}, 20)
-Expect:
-  <variables>
-  v Local : 
-    - local_0_f, float: 2.34
-    - local_0_i, integer: 123
-    v local_0_o, object: Object
-      - object__f, float: 3.14
-      - object__i, integer: 123
-      > object__o, object: Object
-      - object__s, string: hello world
-    - local_0_s, string: hello world
-  </variables>
+" Execute (VariablesPrinter: ExpandEntry to Update a Single Variable, w/ Explicit Value):
+"   call g:buffer.SetBuffer(bufnr('%'))
+"   call g:buffer.ReplaceLines(1, -1,
+"       \ ['<variables>', '> Local : ', '</variables>']
+"       \ )
+"   call g:vp.ExpandEntry(['Local'], g:scope, 2)
+"   sleep 100m
+"   call g:buffer.ReplaceLines(3, 3, ['  - local_0_f, float: 6.28'])
+"   " updating should restore the original value
+"   " rec_depth should have no effect
+"   call g:vp.ExpandEntry(['Local', 'local_0_f'], {'value': '2.34'}, 20)
+" Expect:
+"   <variables>
+"   v Local : 
+"     - local_0_f, float: 2.34
+"     - local_0_i, integer: 123
+"     v local_0_o, object: Object
+"       - object__f, float: 3.14
+"       - object__i, integer: 123
+"       > object__o, object: Object
+"       - object__s, string: hello world
+"     - local_0_s, string: hello world
+"   </variables>
+
+Execute (Clean Up Old Variables Printer, Create Real One):
+  " which used a mock VariableLookup object
+  unlet g:vp
+  unlet g:var_lookup
+  let g:var_lookup = dapper#model#VariableLookup#New(g:dapper_middletalker, g:frame)
+  let g:vp = dapper#view#VariablesPrinter#New(
+      \ g:dapper_middletalker, g:buffer, g:var_lookup)
 
 Execute (VariablesPrinter: Print All Scopes):
   call g:buffer.SetBuffer(bufnr('%'))
   call g:buffer.ReplaceLines(1, -1,
       \ ['<variables>', '</variables>']
       \ )
-  call g:vp.PrintScopes(g:frame.scopes())
-  sleep 100m
+  let g:scopes = g:frame.scopes()
+  echo g:scopes
+  call g:vp.PrintScopes(g:scopes)
+  sleep 1000m
 Expect:
   <variables>
   v Global : 

@@ -735,6 +735,7 @@ function! dapper#view#VariablesPrinter#PrintScopes(scopes, ...) dict abort
   for l:scope in a:scopes
     let l:name_and_scope = [maktaba#ensure#IsString(l:scope)]
     call add(l:name_and_scope, l:var_lookup.VariableFromPath([l:scope]))
+    call add(l:names_and_scopes, l:name_and_scope)
   endfor
 
   call sort(l:names_and_scopes, function('typevim#value#CompareKeys'))
@@ -743,7 +744,7 @@ function! dapper#view#VariablesPrinter#PrintScopes(scopes, ...) dict abort
   for [l:name, l:scope_promise] in l:names_and_scopes
     let l:scope_header =
         \ dapper#view#VariablesPrinter#StringFromScope(
-            \ {'expanded': 0, 'name': l:name, 'info': ''})
+            \ {'expanded': 0, 'name': l:name, 'info': ''}, 1)
     call l:buffer.InsertLines(l:print_after, [l:scope_header])
     call l:scope_promise.Then(
         \ function('s:ExpandScope', [l:self, [l:name], l:rec_depth]),
@@ -753,7 +754,8 @@ function! dapper#view#VariablesPrinter#PrintScopes(scopes, ...) dict abort
 endfunction
 
 function! s:ExpandScope(printer, lookup_path, rec_depth, scope) abort
-  call a:printer._PrintCollapsedChildren(a:lookup_path, a:scope, a:rec_depth)
+  call a:printer.ExpandEntry(
+      \ a:lookup_path, a:scope, a:rec_depth)
 endfunction
 
 ""
