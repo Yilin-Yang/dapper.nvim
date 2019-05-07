@@ -77,12 +77,12 @@ endfunction
 
 ""
 " @dict StackTraceBuffer
-" Report that an attempt to retrieve a @dict(StackTrace) object failed.
+" Report that an attempt to retrieve an object failed.
 function! dapper#view#StackTraceBuffer#_PrintFailedResponse(error) dict abort
   call s:CheckType(l:self)
   call l:self._Log(
       \ 'error',
-      \ 'StackTrace object retrieval failed!',
+      \ 'Object retrieval failed in StackTraceBuffer!',
       \ a:error,
       \ l:self)
 endfunction
@@ -206,8 +206,20 @@ endfunction
 " Open the given stack frame.
 function! dapper#view#StackTraceBuffer#DigDown() dict abort
   call s:CheckType(l:self)
-  let l:callstack = l:self._thread.stackTrace()
-  call l:self._DigDownAndPush(l:callstack[l:self.GetRange()])
+  let l:stack_trace_promise = l:self._thread.stackTrace()
+  let l:frame_idx = l:self._GetSelected()
+
+  call l:stack_trace_promise.Then(
+      \ function('s:GetStackFrameAndPush', [l:self, l:frame_idx]),
+      \ l:self._PrintFailedResponse)
+endfunction
+
+function! s:GetStackFrameAndPush(buffer, index, stack_trace) abort
+  call typevim#ensure#IsType(a:stack_trace, 'StackTrace')
+  let l:frame_promise = a:stack_trace.frame(a:index)
+  call l:frame_promise.Then(
+      \ typevim#object#Bind(a:buffer._DigDownAndPush, a:buffer),
+      \ a:buffer._PrintFailedResponse)
 endfunction
 
 ""
@@ -215,7 +227,7 @@ endfunction
 " Make a VariablesBuffer representing a stack frame in this StackTraceBuffer.
 function! dapper#view#StackTraceBuffer#_MakeChild() dict abort
   call s:CheckType(l:self)
-  let l:child = dapper#view#VariablesBuffer#New()
+  let l:child = dapper#view#VariablesBuffer#New(l:self._message_passer)
   call l:child.SetParent(l:self)
   return l:child
 endfunction
@@ -227,48 +239,46 @@ endfunction
 " @throws NotFound if the numerical index could not be determined.
 function! dapper#view#StackTraceBuffer#_GetSelected() dict abort
   call s:CheckType(l:self)
+  return getcurpos()[1] - 2
+"   function! s:ReportNotFound() abort
+"     call l:self._Log(
+"         \ 'warn',
+"         \ 'Could not determine currently selected stackframe!',
+"         \ extend(['buffer contents:'], l:self.GetLines(1, -1)),
+"         \ string(getcurpos())
+"         \ )
+"   endfunction
 
-  function! s:ReportNotFound() abort
-    call l:self._Log(
-        \ 'warn',
-        \ 'Could not determine currently selected stackframe!',
-        \ extend(['buffer contents:'], l:self.GetLines(1, -1)),
-        \ string(getcurpos())
-        \ )
-  endfunction
+"   let l:buf_contents = l:self.GetLines(1, -1)
+"   if len(l:buf_contents) ==# 2  " only tags, no actual stack frames
+"     call s:ReportNotFound()
+"     return
+"   endif
 
-  let l:buf_contents = l:self.GetLines(1, -1)
-  let l:lineno = line('.')
+"   let l:found = 0
+"   while !l:found
+"     let l:lineno = line('.') - 1
+"     let l:line = l:buf_contents[l:lineno]
+"     let l:tokens = matchlist(l:line, '(\([0-9]\{-}\))\s\+\[\(..\)\]')
+"     if l:lineno ==# 1
+"       normal! j
+"     elseif l:lineno ==# len(l:buf_contents)
+"       normal! k
+"     elseif len(l:tokens) <# 3
+"       throw maktaba#error#Failure(
+"           \ 'StackTraceBuffer failed to parse stackframe entry: %s, '
+"           \ . 'parsed into tokens: %s', l:line, string(l:tokens))
+"     elseif l:tokens[2] ==# 'LA'  " is label, i.e. not a real stack frame
+"       if l:lineno <=# 2  " nothing above this stack frame?
+"         call s:ReportNotFound()
+"         return
+"       endif
+"       " move cursor up by one line
+"       normal! k
+"     else
+"       let l:found = 1
+"     endif
+"   endwhile
 
-  if len(l:buf_contents ==# 2)  " only tags, no actual stack frames
-    call s:ReportNotFound()
-    return
-  endif
-
-  let l:found = 0
-  while !l:found
-    let l:lineno = line('.')
-    let l:line = l:buf_contents[l:lineno]
-    let l:tokens = matchlist(l:line, '(\([0-9]\{-}\)) \[\(..\)\]')
-    if l:lineno ==# 1
-      normal! j
-    elseif l:lineno ==# len(l:buf_contents)
-      normal! k
-    elseif len(l:tokens) <# 3
-      throw maktaba#error#Failure(
-          \ 'StackTraceBuffer failed to parse stackframe entry: %s, '
-          \ . 'parsed into tokens: %s', l:line, string(l:tokens))
-    elseif l:tokens[2] ==# 'LA'  " is label, i.e. not a real stack frame
-      if l:lineno <=# 2  " nothing above this stack frame?
-        call s:ReportNotFound()
-        return
-      endif
-      " move cursor up by one line
-      normal! k
-    else
-      let l:found = 1
-    endif
-  endwhile
-
-  return l:tokens[1]
+"   return l:tokens[1] + 0
 endfunction
