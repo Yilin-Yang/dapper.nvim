@@ -107,6 +107,7 @@ function! dapper#view#VariablesBuffer#Push(stack_frame) dict abort
       \ l:self._message_passer, l:self, l:self._lookup)
 
   let l:scopes = a:stack_frame.scopes()
+  call l:self._ResetBuffer()
   call l:self._printer.PrintScopes(
       \ l:scopes, s:plugin.Flag('menu_expand_depth_initial'))
 endfunction
