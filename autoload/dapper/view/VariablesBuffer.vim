@@ -32,6 +32,7 @@ function! dapper#view#VariablesBuffer#New(message_passer, ...) abort
   let l:base = dapper#view#DapperBuffer#new(
           \ a:message_passer,
           \ {'bufname': '[dapper.nvim] Variables, '.s:counter})
+  let s:counter += 1
 
   " TODO what if we push a new StackFrame while a variable expansion is still
   " pending?
@@ -40,7 +41,6 @@ function! dapper#view#VariablesBuffer#New(message_passer, ...) abort
   " 'leaf') in the DapperBuffer tree.
   let l:new = {
       \ '_stack_frame': l:stack_frame,
-      \ '_names_to_scopes': {},
       \ '_lookup': v:null,
       \ '_printer': v:null,
       \ '_ResetBuffer': typevim#make#Member('_ResetBuffer'),
@@ -62,8 +62,6 @@ function! dapper#view#VariablesBuffer#New(message_passer, ...) abort
         \ dapper#view#VariablesPrinter#New(a:message_passer, l:new._lookup)
   endif
 
-  let l:new._ShowVariables =
-      \ typevim#object#Bind(l:new._ShowVariables, l:new)
   call l:new._ResetBuffer()
   return l:new
 endfunction
@@ -103,14 +101,12 @@ endfunction
 function! dapper#view#VariablesBuffer#Push(stack_frame) dict abort
   call s:CheckType(l:self)
   let l:self._stack_frame = typevim#ensure#IsType(a:stack_frame, 'StackFrame')
-  let l:self._var_lookup =
+  let l:self._lookup =
       \ dapper#model#VariableLookup#New(l:self._message_passer, a:stack_frame)
   let l:self._printer = dapper#view#VariablesPrinter#New(
-      \ l:self._message_passer, l:self._var_lookup)
+      \ l:self._message_passer, l:self, l:self._lookup)
 
-  let l:self._names_to_scopes = {}
   let l:scopes = a:stack_frame.scopes()
-
   call l:self._printer.PrintScopes(
       \ l:scopes, s:plugin.Flag('menu_expand_depth_initial'))
 endfunction
