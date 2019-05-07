@@ -422,3 +422,40 @@ Expect:
       - object__s, string: hello world
     - local_0_s, string: hello world
   </variables>
+
+Execute (VariablesPrinter: Print All Scopes):
+  call g:buffer.SetBuffer(bufnr('%'))
+  call g:buffer.ReplaceLines(1, -1,
+      \ ['<variables>', '</variables>']
+      \ )
+  call g:vp.PrintScopes(g:frame.scopes())
+  sleep 100m
+Expect:
+  <variables>
+  v Global : 
+    - global_0_f, float: 3.14
+    - global_0_i, integer: 123
+    v global_0_o, object: Object
+      - object__f, float: 3.14
+      - object__i, integer: 123
+      v object__o, object: Object
+        - object__f, float: 3.14
+        - object__i, integer: 123
+        > object__o, object: Object
+        - object__s, string: hello world
+      - object__s, string: hello world
+    - global_0_s, string: hello world
+  v Local : 
+    - local_0_f, float: 3.14
+    - local_0_i, integer: 123
+    v local_0_o, object: Object
+      - object__f, float: 3.14
+      - object__i, integer: 123
+      v object__o, object: Object
+        - object__f, float: 3.14
+        - object__i, integer: 123
+        > object__o, object: Object
+        - object__s, string: hello world
+      - object__s, string: hello world
+    - local_0_s, string: hello world
+  </variables>
