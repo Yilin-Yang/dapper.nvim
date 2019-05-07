@@ -734,7 +734,7 @@ function! dapper#view#VariablesPrinter#PrintScopes(scopes, ...) dict abort
   let l:names_and_scopes = []
   for l:scope in a:scopes
     let l:name_and_scope = [maktaba#ensure#IsString(l:scope)]
-    call add(l:name_and_scope, l:var_lookup.scope(l:scope))
+    call add(l:name_and_scope, l:var_lookup.VariableFromPath([l:scope]))
   endfor
 
   call sort(l:names_and_scopes, function('typevim#value#CompareKeys'))
