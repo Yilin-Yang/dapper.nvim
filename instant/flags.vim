@@ -54,21 +54,18 @@ endfunction
 ""
 " Keymapping used to "dig down" to a deeper level of a dapper.nvim buffer,
 " e.g. to go from a "ThreadBuffer" down to the selected "StackTraceBuffer".
-" Defaults to `"<cr>"`.
 call s:plugin.Flag('dig_down_mapping',
     \ s:GlobalSettingOrDefault('g:dapper_dig_down_mapping', '<cr>'))
 
 ""
 " Keymapping used to "climb up" to a higher level of a dapper.nvim buffer,
-" e.g. to go from a "StackTraceBuffer" up to a "ThreadBuffer". Defaults to
-" `"<Esc>"`.
+" e.g. to go from a "StackTraceBuffer" up to a "ThreadBuffer".
 call s:plugin.Flag('climb_up_mapping',
     \ s:GlobalSettingOrDefault('g:dapper_climb_up_mapping', '<Esc>'))
 
 ""
 " Keymapping used to expand the contents of a collapsed scope or "structured"
-" variable (e.g. a class instance, a struct, a list) in a
-" @dict(VariablesBuffer).
+" variable (e.g. a class instance, a struct, a list) in a @dict(VariablesBuffer).
 call s:plugin.Flag('expand_mapping',
     \ s:GlobalSettingOrDefault(
         \ 'g:dapper_expand_mappping', s:plugin.Flag('dig_down_mapping')))
@@ -76,7 +73,7 @@ call s:plugin.Flag('expand_mapping',
 ""
 " Keymapping used to collapse the contents of an expanded scope or
 " "structured" variable in a @dict(VariablesBuffer).
-call s:pluugin.Flag('collapse_mapping',
+call s:plugin.Flag('collapse_mapping',
     \ s:GlobalSettingOrDefault(
         \ 'g:dapper_collapse_mapping', '<BS>'))
 
@@ -132,7 +129,8 @@ call s:plugin.flags.min_log_level.AddTranslator(
 
 ""
 " The greatest recursion depth to which dapper.nvim will inspect a
-" "structured" variable holding other structured variables.
+" "structured" variable holding other structured variables. Should be a
+" positive number.
 "
 " This setting exists to prevent infinite recursion, e.g. if a local variable
 " in the debuggee process is infinitely self-recursive, dapper.nvim will stop
@@ -142,12 +140,18 @@ call s:plugin.flags.min_log_level.AddTranslator(
 call s:plugin.Flag('max_drilldown_recursion',
     \ s:GlobalSettingOrDefault('g:dapper_max_drilldown_recursion', 10))
 
+call s:plugin.flags.max_drilldown_recursion.AddTranslator(
+    \ function('typevim#ensure#IsPositive'))
+
 ""
 " The initial depth to which scopes and structured variables will be expanded
 " when viewing scopes and variables accessible in a stack frame. Should be a
 " positive number.
 call s:plugin.Flag('menu_expand_depth_initial',
     \ s:GlobalSettingOrDefault('g:menu_expand_depth_initial', 3))
+
+call s:plugin.flags.menu_expand_depth_initial.AddTranslator(
+    \ function('typevim#ensure#IsPositive'))
 
 ""
 " The default depth to which collapsed variables and scopes will expand. When
@@ -157,3 +161,6 @@ call s:plugin.Flag('menu_expand_depth_initial',
 
 call s:plugin.Flag('menu_expand_depth_on_map',
     \ s:GlobalSettingOrDefault('g:menu_expand_depth_on_map', 3))
+
+call s:plugin.flags.menu_expand_depth_on_map.AddTranslator(
+    \ function('typevim#ensure#IsPositive'))

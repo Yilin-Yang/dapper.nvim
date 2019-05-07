@@ -111,8 +111,8 @@ function! dapper#view#VariablesBuffer#Push(stack_frame) dict abort
   let l:self._names_to_scopes = {}
   let l:scopes = a:stack_frame.scopes()
 
-  " TODO configurable default recursion depth
-  call l:self._printer.PrintScopes(l:scopes)
+  call l:self._printer.PrintScopes(
+      \ l:scopes, s:plugin.Flag('menu_expand_depth_initial'))
 endfunction
 
 ""
@@ -127,13 +127,15 @@ endfunction
 function! dapper#view#VariablesBuffer#SetMappings() dict abort
   call s:CheckType(l:self)
   call setbufvar(l:self.bufnr(), 'dapper_buffer', l:self)
-  execute 'nnoremap <buffer> '.s:plugin.flags.climb_up_mapping.Get().' '
+
+  execute 'nnoremap <buffer> '.s:plugin.Flag('climb_up_mapping').' '
       \ . ':call b:dapper_buffer.ClimbUp()<cr>'
 
-  " TODO separate mapping for 'expand variable' that defauls to the same as
-  " DigDown?
-  execute 'nnoremap <buffer> '.s:plugin.flags.dig_down_mapping.Get().' '
+  execute 'nnoremap <buffer> '.s:plugin.Flag('expand_mapping').' '
       \ . ':call b:dapper_buffer.ExpandSelected()<cr>'
+
+  execute 'nnoremap <buffer> '.s:plugin.Flag('collapse_mapping').' '
+      \ . ':call b:dapper_buffer.CollapseSelected()<cr>'
 endfunction
 
 ""
@@ -147,10 +149,11 @@ function! dapper#view#VariablesBuffer#ExpandSelected() dict abort
   let l:var_or_scope_promise =
       \ l:self._var_lookup.VariableFromPath(l:lookup_path_of_selected)
 
-  " TODO configurable 'expansion depth'?
+  let l:expand_depth = s:plugin.Flag('menu_expand_depth_on_map')
+
   call l:var_or_scope_promise.Then(
       \ function('s:ExpandSelectedWrapper',
-          \ [l:self._printer, l:lookup_path_of_selected, 1]),
+          \ [l:self._printer, l:lookup_path_of_selected, l:expand_depth]),
       \ function(l:self._printer._LogFailure, ['"expand selected"']))
 endfunction
 
