@@ -76,6 +76,33 @@ Then (Check Values in Structured Variable):
   AssertEqual 'string',      g:var.type()
   AssertEqual 'hello world', g:var.value()
 
+Execute (Pipeline: Dig Down Into VariablesBuffer):
+  call g:tb.Open()
+  normal! 2G
+  execute "normal \<cr>"
+  let g:sb = b:dapper_buffer
+  let g:vb = dapper#view#VariablesBuffer#New(g:dapper_middletalker)
+  call g:vb.SetParent(g:sb)
+  normal! 2G
+  execute "normal \<cr>"
+  call AwaitTimeout({ -> ReceivedMessage('ScopesResponse')}, 4000, 1)
+Expect:
+  <variables>
+  v Local : 
+    - local_0_f, float: 3.14
+    - local_0_i, integer: 123
+    v local_0_o, object: Object
+      - object__f, float: 3.14
+      - object__i, integer: 123
+      v object__o, object: Object
+        - object__f, float: 3.14
+        - object__i, integer: 123
+        > object__o, object: Object
+        - object__s, string: hello world
+      - object__s, string: hello world
+    - local_0_s, string: hello world
+  </variables>
+
 Execute (Pipeline: Cleanup):
   " call g:tb.CleanUp()
   " unlet g:tb
