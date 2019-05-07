@@ -166,12 +166,12 @@ function! dapper#model#Variable#_UpdateFromMsg(msg) dict abort
   call s:CheckType(l:self)
   call typevim#ensure#Implements(a:msg, dapper#dap#ProtocolMessage())
   if !empty(l:self._names_to_children)
-    call l:self._message_passer.NotifyReport(
-        \ 'error',
-        \ 'Variable obj updated, but didn''t clear children?',
-        \ a:msg,
-        \ l:self
-        \ )
+    " call l:self._message_passer.NotifyReport(
+    "     \ 'error',
+    "     \ 'Variable obj updated, but didn''t clear children?',
+    "     \ a:msg,
+    "     \ l:self
+    "     \ )
     let l:self._names_to_children = {}
   endif
   if a:msg.vim_msg_typename !=# 'VariablesResponse'
