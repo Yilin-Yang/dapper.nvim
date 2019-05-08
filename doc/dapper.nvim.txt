@@ -32,6 +32,30 @@ behavior at runtime.
 Install Glaive (https://github.com/google/glaive) and use the |:Glaive|
 command to configure dapper.nvim's maktaba flags.
 
+                                                *dapper.nvim:dig_down_mapping*
+Keymapping used to "dig down" to a deeper level of a dapper.nvim buffer, e.g.
+to go from a "ThreadBuffer" down to the selected "StackTraceBuffer".
+Default: s:GlobalSettingOrDefault('g:dapper_dig_down_mapping', '<cr>') `
+
+                                                *dapper.nvim:climb_up_mapping*
+Keymapping used to "climb up" to a higher level of a dapper.nvim buffer, e.g.
+to go from a "StackTraceBuffer" up to a "ThreadBuffer".
+Default: s:GlobalSettingOrDefault('g:dapper_climb_up_mapping', '<Esc>') `
+
+                                                  *dapper.nvim:expand_mapping*
+Keymapping used to expand the contents of a collapsed scope or "structured"
+variable (e.g. a class instance, a struct, a list) in a
+|dapper.nvim.VariablesBuffer|.
+
+                                                *dapper.nvim:collapse_mapping*
+Keymapping used to collapse the contents of an expanded scope or "structured"
+variable in a |dapper.nvim.VariablesBuffer|.
+Default: s:GlobalSettingOrDefault( 'g:dapper_collapse_mapping', '<BS>') `
+
+                                       *dapper.nvim:toggle_breakpoint_mapping*
+Keymapping used to toggle breakpoints on the current line. Defaults to "<F9>".
+Default: s:GlobalSettingOrDefault('g:toggle_breakpoint_mapping', '<F9>') `
+
                                             *dapper.nvim:filetypes_to_configs*
 Mapping between a filetype and all debug adapter configurations for that
 filetype.
@@ -71,7 +95,7 @@ Default: s:GlobalSettingOrDefault('g:dapper_min_log_level', 'error') `
 
                                          *dapper.nvim:max_drilldown_recursion*
 The greatest recursion depth to which dapper.nvim will inspect a "structured"
-variable holding other structured variables.
+variable holding other structured variables. Should be a positive number.
 
 This setting exists to prevent infinite recursion, e.g. if a local variable in
 the debuggee process is infinitely self-recursive, dapper.nvim will stop
@@ -79,6 +103,12 @@ the debuggee process is infinitely self-recursive, dapper.nvim will stop
 still possible to drill deeper by manually expanding the variable contents in
 the |dapper.nvim.VariablesBuffer|.
 Default: s:GlobalSettingOrDefault('g:dapper_max_drilldown_recursion', 10) `
+
+                                       *dapper.nvim:menu_expand_depth_initial*
+The initial depth to which scopes and structured variables will be expanded
+when viewing scopes and variables accessible in a stack frame. Should be a
+positive number.
+Default: s:GlobalSettingOrDefault('g:menu_expand_depth_initial', 3) `
 
                                                 *dapper.nvim:plugin[mappings]*
 Configures whether plugin/mappings.vim should be loaded.
@@ -907,12 +937,40 @@ VariablesBuffer.stackFrame()                    *VariablesBuffer.stackFrame()*
 VariablesBuffer.Push({stack_frame})                   *VariablesBuffer.Push()*
   Display the scopes (and the variables) accessible from the given
   {stack_frame}. The buffer will update when the given
-  |dapper.nvim.StackFrame| is receives DebugProtocol.VariablesResponse updates
+  |dapper.nvim.StackFrame| receives DebugProtocol.VariablesResponse updates
   from the debug adapter, or throw an appropriate error message if the request
   fails entirely.
 
   Throws ERROR(BadValue) if {stack_frame} is not a dict.
   Throws ERROR(WrongType) if {stack_frame} is not a |dapper.nvim.StackFrame|.
+
+VariablesBuffer.GetRange({lookup_path_of_var})    *VariablesBuffer.GetRange()*
+  See |dapper#view#VariablesPrinter#GetRange()|.
+
+VariablesBuffer.ExpandSelected()            *VariablesBuffer.ExpandSelected()*
+  Expand (or merely update) the currently selected |dapper.nvim.Scope| or
+  |dapper.nvim.Variable| inside the current buffer.
+
+VariablesBuffer.CollapseSelected()        *VariablesBuffer.CollapseSelected()*
+  Collapse the currently selected |dapper.nvim.Scope| or
+  |dapper.nvim.Variable| inside the current buffer.
+
+  If the currently selected |dapper.nvim.Variable| is an unstructured
+  variable, instead collapse its parent |dapper.nvim.Scope| or
+  |dapper.nvim.Variable|.
+
+VariablesBuffer.PrintScopes({scopes}, [rec_depth])
+                                               *VariablesBuffer.PrintScopes()*
+  Print each scope in {scopes} as a collapsed item at the top of the managed
+  buffer, after the leading `<variables>` tag, making asynchronous requests to
+  expand each one.
+
+  {scopes} is a list of strings, with each string being the name of a
+  |dapper.nvim.Scope| in the stack frame being shown.
+
+  [rec_depth] is 3 if omitted.
+  Throws ERROR(WrongType) if {scopes} is a not list of strings, or [rec_depth]
+  is not a number.
 
                                                 *dapper.nvim.VariablesPrinter*
 An object for printing the contents of scopes and variables.
