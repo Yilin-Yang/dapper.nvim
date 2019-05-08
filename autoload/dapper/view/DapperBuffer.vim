@@ -122,7 +122,10 @@ function! dapper#view#DapperBuffer#ConfigureBuffer() dict abort
   call s:CheckType(l:self)
   setlocal nolist
   setlocal tabstop=8
+  setlocal shiftwidth=2
   setlocal conceallevel=0
+  setlocal foldmethod=indent
+  setlocal foldlevel=99
   set syntax=dapper
 endfunction
 
