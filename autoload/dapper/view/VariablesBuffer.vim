@@ -163,8 +163,29 @@ endfunction
 " @dict VariablesBuffer
 " Collapse the currently selected @dict(Scope) or @dict(Variable) inside the
 " current buffer.
+"
+" If the currently selected @dict(Variable) is an unstructured variable,
+" instead collapse its parent @dict(Scope) or @dict(Variable).
 function! dapper#view#VariablesBuffer#CollapseSelected() dict abort
   call s:CheckType(l:self)
-  call l:self._printer.CollapseEntry(
-      \ l:self._printer.VarFromCursor(getcurpos(), 1))
+  let l:lookup_path = l:self._printer.VarFromCursor(getcurpos(), 1)
+
+  if len(l:lookup_path) ># 1  " is variable
+    " check if this is an unstructured variable
+    let l:curpos = getcurpos()
+    if l:curpos[1] ==# 1
+      let l:curpos[1] += 1
+    elseif l:curpos[1] ==# l:self.NumLines()
+      let l:curpos[1] -= 1
+    endif
+
+    let l:line = l:self.GetLines(l:curpos[1])[0]
+    let l:parsed_var = dapper#view#VariablesPrinter#VariableFromString(l:line)
+
+    if !empty(l:parsed_var) && l:parsed_var.unstructured
+      unlet l:lookup_path[-1]  " instead, collapse the parent
+    endif
+  endif
+
+  call l:self._printer.CollapseEntry(l:lookup_path)
 endfunction
