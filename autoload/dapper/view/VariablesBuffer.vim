@@ -41,7 +41,7 @@ function! dapper#view#VariablesBuffer#New(message_passer, ...) abort
   " 'leaf') in the DapperBuffer tree.
   let l:new = {
       \ '_stack_frame': l:stack_frame,
-      \ '_lookup': v:null,
+      \ '_var_lookup': v:null,
       \ '_printer': v:null,
       \ '_ResetBuffer': typevim#make#Member('_ResetBuffer'),
       \ 'stackFrame': typevim#make#Member('stackFrame'),
@@ -56,10 +56,10 @@ function! dapper#view#VariablesBuffer#New(message_passer, ...) abort
   call typevim#make#Derived(s:typename, l:base, l:new)
 
   if l:has_stack_frame
-    let l:new._lookup =
+    let l:new._var_lookup =
         \ dapper#model#VariableLookup#New(a:message_passer, l:stack_frame)
     let l:new._printer =
-        \ dapper#view#VariablesPrinter#New(a:message_passer, l:new._lookup)
+        \ dapper#view#VariablesPrinter#New(a:message_passer, l:new._var_lookup)
   endif
 
   call l:new._ResetBuffer()
@@ -101,10 +101,10 @@ endfunction
 function! dapper#view#VariablesBuffer#Push(stack_frame) dict abort
   call s:CheckType(l:self)
   let l:self._stack_frame = typevim#ensure#IsType(a:stack_frame, 'StackFrame')
-  let l:self._lookup =
+  let l:self._var_lookup =
       \ dapper#model#VariableLookup#New(l:self._message_passer, a:stack_frame)
   let l:self._printer = dapper#view#VariablesPrinter#New(
-      \ l:self._message_passer, l:self, l:self._lookup)
+      \ l:self._message_passer, l:self, l:self._var_lookup)
 
   let l:scopes = a:stack_frame.scopes()
   call l:self._ResetBuffer()

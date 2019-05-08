@@ -216,28 +216,30 @@ endfunction
 " @throws WrongType if {lookup_path} is not a list of strings.
 function! dapper#model#VariableLookup#VariableFromPath(lookup_path) dict abort
   call s:CheckType(l:self)
-  call maktaba#ensure#IsList(a:lookup_path)
-  for l:Obj in a:lookup_path
+  " copy lookup_path to avoid unexpectedly modifying the lookup_path
+  " that the user had provided
+  let l:lookup_path = copy(maktaba#ensure#IsList(a:lookup_path))
+  for l:Obj in l:lookup_path
     call maktaba#ensure#IsString(l:Obj)
   endfor
 
   let l:names_to_scope_promises = l:self.__names_to_scope_promises
-  if empty(a:lookup_path)  " Promise resolves to all Scope objects
+  if empty(l:lookup_path)  " Promise resolves to all Scope objects
     let l:doer = s:ScopesDoer_New(
         \ l:self._message_passer, l:self.__names_to_scope_promises)
     return typevim#Promise#New(l:doer)
   endif
 
-  let l:scope_name = a:lookup_path[0]
+  let l:scope_name = l:lookup_path[0]
   if !has_key(l:names_to_scope_promises, l:scope_name)
     throw maktaba#error#NotFound('No Scope found with name: %s', l:scope_name)
-  elseif len(a:lookup_path) ==# 1  " user requested only a Scope
+  elseif len(l:lookup_path) ==# 1  " user requested only a Scope
     return l:names_to_scope_promises[l:scope_name]
   endif
 
   " user requested a variable in a scope; perform full async waterfall
   let l:scope_promise = l:names_to_scope_promises[l:scope_name]
   let l:var_doer = s:VariableDoer_New(
-      \ l:self._message_passer, a:lookup_path, l:scope_promise)
+      \ l:self._message_passer, l:lookup_path, l:scope_promise)
   return typevim#Promise#New(l:var_doer)
 endfunction

@@ -588,7 +588,6 @@ function! dapper#view#VariablesPrinter#ExpandEntry(
   else  " is Variable
     let l:var = dapper#view#VariablesPrinter#VariableFromString(l:start_line)
     if l:var.unstructured
-
       call l:self.UpdateValue(a:lookup_path, a:var_or_scope)
       return 0
     endif

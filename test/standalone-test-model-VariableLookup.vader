@@ -49,6 +49,19 @@ Then (Retrieve Local Structured Variable):
   let g:var = AwaitPromise(g:vl.VariableFromPath(['Local', 'local_0_o']), g:timeout_len, 1)
   AssertEqual 'local_0_o', g:var.name()
 
+Execute (VariableLookup: Original Lookup Path Unmodified by Lookup):
+  let g:lookup_path = ['Local']
+  let g:orig_lookup_path = copy(g:lookup_path)
+  let g:scope =
+      \ AwaitPromise(g:vl.VariableFromPath(g:lookup_path), g:timeout_len, 1)
+  AssertEqual g:orig_lookup_path, g:lookup_path
+
+  let g:lookup_path = ['Local', 'local_0_i']
+  let g:orig_lookup_path = copy(g:lookup_path)
+  let g:scope =
+      \ AwaitPromise(g:vl.VariableFromPath(g:lookup_path), g:timeout_len, 1)
+  AssertEqual g:orig_lookup_path, g:lookup_path
+
 Execute (VariableLookup: Retrieve Nested Global Variable):
   let g:var = AwaitPromise(
       \ g:vl.VariableFromPath(
