@@ -273,8 +273,7 @@ function! dapper#model#Variable#Child(name_or_idx) dict abort
     let l:children_promise =
         \ dapper#model#Variable#__GetPromiseUpdateChild(l:self)
     return l:children_promise.Then(
-        \ typevim#object#Bind(
-            \ function('dapper#model#Variables#__ReturnChildWithName'),
+        \ function('dapper#model#Variable#__ReturnChildWithName',
             \ [l:self, a:name_or_idx]))
   else
     let l:to_return = typevim#Promise#New()
