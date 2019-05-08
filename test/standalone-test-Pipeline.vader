@@ -82,6 +82,7 @@ Execute (Pipeline: Dig Down Into VariablesBuffer):
   execute "normal \<cr>"
   let g:sb = b:dapper_buffer
   let g:vb = dapper#view#VariablesBuffer#New(g:dapper_middletalker)
+  call g:sb.AddChild(g:vb)
   call g:vb.SetParent(g:sb)
   normal! 2G
   execute "normal \<cr>"
@@ -116,6 +117,180 @@ Expect:
     - local_0_s, string: hello world
   </variables>
 
-Execute (Pipeline: Cleanup):
-  " call g:tb.CleanUp()
-  " unlet g:tb
+Execute (Pipeline: Collapse Scopes):
+  call g:vb.Open()
+  execute "normal \<BS>"
+  normal! 3G
+  execute "normal \<BS>"
+  sleep 100m
+Expect:
+  <variables>
+  > Global : 
+  > Local : 
+  </variables>
+
+Execute (Pipeline: Expand Scopes):
+  call g:vb.Open()
+  normal! 2G
+  execute "normal \<CR>"
+  sleep 100m
+  normal! 15G
+  execute "normal \<CR>"
+  sleep 100m
+Expect:
+  <variables>
+  v Global : 
+    - global_0_f, float: 3.14
+    - global_0_i, integer: 123
+    v global_0_o, object: Object
+      - object__f, float: 3.14
+      - object__i, integer: 123
+      v object__o, object: Object
+        - object__f, float: 3.14
+        - object__i, integer: 123
+        > object__o, object: Object
+        - object__s, string: hello world
+      - object__s, string: hello world
+    - global_0_s, string: hello world
+  v Local : 
+    - local_0_f, float: 3.14
+    - local_0_i, integer: 123
+    v local_0_o, object: Object
+      - object__f, float: 3.14
+      - object__i, integer: 123
+      v object__o, object: Object
+        - object__f, float: 3.14
+        - object__i, integer: 123
+        > object__o, object: Object
+        - object__s, string: hello world
+      - object__s, string: hello world
+    - local_0_s, string: hello world
+  </variables>
+
+Execute (Pipeline: Collapse Variables):
+  call g:vb.Open()
+  normal! 5G
+  execute "normal \<BS>"
+  sleep 100m
+  normal! 7G
+  execute "normal \<BS>"
+  sleep 100m
+Expect:
+  <variables>
+  v Global : 
+    - global_0_f, float: 3.14
+    - global_0_i, integer: 123
+    > global_0_o, object: Object
+    - global_0_s, string: hello world
+  > Local : 
+  </variables>
+
+Execute (Pipeline: Re-Expand Variables):
+  call g:vb.Open()
+  let g:plugin = maktaba#plugin#Get('dapper.nvim')
+  normal! 5G
+  execute "normal \<CR>"
+  sleep 100m
+  normal! 23G
+  execute "normal \<CR>"
+  sleep 100m
+Expect:
+  <variables>
+  v Global : 
+    - global_0_f, float: 3.14
+    - global_0_i, integer: 123
+    v global_0_o, object: Object
+      - object__f, float: 3.14
+      - object__i, integer: 123
+      v object__o, object: Object
+        - object__f, float: 3.14
+        - object__i, integer: 123
+        v object__o, object: Object
+          - object__f, float: 3.14
+          - object__i, integer: 123
+          > object__o, object: Object
+          - object__s, string: hello world
+        - object__s, string: hello world
+      - object__s, string: hello world
+    - global_0_s, string: hello world
+  v Local : 
+    - local_0_f, float: 3.14
+    - local_0_i, integer: 123
+    v local_0_o, object: Object
+      - object__f, float: 3.14
+      - object__i, integer: 123
+      v object__o, object: Object
+        - object__f, float: 3.14
+        - object__i, integer: 123
+        > object__o, object: Object
+        - object__s, string: hello world
+      - object__s, string: hello world
+    - local_0_s, string: hello world
+  </variables>
+
+
+Execute (Pipeline: Collapse with an Unstructured Variable Selected):
+  call g:vb.Open()
+  let g:plugin = maktaba#plugin#Get('dapper.nvim')
+  call g:plugin.Flag('menu_expand_depth_on_map', 1)
+
+  normal! 17G
+  execute "normal \<BS>"
+  sleep 100m
+
+  normal! 9G
+  execute "normal \<BS>"
+  sleep 100m
+
+Expect:
+  <variables>
+  v Global : 
+    - global_0_f, float: 3.14
+    - global_0_i, integer: 123
+    > global_0_o, object: Object
+    - global_0_s, string: hello world
+  > Local : 
+  </variables>
+
+Execute (Pipeline: Fully Collapse Again):
+  call g:vb.Open()
+
+  normal! 2G
+  execute "normal \<BS>"
+  sleep 100m
+
+  normal! 3G
+  execute "normal \<BS>"
+  sleep 100m
+Expect:
+  <variables>
+  > Global : 
+  > Local : 
+  </variables>
+
+Execute (Pipeline: Re-Expand, at a Shallower Depth):
+  call g:vb.Open()
+  let g:plugin = maktaba#plugin#Get('dapper.nvim')
+  call g:plugin.Flag('menu_expand_depth_on_map', 1)
+
+  normal! gg
+  execute "normal \<CR>"
+  sleep 100m
+
+  normal! 7G
+  execute "normal \<CR>"
+  sleep 100m
+
+Expect:
+  <variables>
+  v Global : 
+    - global_0_f, float: 3.14
+    - global_0_i, integer: 123
+    > global_0_o, object: Object
+    - global_0_s, string: hello world
+  v Local : 
+    - local_0_f, float: 3.14
+    - local_0_i, integer: 123
+    > local_0_o, object: Object
+    - local_0_s, string: hello world
+  </variables>
