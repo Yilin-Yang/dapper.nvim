@@ -597,11 +597,10 @@ dapper#model#StackFrame#New({message_passer}, {stack_frame},
   implement a |dapper.nvim.MiddleTalker| interface.
 
 StackFrame.id()                                              *StackFrame.id()*
-  Return a unique identifier for the stack frame, or |v:null| if none could be
-  found.
+  Return a unique identifier for the stack frame.
 
 StackFrame.name()                                          *StackFrame.name()*
-  Return the name of the stack frame, or |v:null| if none could be found.
+  Return the name of the stack frame.
 
 StackFrame.source()                                      *StackFrame.source()*
   Return the DebugProtocol.Source associated with this stack frame, or

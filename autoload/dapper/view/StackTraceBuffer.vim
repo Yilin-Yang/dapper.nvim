@@ -24,12 +24,16 @@ function! dapper#view#StackTraceBuffer#New(message_passer, ...) abort
   call typevim#ensure#Implements(
       \ a:message_passer, dapper#MiddleTalker#Interface())
   let l:thread = get(a:000, 0, {})
-  if !empty(l:thread) | call typevim#ensure#IsType(l:thread, 'Thread') | endif
+  if !empty(l:thread)
+    call typevim#ensure#IsType(l:thread, 'Thread')
+    let l:bufname = s:BufferNameFrom(l:thread)
+  else
+    let l:bufname = s:BufferNameFrom()
+  endif
 
   let l:base = dapper#view#DapperBuffer#new(
           \ a:message_passer,
-          \ {'bufname': '[dapper.nvim] Stack Trace, '.s:counter})
-  let s:counter += 1
+          \ {'bufname': l:bufname})
 
   let l:new = {
       \ '_thread': l:thread,
@@ -55,6 +59,22 @@ endfunction
 
 function! s:CheckType(Obj) abort
   call typevim#ensure#IsType(a:Obj, s:typename)
+endfunction
+
+""
+" Given an optional [thread_id], return a name for a StackTraceBuffer.
+function! s:BufferNameFrom(...) abort
+  let l:has_id = a:0
+  if l:has_id
+    let l:thread_id = maktaba#ensure#IsNumber(a:1)
+    let l:to_return = printf(
+        \ '[dapper.nvim] Stack Trace, Thread ID: %d (buf #%d)',
+        \ l:thread_id, s:counter)
+  else
+    let l:to_return = printf('[dapper.nvim] Stack Trace (buf #%d)', s:counter)
+  endif
+  let s:counter += 1
+  return typevim#string#EscapeChars(l:to_return, '#%')
 endfunction
 
 ""
@@ -104,6 +124,7 @@ function! dapper#view#StackTraceBuffer#Push(thread) dict abort
   call l:stack_trace_promise.Then(
       \ l:self._ShowCallstack,
       \ l:self._PrintFailedResponse)
+  call l:self.Rename(s:BufferNameFrom(a:thread.id()))
   call l:self._Log(
       \ 'debug',
       \ 'Will print StackTraceResponse in this buffer',

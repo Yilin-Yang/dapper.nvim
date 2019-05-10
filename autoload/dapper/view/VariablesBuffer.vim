@@ -26,13 +26,14 @@ function! dapper#view#VariablesBuffer#New(message_passer, ...) abort
   let l:has_stack_frame = 0
   if !empty(l:stack_frame)
     call typevim#ensure#IsType(l:stack_frame, 'StackFrame')
+    let l:bufname = s:BufferNameFrom(l:stack_frame.name(), l:stack_frame.id())
     let l:has_stack_frame = 1
+  else
+    let l:bufname = s:BufferNameFrom()
   endif
 
   let l:base = dapper#view#DapperBuffer#new(
-          \ a:message_passer,
-          \ {'bufname': '[dapper.nvim] Variables, '.s:counter})
-  let s:counter += 1
+      \ a:message_passer, {'bufname': l:bufname})
 
   " TODO what if we push a new StackFrame while a variable expansion is still
   " pending?
@@ -68,6 +69,24 @@ endfunction
 
 function! s:CheckType(Obj) abort
   call typevim#ensure#IsType(a:Obj, s:typename)
+endfunction
+
+""
+" Return a name for a VariablesBuffer, given an optional [frame_name] and
+" [frame_id].
+function! s:BufferNameFrom(...) abort
+  let l:to_return = '[dapper.nvim] Variables'
+  if a:0
+    let l:to_return .= printf(' in Frame: %s,', maktaba#ensure#IsString(a:1))
+  else
+    let l:to_return .= ','
+  endif
+  if a:0 ># 1
+    let l:to_return .= printf(' ID: %s,', a:2)
+  endif
+  let l:to_return .= printf(' (buf #%d)', s:counter)
+  let s:counter += 1
+  return typevim#string#EscapeChars(l:to_return, '#%')
 endfunction
 
 ""
@@ -110,6 +129,7 @@ function! dapper#view#VariablesBuffer#Push(stack_frame) dict abort
   call l:self._ResetBuffer()
   call l:self._printer.PrintScopes(
       \ l:scopes, s:plugin.Flag('menu_expand_depth_initial'))
+  call l:self.Rename(s:BufferNameFrom(a:stack_frame.name(), a:stack_frame.id()))
 endfunction
 
 ""

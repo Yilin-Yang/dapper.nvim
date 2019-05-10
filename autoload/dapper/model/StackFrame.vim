@@ -93,20 +93,20 @@ endfunction
 ""
 " @public
 " @dict StackFrame
-" Return a unique identifier for the stack frame, or |v:null| if none could be
-" found.
+" Return a unique identifier for the stack frame.
 function! dapper#model#StackFrame#id() dict abort
   call s:CheckType(l:self)
+  return l:self._stack_frame.id
   return s:ReturnPropIfPresent(l:self, 'id')
 endfunction
 
 ""
 " @public
 " @dict StackFrame
-" Return the name of the stack frame, or |v:null| if none could be found.
+" Return the name of the stack frame.
 function! dapper#model#StackFrame#name() dict abort
   call s:CheckType(l:self)
-  return s:ReturnPropIfPresent(l:self, 'name')
+  return l:self._stack_frame.name
 endfunction
 
 ""
