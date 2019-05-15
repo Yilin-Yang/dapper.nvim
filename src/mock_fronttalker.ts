@@ -1,5 +1,7 @@
 import {BasicFrontTalker} from './basic_fronttalker';
-import {DapperAnyMsg} from './messages';
+import {DapperAnyMsg, DapperReport, typenameOf} from './messages';
+
+// tslint:disable:no-any
 
 /**
  * FrontTalker implementation for use in test cases.
@@ -18,6 +20,26 @@ export class MockFrontTalker extends BasicFrontTalker {
       this.messages = [];
     }
     this.messages.push(JSON.parse(JSON.stringify(msg)));
+  }
+
+  report(kind: string, brief: string, long: string, other?: any):
+      Promise<void> {
+    if (!this.messages) {
+      this.messages = [];
+    }
+    const msg: DapperReport = {
+      seq: 0,
+      vim_id: 0,
+      vim_msg_typename: '',
+      type: 'report',
+      kind,
+      brief,
+      long,
+      other
+    };
+    msg.vim_msg_typename = typenameOf(msg);
+    this.messages.push(msg);
+    return Promise.resolve();
   }
 
   getLast(): DapperAnyMsg|undefined {

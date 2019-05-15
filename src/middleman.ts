@@ -161,7 +161,7 @@ export class Middleman {
       Promise<DebugProtocol.ConfigurationDoneResponse|DebugProtocol.Response> {
     try {
       // wait for initialization to complete before configuring
-      // await this.initialized;
+      await this.initialized;
 
       // TODO reject if exBps contains filters not contained in Capabilities
       const responses: Array<Promise<DebugProtocol.Response>> = [];
@@ -272,6 +272,8 @@ export class Middleman {
   async request(command: string, vimID: number, args: any):
       Promise<DapperResponse> {
     try {
+      this.ft.report(
+          'debug', 'Sending request: ' + command, JSON.stringify(args));
       const resp = await this.dc.send(command, args) as DapperResponse;
       resp.vim_id = vimID;
       resp.vim_msg_typename = typenameOf(resp);
