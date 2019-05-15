@@ -49,20 +49,19 @@ export function startAndConfigure(config: Config.StartArgs): Promise<boolean> {
   console.log('Given args: ' + JSON.stringify(config));
   return new Promise<boolean>(async (resolve, reject) => {
     const args = config.adapter_config as Config.DebugAdapterConfig;
-    const started = await middleman.startAdapter(
+    await middleman.startAdapter(
         args.runtime_env, args.exe_filepath, args.adapter_id, config.locale);
-    if (!started) reject('Failed to start debug adapter!');
+    console.log('Started debug adapter successfully.');
 
     const dbgArgs = config.debuggee_args;
     const bps = dbgArgs.initial_bps;
-    let configured;
     if (bps) {
-      configured = await middleman.configureAdapter(
+      await middleman.configureAdapter(
           bps.bps, bps.function_bps, bps.exception_bps);
     } else {
-      configured = await middleman.configureAdapter();
+      await middleman.configureAdapter();
     }
-    if (!configured) reject('Failed to configure debug adapter!');
+    console.log('Configured debug adapter successfully.');
 
     let launchedOrAttached;
     if (dbgArgs.request === 'launch' || dbgArgs.request === 'attach') {
@@ -71,7 +70,11 @@ export function startAndConfigure(config: Config.StartArgs): Promise<boolean> {
     } else {
       reject('Bad request type: ' + dbgArgs.request);
     }
-    if (!launchedOrAttached) reject('Failed to launch/attach to debuggee!');
+    if (!launchedOrAttached) {
+      reject('Failed to launch/attach to debuggee!');
+    } else {
+      console.log('Launch/attachment to debuggee was successful.');
+    }
 
     resolve(true);
   });

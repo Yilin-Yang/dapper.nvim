@@ -116,6 +116,7 @@ export class Middleman {
     try {
       this.wasAttachment = false;
       this.dc = new DebugClient(runtimeEnv, exeFilepath, adapterID);
+
       const args: DebugProtocol.InitializeRequestArguments = {
         clientName: Middleman.CLIENT_NAME,
         adapterID,
@@ -128,20 +129,24 @@ export class Middleman {
         // supportsVariablePaging: true,
         // supportsRunInTerminalRequest: true,
       };
-      // only proceed with configuration after initialization is complete
+      // monkey-patch DebugClient to support 'subscribe to All'
+      this.oldEmit = this.dc.emit.bind(this.dc);
+      this.dc.emit = this.teeEmit.bind(this);
+
+      // need to *start* waiting *before* we send the InitializeRequest, or else
+      // we'll "miss it"
       this.initialized = this.dc.waitForEvent('initialized');
+
+      // only proceed with configuration after initialization is complete
       await this.dc.start();
       const response: DebugProtocol.InitializeResponse =
           await this.request('initialize', NULL_VIM_ID, args);
 
       this.capabilities = response.body as DebugProtocol.Capabilities;
-      // monkey-patch DebugClient to support 'subscribe to All'
-      this.oldEmit = this.dc.emit.bind(this.dc);
-      this.dc.emit = this.teeEmit.bind(this);
       return response;
     } catch (e) {
       this.ft.report('error', 'Failed to start debug adapter!', e.toString());
-      return {} as DebugProtocol.InitializeResponse;
+      throw e;
     }
   }
 
@@ -193,7 +198,7 @@ export class Middleman {
     } catch (e) {
       this.ft.report(
           'error', 'Failed to configure debug adapter!', e.toString());
-      return {} as DebugProtocol.Response;
+      throw e;
     }
   }
 
@@ -208,7 +213,7 @@ export class Middleman {
     }
     this.terminatePending = true;
     const termResp = this.request('terminate', NULL_VIM_ID, {restart});
-    const timeout = new Promise<void>(async (resolve, reject) => {
+    const timeout = new Promise<void>(async (_, reject) => {
       const id = setTimeout(() => {
         // prevent erroneous timeout from an older, "stale" terminate request
         clearTimeout(id);
