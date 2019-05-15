@@ -12,7 +12,7 @@ export const TEST_README_FPATH: string = path.join(__dirname, 'TEST_README.md');
  * The compiled mock debug adapter `exe_filepath`.
  */
 export const MOCK_ADAPTER_EXE_FPATH: string = path.join(
-    __dirname, '..', 'node_modules',
+    __dirname, '..', 'extensions',
     'vscode-mock-debug', 'out', 'debugAdapter.js');
 
 /**

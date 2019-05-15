@@ -128,16 +128,16 @@ machine; see `.travis.yml` for (Debian/Ubuntu) installation instructions.
 
 ```bash
 # from project root
-./clone_node_dap.sh  # "install" vscode-mock-debug into node_modules
+extensions/mock-debug-install.sh  # "install" vscode-mock-debug
 npm run test
 ```
 dapper.nvim uses [mocha](https://mochajs.org/) as its testing library. `yarn
 install` should also install mocha, and all necessary dependencies for running
 it.
 
-`./clone_node_dap.sh` may fail if your nodejs installation is newer than major
-verrsion 8. This doesn't actually seem like a hard requirement; if this occurs,
-try changing `"node": "^8.9.3"` inside of `node_modules/vscode-mock-debug/package.json`
+`extensions/mock-debug-install.sh` may fail if your nodejs installation is newer
+than major version 8. This doesn't actually seem like a hard requirement; if
+this occurs, try changing `"node": "^8.9.3"` inside of `node_modules/vscode-mock-debug/package.json`
 to `"node": ">=8.9.3"`, and then run `yarn install` in that directory.
 
 Note that, since the Debug Adapter Protocol (and dapper.nvim, by extension) rely
