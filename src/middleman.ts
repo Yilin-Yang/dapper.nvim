@@ -129,7 +129,7 @@ export class Middleman {
         // supportsRunInTerminalRequest: true,
       };
       // only proceed with configuration after initialization is complete
-      this.initialized = this.dc.waitForEvent('initialized', 10000);
+      this.initialized = this.dc.waitForEvent('initialized');
       await this.dc.start();
       const response: DebugProtocol.InitializeResponse =
           await this.request('initialize', NULL_VIM_ID, args);
@@ -161,7 +161,8 @@ export class Middleman {
       Promise<DebugProtocol.ConfigurationDoneResponse|DebugProtocol.Response> {
     try {
       // wait for initialization to complete before configuring
-      await this.initialized;
+      // await this.initialized;
+
       // TODO reject if exBps contains filters not contained in Capabilities
       const responses: Array<Promise<DebugProtocol.Response>> = [];
       if (!isUndefined(bps)) {

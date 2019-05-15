@@ -187,9 +187,8 @@ Execute (Start Mock Debug Adapter, Store Incoming Messages):
       \ 'launch',
       \ 'test_node_program',
       \ { 'stopOnEntry': 1,
-        \ 'cwd': g:project_root.'/test/js_test',
-        \ 'args': ['node', g:project_root.'/test/js_test/index.js',
-                 \ 'construct', 'error'],
+        \ 'cwd': getcwd(),
+        \ 'args': ['construct', 'error'],
         \ 'program': g:project_root.'/test/js_test/index.js' }
       \ )
   let g:vscode_attr = dapper#config#VSCodeAttributes#New()
