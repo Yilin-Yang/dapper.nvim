@@ -4,7 +4,6 @@ Include: SubscriptionHelpers.vader
 
 Execute (Pipeline: Setup Model, ThreadsBuffer; Subscribe; Initialize Mock Debug Adapter):
   " setup ThreadsBuffer, which should (itself) subscribe
-  if exists('g:tb') | unlet g:tb | endif
   let g:tb = dapper#view#ThreadsBuffer#New(g:dapper_model, g:dapper_middletalker)
 
 Execute (Pipeline: Launch Debuggee):

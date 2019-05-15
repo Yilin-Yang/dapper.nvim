@@ -124,12 +124,12 @@ export class Middleman {
         locale,
         pathFormat: 'path',
         // TODO support the items below
-        // supportsVariableType: true,
+        supportsVariableType: true,
         // supportsVariablePaging: true,
         // supportsRunInTerminalRequest: true,
       };
       // only proceed with configuration after initialization is complete
-      this.initialized = this.dc.waitForEvent('initialized');
+      this.initialized = this.dc.waitForEvent('initialized', 10000);
       await this.dc.start();
       const response: DebugProtocol.InitializeResponse =
           await this.request('initialize', NULL_VIM_ID, args);

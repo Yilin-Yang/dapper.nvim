@@ -1,0 +1,18 @@
+Include: AwaitTimeout.vader
+Include: StartNode2DebugAdapter.vader
+
+Execute (Node2: Setup):
+  " setup ThreadsBuffer, which should (itself) subscribe
+  let g:tb = dapper#view#ThreadsBuffer#New(g:dapper_model, g:dapper_middletalker)
+
+Execute (Node2: Launch Debuggee):
+  call AwaitTimeout({ -> ReceivedMessage('LaunchResponse')}, 4000, 1)
+
+Execute (Node2: Request Threads):
+  call g:dapper_model.Update()
+  call g:tb.Open()
+  call AwaitTimeout({ -> ReceivedMessage('ThreadsResponse')}, 3000, 1)
+Expect:
+  <threads>
+  thread id: 1	name: thread 1		status: entry
+  </threads>

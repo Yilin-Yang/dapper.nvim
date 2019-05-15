@@ -1,0 +1,202 @@
+Include: SubscriptionHelpers.vader
+
+Execute (Start Mock Debug Adapter, Store Incoming Messages):
+  " subscribe to all incoming messages
+  call g:dapper_middletalker.Subscribe('.*', function('StoreMessage'))
+  let g:dapper_model = dapper#model#Model#New(g:dapper_middletalker)
+
+"          "launch": {
+"            "required": [
+"              "cwd"
+"            ],
+"            "properties": {
+"              "program": {
+"                "type": "string",
+"                "description": "%node.launch.program.description%"
+"              },
+"              "stopOnEntry": {
+"                "type": "boolean",
+"                "description": "%node.stopOnEntry.description%",
+"                "default": true
+"              },
+"              "console": {
+"                "enum": [
+"                  "internalConsole",
+"                  "integratedTerminal",
+"                  "externalTerminal"
+"                ],
+"                "description": "%node.launch.console.description%",
+"                "default": "internalConsole"
+"              },
+"              "args": {
+"                "type": "array",
+"                "description": "%node.launch.args.description%",
+"                "items": {
+"                  "type": "string"
+"                },
+"                "default": []
+"              },
+"              "restart": {
+"                "type": "boolean",
+"                "description": "%node.restart.description%",
+"                "default": true
+"              },
+"              "cwd": {
+"                "type": "string",
+"                "description": "%node.launch.cwd.description%",
+"                "default": "${workspaceFolder}"
+"              },
+"              "runtimeExecutable": {
+"                "type": [
+"                  "string",
+"                  "null"
+"                ],
+"                "markdownDescription": "%node.launch.runtimeExecutable.description%",
+"                "default": null
+"              },
+"              "runtimeArgs": {
+"                "type": "array",
+"                "description": "%node.launch.runtimeArgs.description%",
+"                "items": {
+"                  "type": "string"
+"                },
+"                "default": []
+"              },
+"              "env": {
+"                "type": "object",
+"                "additionalProperties": {
+"                  "type": "string"
+"                },
+"                "description": "%node.launch.env.description%",
+"                "default": {}
+"              },
+"              "sourceMaps": {
+"                "type": "boolean",
+"                "description": "%node.sourceMaps.description%",
+"                "default": true
+"              },
+"              "outDir": {
+"                "type": [
+"                  "string",
+"                  "null"
+"                ],
+"                "deprecationMessage": "%outDir.deprecationMessage%",
+"                "default": null
+"              },
+"              "outFiles": {
+"                "type": "array",
+"                "description": "%node.outFiles.description%",
+"                "items": {
+"                  "type": "string"
+"                },
+"                "default": []
+"              },
+"              "port": {
+"                "type": "number",
+"                "description": "%node.port.description%",
+"                "default": 9229
+"              },
+"              "address": {
+"                "type": "string",
+"                "description": "%node.address.description%",
+"                "default": "localhost"
+"              },
+"              "timeout": {
+"                "type": "number",
+"                "description": "%node.timeout.description%",
+"                "default": 10000
+"              },
+"              "smartStep": {
+"                "type": "boolean",
+"                "description": "%node.smartStep.description%",
+"                "default": true
+"              },
+"              "diagnosticLogging": {
+"                "type": "boolean",
+"                "description": "%node.diagnosticLogging.description%",
+"                "default": true,
+"                "deprecationMessage": "%node.diagnosticLogging.deprecationMessage%"
+"              },
+"              "verboseDiagnosticLogging": {
+"                "type": "boolean",
+"                "description": "%node.verboseDiagnosticLogging.description%",
+"                "default": true,
+"                "deprecationMessage": "%node.verboseDiagnosticLogging.deprecationMessage%"
+"              },
+"              "trace": {
+"                "type": [
+"                  "boolean",
+"                  "string"
+"                ],
+"                "enum": [
+"                  "verbose",
+"                  true
+"                ],
+"                "default": true,
+"                "description": "%node.trace.description%"
+"              },
+"              "sourceMapPathOverrides": {
+"                "type": "object",
+"                "description": "%node.sourceMapPathOverrides.description%",
+"                "default": {}
+"              },
+"              "skipFiles": {
+"                "type": "array",
+"                "description": "%node.skipFiles.description%",
+"                "default": []
+"              },
+"              "envFile": {
+"                "type": "string",
+"                "description": "%node.launch.envFile.description%",
+"                "default": "${workspaceFolder}/.env"
+"              },
+"              "showAsyncStacks": {
+"                "type": "boolean",
+"                "description": "%node.showAsyncStacks.description%",
+"                "default": true
+"              },
+"              "outputCapture": {
+"                "enum": [
+"                  "console",
+"                  "std"
+"                ],
+"                "description": "%node.launch.outputCapture.description%",
+"                "default": "console"
+"              },
+"              "enableSourceMapCaching": {
+"                "type": "boolean",
+"                "description": "%node.enableSourceMapCaching.description%",
+"                "default": true
+"              },
+"              "disableOptimisticBPs": {
+"                "type": "boolean",
+"                "description": "%node.disableOptimisticBPs.description%",
+"                "default": true
+"              }
+"            }
+"          },
+
+  " start mock debug adapter
+  let g:debug_adapter_config = dapper#config#DebugAdapterConfig#New(
+      \ 'node',
+      \ g:node2_adapter_exepath,
+      \ 'node2'
+      \ )
+  " TODO need for us to provide cwd? does vscode provide those by itself?
+  let g:debuggee_args = dapper#config#DebuggeeArgs#New(
+      \ 'launch',
+      \ 'test_node_program',
+      \ { 'stopOnEntry': 1,
+        \ 'cwd': g:project_root.'/test/js_test',
+        \ 'args': ['node', g:project_root.'/test/js_test/index.js',
+                 \ 'construct', 'error'],
+        \ 'program': g:project_root.'/test/js_test/index.js' }
+      \ )
+  let g:vscode_attr = dapper#config#VSCodeAttributes#New()
+  let g:start_args = dapper#config#StartArgs#New(
+      \ g:debug_adapter_config,
+      \ g:debuggee_args,
+      \ g:vscode_attr,
+      \ )
+  call DapperStart(g:start_args)
+  call AwaitTimeout({ -> ReceivedMessage('InitializedEvent')}, 7000, 1)
