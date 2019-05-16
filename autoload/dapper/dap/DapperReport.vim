@@ -23,6 +23,7 @@ function! dapper#dap#DapperReport#New(...) abort
   " autopopulate vim_msg_typename
   let l:new.vim_msg_typename = toupper(l:kind[0:0]).l:kind[1:].'Report'
 
-  return typevim#ensure#Implements(l:new, l:interface)
+  " return typevim#ensure#Implements(l:new, l:interface)  " check is redundant
+  return l:new
 endfunction
 let s:log_levels = dapper#constants#LOG_LEVELS()
