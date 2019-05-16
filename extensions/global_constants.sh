@@ -22,7 +22,7 @@ function clone_extension() {
 
   if [ -a "$DIR/$REPONAME" ]; then
     echo "Detected existing \"$REPONAME\", removing."
-    rm -rfv "${DIR:?}/$REPONAME"
+    rm -rf "${DIR:?}/$REPONAME"
   fi
 
   git clone "$GIT_URL" "$DIR/$REPONAME"
