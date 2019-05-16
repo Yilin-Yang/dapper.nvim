@@ -26,6 +26,8 @@ let g:dapper_min_log_level = 'info'
 " TODO: make it possible to change settings after calls to Detect?
 call maktaba#plugin#Detect()
 
+let g:python_adapter_exepath =
+    \ g:project_root.'/extensions/vscode-python/out/client/debugger/debugAdapter/main.js'
 let g:node2_adapter_exepath =
     \ g:project_root.'/extensions/vscode-node-debug2/out/src/nodeDebug.js'
 let g:mock_adapter_exepath =
