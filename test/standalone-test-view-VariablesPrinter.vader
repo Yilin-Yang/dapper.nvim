@@ -1,5 +1,6 @@
 Include: AwaitTimeout.vader
 Include: StartMockDebugAdapter.vader
+Include: EnableProfiling.vader
 
 Execute (VariablesPrinter: Parse Structured Variable):
   let g:parsed = dapper#view#VariablesPrinter#VariableFromString(

@@ -1,6 +1,7 @@
 Include: AwaitTimeout.vader
 Include: StartMockDebugAdapter.vader
 Include: SubscriptionHelpers.vader
+Include: EnableProfiling.vader
 
 Execute (Pipeline: Setup Model, ThreadsBuffer; Subscribe; Initialize Mock Debug Adapter):
   " setup ThreadsBuffer, which should (itself) subscribe
