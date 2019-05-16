@@ -305,7 +305,7 @@ endfunction
 " ERROR(NotAuthorized) if the recursion depth has gone too deep.
 function! dapper#model#Variable#__GetPromiseAutopopulate(self) abort
   call s:CheckType(a:self)
-  if a:self.__recursion_depth ># s:plugin.flags.max_drilldown_recursion.Get()
+  if a:self.__recursion_depth ># s:plugin.Flag('max_drilldown_recursion')
     call a:self._message_passer.NotifyReport(
         \ 'info',
         \ 'Too deeply nested, halting drill-down: '.a:self.name(),

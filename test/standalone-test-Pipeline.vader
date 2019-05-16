@@ -5,6 +5,9 @@ Include: SubscriptionHelpers.vader
 Execute (Pipeline: Setup Model, ThreadsBuffer; Subscribe; Initialize Mock Debug Adapter):
   " setup ThreadsBuffer, which should (itself) subscribe
   let g:tb = dapper#view#ThreadsBuffer#New(g:dapper_model, g:dapper_middletalker)
+  let g:plugin = maktaba#plugin#Get('dapper.nvim')
+  call g:plugin.Flag('menu_expand_depth_on_map', 3)
+  call g:plugin.Flag('menu_expand_depth_initial', 3)
 
 Execute (Pipeline: Launch Debuggee):
   call AwaitTimeout({ -> ReceivedMessage('LaunchResponse')}, 4000, 1)

@@ -1,0 +1,8 @@
+Execute (Enable Performance Profiling):
+  profile start perf.vim
+  profile func *
+
+  augroup TestProfilingWriteback
+    au!
+    autocmd VimLeave * profile stop
+  augroup end

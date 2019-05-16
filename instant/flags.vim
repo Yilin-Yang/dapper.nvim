@@ -128,30 +128,37 @@ call s:plugin.flags.min_log_level.AddTranslator(
     \ function('dapper#ensure#IsValidLogLevel'))
 
 ""
-" The greatest recursion depth to which dapper.nvim will inspect a
-" "structured" variable holding other structured variables. Should be a
-" positive number.
+" When retrieving the contents of a structured variable, dapper.nvim can try
+" to automatically and recursively retrieve and cache the contents of its
+" children, so that expanding one of those variables can occur nearly
+" instantly. This option controls the greatest recursion depth to which
+" dapper.nvim will perform this inspection. Should be non-negative.
 "
 " This setting exists to prevent infinite recursion, e.g. if a local variable
 " in the debuggee process is infinitely self-recursive, dapper.nvim will stop
 " "drilling down" into its contents after delving this many levels deep. It is
 " still possible to drill deeper by manually expanding the variable contents
 " in the @dict(VariablesBuffer).
+"
+" However, this recursive retrieval blocks vim. If a stack frame has many
+" (hundreds or more) elements, then inspecting its variables would freeze vim
+" for up to several minutes. Consequently, this value should never be greater
+" than zero unless you plan to use it for performance benchmarking.
 call s:plugin.Flag('max_drilldown_recursion',
-    \ s:GlobalSettingOrDefault('g:dapper_max_drilldown_recursion', 10))
+    \ s:GlobalSettingOrDefault('g:dapper_max_drilldown_recursion', 0))
 
 call s:plugin.flags.max_drilldown_recursion.AddTranslator(
-    \ function('typevim#ensure#IsPositive'))
+    \ function('typevim#ensure#IsNonNegative'))
 
 ""
 " The initial depth to which scopes and structured variables will be expanded
 " when viewing scopes and variables accessible in a stack frame. Should be a
-" positive number.
+" non-negative number.
 call s:plugin.Flag('menu_expand_depth_initial',
-    \ s:GlobalSettingOrDefault('g:menu_expand_depth_initial', 3))
+    \ s:GlobalSettingOrDefault('g:menu_expand_depth_initial', 1))
 
 call s:plugin.flags.menu_expand_depth_initial.AddTranslator(
-    \ function('typevim#ensure#IsPositive'))
+    \ function('typevim#ensure#IsNonNegative'))
 
 ""
 " The default depth to which collapsed variables and scopes will expand. When
@@ -160,7 +167,7 @@ call s:plugin.flags.menu_expand_depth_initial.AddTranslator(
 " children will be shown. Should be a positive number.
 
 call s:plugin.Flag('menu_expand_depth_on_map',
-    \ s:GlobalSettingOrDefault('g:menu_expand_depth_on_map', 3))
+    \ s:GlobalSettingOrDefault('g:menu_expand_depth_on_map', 1))
 
 call s:plugin.flags.menu_expand_depth_on_map.AddTranslator(
     \ function('typevim#ensure#IsPositive'))

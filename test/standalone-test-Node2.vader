@@ -1,5 +1,6 @@
 Include: AwaitTimeout.vader
 Include: StartNode2DebugAdapter.vader
+Include: EnableProfiling.vader
 
 Execute (Node2: Setup):
   " setup ThreadsBuffer, which should (itself) subscribe
