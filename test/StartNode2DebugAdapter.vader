@@ -176,20 +176,22 @@ Execute (Start Mock Debug Adapter, Store Incoming Messages):
 "            }
 "          },
 
-  " start mock debug adapter
+  " start node debug adapter
   let g:debug_adapter_config = dapper#config#DebugAdapterConfig#New(
       \ 'node',
       \ g:node2_adapter_exepath,
       \ 'node2'
       \ )
-  " TODO need for us to provide cwd? does vscode provide those by itself?
+
   let g:debuggee_args = dapper#config#DebuggeeArgs#New(
       \ 'launch',
       \ 'test_node_program',
-      \ { 'stopOnEntry': 1,
-        \ 'cwd': getcwd(),
-        \ 'args': ['construct', 'error'],
-        \ 'program': g:project_root.'/test/js_test/index.js' }
+      \ { 'program': g:project_root.'/test/js_test/index.js' },
+      \ dapper#config#InitialBreakpoints#New(
+          \ {
+            \ 'source': {'path': '/home/yiliny/plugin/dapper.nvim/test/js_test/index.js'},
+            \ 'breakpoints': [{'line': 1}]
+          \ })
       \ )
   let g:vscode_attr = dapper#config#VSCodeAttributes#New()
   let g:start_args = dapper#config#StartArgs#New(
