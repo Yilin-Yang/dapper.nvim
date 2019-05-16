@@ -4,6 +4,7 @@ import {isUndefined} from 'util';
 import {DebugClient} from 'vscode-debugadapter-testsupport';
 import {DebugProtocol} from 'vscode-debugprotocol';
 
+import * as Config from './config';
 import {FrontTalker} from './fronttalker';
 import {DapperEvent, DapperResponse, isDAPEvent, NULL_VIM_ID, typenameOf} from './messages';
 
@@ -95,9 +96,8 @@ export class Middleman {
    * @param {adapterID}   The name of the debug adapter.
    * @return  {}  `true` when the initialization succeeded, `false` otherwise.
    */
-  async startAdapter(
-      runtimeEnv: string, exeFilepath: string, adapterID: string,
-      locale = 'en-US'): Promise<DebugProtocol.InitializeResponse> {
+  async startAdapter(startArgs: Config.StartArgs):
+      Promise<DebugProtocol.InitializeResponse> {
     this.terminatePending = false;
     if (!deepEqual(this.dc, Middleman.EMPTY_DC)) {
       try {
@@ -110,96 +110,95 @@ export class Middleman {
         this.ft.report(
             'error', 'Failed to terminate running debug adapter!',
             e.toString());
+        // try to kill it again
+        await this.terminate();
       }
     }
+    this.wasAttachment = false;
 
-    try {
-      this.wasAttachment = false;
-      this.dc = new DebugClient(runtimeEnv, exeFilepath, adapterID);
+    const config = startArgs.adapter_config;
+    this.dc = new DebugClient(
+        config.runtime_env, config.exe_filepath, config.adapter_id);
 
-      const args: DebugProtocol.InitializeRequestArguments = {
-        clientName: Middleman.CLIENT_NAME,
-        adapterID,
-        linesStartAt1: true,
-        columnsStartAt1: true,
-        locale,
-        pathFormat: 'path',
-        // TODO support the items below
-        supportsVariableType: true,
-        // supportsVariablePaging: true,
-        // supportsRunInTerminalRequest: true,
-      };
-      // monkey-patch DebugClient to support 'subscribe to All'
-      this.oldEmit = this.dc.emit.bind(this.dc);
-      this.dc.emit = this.teeEmit.bind(this);
+    // monkey-patch DebugClient to "CC" the frontend on all incoming messages
+    this.oldEmit = this.dc.emit.bind(this.dc);
+    this.dc.emit = this.teeEmit.bind(this);
 
-      // need to *start* waiting *before* we send the InitializeRequest, or else
-      // we'll "miss it"
-      this.initialized = this.dc.waitForEvent('initialized');
+    this.dc.start();
 
-      // only proceed with configuration after initialization is complete
-      await this.dc.start();
-      const response: DebugProtocol.InitializeResponse =
-          await this.request('initialize', NULL_VIM_ID, args);
+    // need to start waiting for InitializedEvent before sending the
+    // InitializeRequest, or else we may miss it entirely
+    const initialBps = startArgs.debuggee_args.initial_bps || {};
+    this.initialized = this.dc.waitForEvent('initialized');
+    this.initialized.then(event => {
+      console.log('Received InitializedEvent from adapter.');
+      console.log(JSON.stringify(event));
+      this.configureAdapter(
+          initialBps.bps, initialBps.function_bps, initialBps.exception_bps);
+    });
 
-      this.capabilities = response.body as DebugProtocol.Capabilities;
-      return response;
-    } catch (e) {
-      this.ft.report('error', 'Failed to start debug adapter!', e.toString());
-      throw e;
-    }
+    const args: DebugProtocol.InitializeRequestArguments = {
+      clientName: Middleman.CLIENT_NAME,
+      adapterID: config.adapter_id,
+      linesStartAt1: true,
+      columnsStartAt1: true,
+      locale: startArgs.locale,
+      pathFormat: 'path',
+      // TODO support the items below
+      // supportsVariableType: true,
+      // supportsVariablePaging: true,
+      // supportsRunInTerminalRequest: true,
+    };
+
+    const response: DebugProtocol.InitializeResponse =
+        await this.request('initialize', NULL_VIM_ID, args);
+
+    this.capabilities = response.body as DebugProtocol.Capabilities;
+    return response;
   }
 
   /**
    * Finish configuring the debug adapter, i.e. complete the 'startup
    * sequence.'
    *
-   * Shall only be invoked after a call to `startAdapter`.
+   * Shall only be invoked after a call to `startAdapter`, *immediately* after
+   * receiving a DebugProtocol.InitializedEvent.
    * @param {bps}     Ordinary breakpoints to be set on initialization.
    * @param {funcBps} Breakpoints to be set on particular functions.
    * @param {exBps}   Filters for exceptions on which to stop execution.
    */
-  async configureAdapter(
+  private async configureAdapter(
       bps?: DebugProtocol.SetBreakpointsArguments,
       funcBps?: DebugProtocol.SetFunctionBreakpointsArguments,
       exBps?: DebugProtocol.SetExceptionBreakpointsArguments):
       Promise<DebugProtocol.ConfigurationDoneResponse|DebugProtocol.Response> {
-    try {
-      // wait for initialization to complete before configuring
-      await this.initialized;
-
-      // TODO reject if exBps contains filters not contained in Capabilities
-      const responses: Array<Promise<DebugProtocol.Response>> = [];
-      if (!isUndefined(bps)) {
-        responses.push(this.request('setBreakpoints', NULL_VIM_ID, bps));
-      }
-      if (!isUndefined(funcBps)) {
-        responses.push(
-            this.request('setFunctionBreakpoints', NULL_VIM_ID, funcBps));
-      }
-      await Promise.all(responses);
-
-      if (isUndefined(exBps)) {
-        if (this.capabilities.supportsConfigurationDoneRequest) {
-          return await this.request('configurationDone', NULL_VIM_ID, {});
-        } else {
-          return await this.request(
-              'setExceptionBreakpoints', NULL_VIM_ID, {filters: ['any']});
-        }
-      }
-      // send exception breakpoints, and only send configurationDone if
-      // supported, to avoid clobbering user-set exception breakpoints
-      const exBpsResp =
-          await this.request('setExceptionBreakpoints', NULL_VIM_ID, exBps);
-      if (this.capabilities.supportsConfigurationDoneRequest) {
-        return await this.request('configurationDone', NULL_VIM_ID, {});
-      }
-      return exBpsResp;
-    } catch (e) {
-      this.ft.report(
-          'error', 'Failed to configure debug adapter!', e.toString());
-      throw e;
+    const responses: Array<Promise<DebugProtocol.Response>> = [];
+    if (!isUndefined(bps)) {
+      console.log('User provided "normal" breakpoints; sending them.');
+      responses.push(this.request('setBreakpoints', NULL_VIM_ID, bps));
     }
+    if (!isUndefined(funcBps)) {
+      console.log('User provided function breakpoints; sending them.');
+      responses.push(
+          this.request('setFunctionBreakpoints', NULL_VIM_ID, funcBps));
+    }
+
+    await Promise.all(responses);
+
+    // send exception breakpoints, and then only send configurationDone if
+    // supported
+    if (isUndefined(exBps)) {
+      // TODO reject if exBps contains filters not contained in Capabilities
+      console.log(
+          'User did not provide exception breakpoints. Setting defaults.');
+      exBps = {filters: []};
+    }
+    const exBpsResp =
+        await this.request('setExceptionBreakpoints', NULL_VIM_ID, exBps);
+    if (this.capabilities.supportsConfigurationDoneRequest) {
+      return await this.request('configurationDone', NULL_VIM_ID, {});
+    }
+    return exBpsResp;
   }
 
   /**
@@ -289,7 +288,7 @@ export class Middleman {
           'error', command + ' request failed!',
           'vimID: ' + vimID + 'args: ' + JSON.stringify(args) + ', ' +
               e.toString());
-      return {} as DapperResponse;
+      throw e;
     }
   }
 

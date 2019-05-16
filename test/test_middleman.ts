@@ -1,15 +1,32 @@
 import * as assert from 'assert';
 import {describe, it} from 'mocha';
+import {DebugProtocol} from 'vscode-debugprotocol';
 
+import * as Config from '../src/config';
 import {Middleman} from '../src/middleman';
 import {MockFrontTalker} from '../src/mock_fronttalker';
 
-import {MOCK_ADAPTER_EXE_FPATH, MOCK_ADAPTER_CAPABILITIES, THREADS, STACK_FRAMES, TEST_README_FPATH} from './test_readme';
+import {MOCK_ADAPTER_CAPABILITIES, MOCK_ADAPTER_EXE_FPATH, STACK_FRAMES, TEST_README_FPATH, THREADS} from './test_readme';
 
 const TIMEOUT_LEN = 5000;  // ms
 
 let mm: Middleman;
 const ft: MockFrontTalker = new MockFrontTalker();
+
+const startArgs: Config.StartArgs = {
+  adapter_config: {
+    runtime_env: 'node',
+    exe_filepath: MOCK_ADAPTER_EXE_FPATH,
+    adapter_id: 'mock'
+  },
+  debuggee_args: {request: 'launch', name: 'test debuggee', args: {}},
+  locale: 'en_US'
+};
+const launchArgs = {
+  stopOnEntry: true,
+  program: TEST_README_FPATH
+} as DebugProtocol.LaunchRequestArguments;
+startArgs.debuggee_args.args = launchArgs;
 
 describe('Middleman initialization, mock debug adapter', () => {
   it('can be constructed with a mock FrontTalker', () => {
@@ -17,26 +34,18 @@ describe('Middleman initialization, mock debug adapter', () => {
   });
 
   it('can start a mock debug adapter', async () => {
-    const result = await mm.startAdapter(
-        'node',
-        MOCK_ADAPTER_EXE_FPATH,
-        'mock');
+    const result = await mm.startAdapter(startArgs);
     assert.deepEqual(mm.getCapabilities(), MOCK_ADAPTER_CAPABILITIES);
     return result;
   }).timeout(TIMEOUT_LEN);
 
   it('will terminate an already running adapter before starting a new one',
-      async () => {
-    const result =
-        await mm.startAdapter('node', MOCK_ADAPTER_EXE_FPATH, 'mock');
-    assert.deepEqual(mm.getCapabilities(), MOCK_ADAPTER_CAPABILITIES);
-    return result;
-  }).timeout(TIMEOUT_LEN);
-
-  it('can configure the mock debug adapter', async () => {
-    const result = await mm.configureAdapter();
-    return result;
-  }).timeout(TIMEOUT_LEN);
+     async () => {
+       const result = await mm.startAdapter(startArgs);
+       assert.deepEqual(mm.getCapabilities(), MOCK_ADAPTER_CAPABILITIES);
+       return result;
+     })
+      .timeout(TIMEOUT_LEN);
 });
 
 describe('Middleman interaction, mock debug adapter', () => {
@@ -70,8 +79,10 @@ describe('Middleman interaction, mock debug adapter', () => {
 });
 
 describe('Middleman termination, mock debug adapter', () => {
-  it('can terminate the running debug adapter and debuggee process', async () => {
-     const result = await mm.terminate();
-     return result;
-  }).timeout(TIMEOUT_LEN);
+  it('can terminate the running debug adapter and debuggee process',
+     async () => {
+       const result = await mm.terminate();
+       return result;
+     })
+      .timeout(TIMEOUT_LEN);
 });
