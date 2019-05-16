@@ -32,8 +32,8 @@ endfunction
 " @throws WrongType if [bps], [function_bps], or [exception_bps] are not dictionaries, or if they are nonempty but do not implement the appropriate interfaces.
 function! dapper#config#InitialBreakpoints#New(...) abort
   let a:bps = maktaba#ensure#IsDict(get(a:000, 0, {}))
-  let a:function_bps = maktaba#ensure#IsDict(get(a:000, 0, {}))
-  let a:exception_bps = maktaba#ensure#IsDict(get(a:000, 0, {}))
+  let a:function_bps = maktaba#ensure#IsDict(get(a:000, 1, {}))
+  let a:exception_bps = maktaba#ensure#IsDict(get(a:000, 2, {}))
   let l:new = {}
   if !empty(a:bps)
     call typevim#ensure#Implements(a:bps, dapper#dap#SetBreakpointsArguments())
