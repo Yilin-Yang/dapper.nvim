@@ -226,7 +226,7 @@ function! dapper#MiddleTalker#Request(command, request_args, Callback) abort dic
   let l:vim_id = l:self.__GetID()
   let l:self.__ids_to_callbacks[l:vim_id] = a:Callback
   call l:self.NotifyReport(
-      \ 'info',
+      \ 'debug',
       \ 'Sending request: '.typevim#object#ShallowPrint(a:command),
       \ 'Given callback: '.typevim#object#ShallowPrint(a:Callback)
         \ . ', given args: '.typevim#object#ShallowPrint(a:request_args)
