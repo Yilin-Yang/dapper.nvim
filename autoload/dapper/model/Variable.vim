@@ -16,34 +16,39 @@ function! dapper#model#Variable#New(message_passer, variable) abort
   return dapper#model#Variable#__New(a:message_passer, a:variable, 0)
 endfunction
 
+let s:FUNC_PREFIX = 'dapper#model#Variable#'
+let s:PROTOTYPE = {
+    \ 'name': function(s:FUNC_PREFIX.'name'),
+    \ 'value': function(s:FUNC_PREFIX.'value'),
+    \ 'type': function(s:FUNC_PREFIX.'type'),
+    \ 'presentationHint': function(s:FUNC_PREFIX.'presentationHint'),
+    \ 'evaluateName': function(s:FUNC_PREFIX.'evaluateName'),
+    \ 'variablesReference': function(s:FUNC_PREFIX.'variablesReference'),
+    \ 'namedVariables': function(s:FUNC_PREFIX.'namedVariables'),
+    \ 'indexedVariables': function(s:FUNC_PREFIX.'indexedVariables'),
+    \
+    \ '_UpdateFromMsg': function(s:FUNC_PREFIX.'_UpdateFromMsg'),
+    \ '_HandleFailedReq': function(s:FUNC_PREFIX.'_HandleFailedReq'),
+    \ 'HasChildren': function(s:FUNC_PREFIX.'HasChildren'),
+    \ 'ChildNames': function(s:FUNC_PREFIX.'ChildNames'),
+    \ 'Children': function(s:FUNC_PREFIX.'Children'),
+    \ 'Child': function(s:FUNC_PREFIX.'Child'),
+    \ }
+call typevim#make#Class(s:typename, s:PROTOTYPE)
+
 function! dapper#model#Variable#__New(message_passer, variable, recursion_depth) abort
   call typevim#ensure#Implements(a:message_passer, dapper#MiddleTalker#Interface())
   call typevim#ensure#Implements(a:variable, dapper#dap#Variable())
   call maktaba#ensure#IsNumber(a:recursion_depth)
 
-  let l:new = {
+  let l:new = deepcopy(s:PROTOTYPE)
+  call extend(l:new, {
       \ '_message_passer': a:message_passer,
       \ '_variable': a:variable,
       \ '_names_to_children': {},
       \ '__recursion_depth': a:recursion_depth,
-      \
-      \ 'name': typevim#make#Member('name'),
-      \ 'value': typevim#make#Member('value'),
-      \ 'type': typevim#make#Member('type'),
-      \ 'presentationHint': typevim#make#Member('presentationHint'),
-      \ 'evaluateName': typevim#make#Member('evaluateName'),
-      \ 'variablesReference': typevim#make#Member('variablesReference'),
-      \ 'namedVariables': typevim#make#Member('namedVariables'),
-      \ 'indexedVariables': typevim#make#Member('indexedVariables'),
-      \
-      \ '_UpdateFromMsg': typevim#make#Member('_UpdateFromMsg'),
-      \ '_HandleFailedReq': typevim#make#Member('_HandleFailedReq'),
-      \ 'HasChildren': typevim#make#Member('HasChildren'),
-      \ 'ChildNames': typevim#make#Member('ChildNames'),
-      \ 'Children': typevim#make#Member('Children'),
-      \ 'Child': typevim#make#Member('Child'),
-      \ }
-  call typevim#make#Class(s:typename, l:new)
+      \ })
+
   let l:new._UpdateFromMsg = typevim#object#Bind(l:new._UpdateFromMsg, l:new)
   let l:new._HandleFailedReq =
       \ typevim#object#Bind(l:new._HandleFailedReq, l:new)
@@ -52,10 +57,7 @@ function! dapper#model#Variable#__New(message_passer, variable, recursion_depth)
   " TODO cache this 'constructor Promise', have async functions resolve when
   " it does (to eliminate redundant VariablesRequests while this request is
   " pending)
-  try
-    call dapper#model#Variable#__GetPromiseAutopopulate(l:new)
-  catch /ERROR(NotAuthorized)/
-  endtry
+  call dapper#model#Variable#__GetPromiseAutopopulate(l:new)
   return l:new
 endfunction
 
@@ -301,20 +303,18 @@ endfunction
 ""
 " @dict Variable
 " The same as @function(dapper#model#Variable#__GetPromiseUpdateChild), but
-" meant to be invoked exclusively from the Variable constructor. Halts with an
-" ERROR(NotAuthorized) if the recursion depth has gone too deep.
+" meant to be invoked exclusively from the Variable constructor. Halts and
+" does nothing if the recursion depth has gone too deep.
 function! dapper#model#Variable#__GetPromiseAutopopulate(self) abort
   call s:CheckType(a:self)
   if a:self.__recursion_depth ># s:plugin.Flag('max_drilldown_recursion')
     call a:self._message_passer.NotifyReport(
-        \ 'info',
-        \ 'Too deeply nested, halting drill-down: '.a:self.name(),
-        \ a:self._variable
+        \ 'debug',
+        \ 'Too deeply nested, halting drill-down: '.a:self.name()
         \ )
-    throw maktaba#error#NotAuthorized(
-        \ 'Recursed too deep during autopopulation of '.a:self.name())
+    return
   endif
-  return dapper#model#Variable#__GetPromiseUpdateChild(a:self)
+  call dapper#model#Variable#__GetPromiseUpdateChild(a:self)
 endfunction
 
 ""
