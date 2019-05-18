@@ -963,8 +963,8 @@ VariablesBuffer.CollapseSelected()        *VariablesBuffer.CollapseSelected()*
   |dapper.nvim.Variable| inside the current buffer.
 
   If the currently selected |dapper.nvim.Variable| is an unstructured
-  variable, instead collapse its parent |dapper.nvim.Scope| or
-  |dapper.nvim.Variable|.
+  variable, or if it's a structured variable that's already been collapsed,
+  instead collapse its parent |dapper.nvim.Scope| or |dapper.nvim.Variable|.
 
 VariablesBuffer.PrintScopes({scopes}, [rec_depth])
                                                *VariablesBuffer.PrintScopes()*

@@ -255,6 +255,19 @@ Expect:
   > Local : 
   </variables>
 
+Execute (Pipeline: Collapse with an Already-Collapsed Variable Selected):
+  call g:vb.Open()
+
+  normal! 5G
+  execute "normal \<BS>"
+  sleep 100m
+
+Expect:
+  <variables>
+  > Global : 
+  > Local : 
+  </variables>
+
 Execute (Pipeline: Fully Collapse Again):
   call g:vb.Open()
 
