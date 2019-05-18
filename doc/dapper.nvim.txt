@@ -986,7 +986,11 @@ Provides functions for printing, collapsing, and expanding scoped blocks of
 text: in this case, actual variable scopes and the variables therein. Meant
 manipulate in this case, actual variable scopes and the variables therein.
 Also provides functions for checking to see which items the user is trying to
-modify. Meant to be used as a member of a VariablesBuffer.
+modify.
+
+Meant to be a "single-use" member variable in a VariablesBuffer, in that it
+should be replaced with a new VariablesPrinter once the VariablesBuffer has
+been pushed a new StackFrame.
 
 Most member functions take in a `{lookup_path_of_var}` See
 |dapper.nvim.VariableLookup| for information on how this argument should be

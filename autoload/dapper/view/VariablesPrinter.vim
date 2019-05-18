@@ -6,7 +6,11 @@
 " text: in this case, actual variable scopes and the variables therein. Meant
 " manipulate in this case, actual variable scopes and the variables therein.
 " Also provides functions for checking to see which items the user is trying
-" to modify. Meant to be used as a member of a VariablesBuffer.
+" to modify.
+"
+" Meant to be a "single-use" member variable in a VariablesBuffer, in that it
+" should be replaced with a new VariablesPrinter once the VariablesBuffer has
+" been pushed a new StackFrame.
 "
 " Most member functions take in a `{lookup_path_of_var}` See
 " @dict(VariableLookup) for information on how this argument should be
@@ -37,6 +41,7 @@ function! dapper#view#VariablesPrinter#New(message_passer, buffer, var_lookup) a
       \ '_message_passer': a:message_passer,
       \ '_buffer': a:buffer,
       \ '_var_lookup': a:var_lookup,
+      \ '_pending_prints': {},
       \ 'PrintVariable': typevim#make#Member('PrintVariable'),
       \ 'GetRange': typevim#make#Member('GetRange'),
       \ 'VarFromCursor': typevim#make#Member('VarFromCursor'),
@@ -313,7 +318,18 @@ function! dapper#view#VariablesPrinter#_PrintCollapsedChildren(
   endif
   call maktaba#ensure#IsDict(a:children)
 
-  let [l:parent_start, l:parent_end] = l:self.GetRange(a:child_of)
+  try
+    let [l:parent_start, l:parent_end] = l:self.GetRange(a:child_of)
+  catch /ERROR(NotFound)/
+    " var_or_scope has not yet been printed; set an async callback to proceed
+    " with printing once it has been
+    let l:args = [a:child_of, a:rec_depth, a:var_or_scope, a:children]
+    let l:self._pending_prints[string(a:child_of)] =
+        \ function(l:self._PrintCollapsedChildren, l:args)
+    call l:self._message_passer.NotifyReport(
+        \ 'info', 'Parent '.a:child_of[-1].' wasn''t printed; waiting.', l:args)
+    return
+  endtry
   if (l:parent_start != l:parent_end)
     " the parent was already expanded; clear all of its current children,
     " since we're going to overwrite them
@@ -358,6 +374,22 @@ function! dapper#view#VariablesPrinter#_PrintCollapsedChildren(
     " print the first line of each child variable so that the callback
     " will be able to find an entry to update
     call l:self._buffer.InsertLines(l:print_after, [l:var_str])
+
+    " if any prints were waiting for one of these children to be printed,
+    " fire them
+    let l:child_lookup_path = l:path_to_given + [l:name]
+    let l:child_lookup_path_as_str = string(l:child_lookup_path)
+
+    call l:self._message_passer.NotifyReport(
+        \ 'debug', 'Setting up child: '.l:child_lookup_path_as_str)
+
+    if has_key(l:self._pending_prints, l:child_lookup_path_as_str)
+      let l:PendingPrint = l:self._pending_prints[l:child_lookup_path_as_str]
+      call l:self._message_passer.NotifyReport(
+          \ 'info', 'Firing pending print for: '.l:name, l:PendingPrint)
+      call l:PendingPrint()
+      unlet l:self._pending_prints[l:child_lookup_path_as_str]
+    endif
 
     let l:var_path = a:child_of + [l:var.name()]
     if a:rec_depth ># 1 && l:has_children
