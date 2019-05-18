@@ -424,6 +424,52 @@ Expect:
     - local_0_s, string: hello world
   </variables>
 
+Given (Node 2 Debug Adapter Output):
+  <variables>
+  v Global : 
+    > Array, Function: function Array() { … }
+    v global, Object: global {global: global, process: process, Buffer: , …}
+      v Array, Function: function Array() { … }
+        - Symbol(Symbol.species), undefined: undefined
+        > [[Scopes]], Object: Scopes[0]
+        - [[StableObjectId]], number: 7
+        > __proto__, Function: function () { … }
+        - arguments, : TypeError: 'caller', 'callee', and 'arguments' properties may not be accessed on strict mode functions or the arguments objects for calls to them
+        - caller, : TypeError: 'caller', 'callee', and 'arguments' properties may not be accessed on strict mode functions or the arguments objects for calls to them
+        > from, Function: function from() { … }
+        > isArray, Function: function isArray() { … }
+        - length, number: 1
+        - name, string: "Array"
+        > of, Function: function of() { … }
+        > prototype, Object: Array(0) [, …]
+      > ArrayBuffer, Function: function ArrayBuffer() { … }
+      > Atomics, Object: Atomics {load: , store: , add: , …}
+      > BigInt, Function: function BigInt() { … }
+      > BigInt64Array, Function: function BigInt64Array() { … }
+      > Boolean, Function: function Boolean() { … }
+      > DataView, Function: function DataView() { … }
+      > unescape, Function: function unescape() { … }
+    > isFinite, Function: function isFinite() { … }
+    > unescape, Function: function unescape() { … }
+  v Local : 
+    - Foo, undefined: undefined
+    - [[StableObjectId]], number: 1
+    - __dirname, string: "/home/yiliny/plugin/dapper.nvim/test/js_test"
+    - __filename, string: "/home/yiliny/plugin/dapper.nvim/test/js_test/index.js"
+    > exports, Object: Object {}
+    - foo, undefined: undefined
+    > module, Object: Module {id: ".", path: "/home/yiliny/plugin/dapper.nvim/test/js_test", exports: Object, …}
+    > require, Function: function require(path) { … }
+    > this, Object: Object
+    > throwError, Function: function throwError() { … }
+  </variables>
+
+Execute (VariablesPrinter: Regression Test, Expand Entry on Var w/ Weird Name):
+  call g:buffer.SetBuffer(bufnr('%'))
+  normal! 7G
+  let [g:start, g:end] = g:vp.GetRange(['Global', 'global', 'Array', '[[Scopes]]'])
+  AssertEqual [7, 7], [g:start, g:end]
+
 Execute (Clean Up Old Variables Printer, Create Real One):
   " which used a mock VariableLookup object
   unlet g:vp
