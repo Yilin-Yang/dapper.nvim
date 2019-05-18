@@ -69,3 +69,11 @@ Execute (VariableLookup: Retrieve Nested Global Variable):
   AssertEqual 'object__f', g:var.name()
   AssertEqual '3.14', g:var.value()
   AssertEqual 'float', g:var.type()
+
+Execute (VariableLookup: Regression Test, Properly Popping from Lookup Path):
+  let g:var = AwaitPromise(
+      \ g:vl.VariableFromPath(
+          \ ['Global', 'global_0_o', 'object__f']), g:timeout_len, 1)
+  AssertEqual 'object__f', g:var.name()
+  AssertEqual '3.14', g:var.value()
+  AssertEqual 'float', g:var.type()
