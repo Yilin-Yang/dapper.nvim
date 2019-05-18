@@ -45,10 +45,9 @@ syn region dapperStackTrace matchgroup=dapperTags
 
 syn match dapperSTIndex /^([0-9]\{-})/ contained
 syn match dapperSTPresentationHint /\[0-90-9\]/ nextgroup=dapperSTLineAndCol contained
-syn region dapperSTLineAndCol start=/(l:/ end=/)/
-    \ contains=dapperSTLineNoColNo nextgroup=dapperSTFrameName contained
+syn region dapperSTLineAndCol start=/(l:/ end=/)/ contains=dapperSTLineNoColNo contained
   syn match dapperSTLineNoColNo /[0-9]/ contained
-syn match dapperSTFrameName /[\s]*$/ contained
+syn match dapperSTFrameName /\(c:\d\+)\t\)\@<=\S.\{-}$/ contained
 
 syn cluster dapperStackTraceElements
     \ contains=dapperSTIndex,
