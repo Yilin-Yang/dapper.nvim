@@ -466,9 +466,39 @@ Given (Node 2 Debug Adapter Output):
 
 Execute (VariablesPrinter: Regression Test, Expand Entry on Var w/ Weird Name):
   call g:buffer.SetBuffer(bufnr('%'))
-  normal! 7G
-  let [g:start, g:end] = g:vp.GetRange(['Global', 'global', 'Array', '[[Scopes]]'])
-  AssertEqual [7, 7], [g:start, g:end]
+  AssertEqual [7, 7], g:vp.GetRange(['Global', 'global', 'Array', '[[Scopes]]'])
+
+Given (Regex-Littered Variables Buffer):
+  <variables>
+  v [[Local]] : 
+    - local_0_f$, float: 3.14
+    - local.0_i, integer: 123
+    v local_0_o, object: Object
+      - object__*, float: 3.14
+      - object__~, integer: 123
+      > object|o, object: Object
+      - ., string: hello world
+    - local_0_s, string: hello world
+  v \(Global\) : 
+    - global_0_f, float: 2.34
+    - global_0_i, integer: 123
+    v global_0_o, object: Object
+      - object__f, float: 3.14
+      - object__i, integer: 123
+      > object__o, object: Object
+      - object__s, string: hello world
+    - global_0_s, string: hello world
+  </variables>
+
+Execute (VariablesPrinter: Can Find Scopes with Regex Chars in Name):
+  call g:buffer.SetBuffer(bufnr('%'))
+  AssertEqual [2, 10], g:vp.GetRange(['[[Local]]'])
+  AssertEqual [3, 3], g:vp.GetRange(['[[Local]]', 'local_0_f$'])
+  AssertEqual [6, 6], g:vp.GetRange(['[[Local]]', 'local_0_o', 'object__*'])
+  AssertEqual [7, 7], g:vp.GetRange(['[[Local]]', 'local_0_o', 'object__~'])
+  AssertEqual [8, 8], g:vp.GetRange(['[[Local]]', 'local_0_o', 'object|o'])
+  AssertEqual [9, 9], g:vp.GetRange(['[[Local]]', 'local_0_o', '.'])
+  AssertEqual [11, 19], g:vp.GetRange(['\(Global\)'])
 
 Execute (Clean Up Old Variables Printer, Create Real One):
   " which used a mock VariableLookup object

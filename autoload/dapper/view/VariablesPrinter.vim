@@ -65,6 +65,10 @@ function! s:CheckType(Obj) abort
   call typevim#ensure#IsType(a:Obj, s:typename)
 endfunction
 
+function! s:EscapeMagicChars(string) abort
+  return typevim#string#EscapeChars(a:string, '\[]$.*~')
+endfunction
+
 ""
 " Convert the given @dict(Variable) {variable} into the "compact struct" used
 " by functions like @function(dapper#view#VariablesPrinter#StringFromVariable).
@@ -215,7 +219,7 @@ call typevim#make#Interface('ParsedVariable', s:variable_interface)
 " provided.
 function! s:VariablePattern(...) abort
   let l:indentation = maktaba#ensure#IsString(get(a:000, 0, '[ ]\{-}'))
-  let l:name = maktaba#ensure#IsString(get(a:000, 1, '.\{-}'))
+  let l:name = a:0 ># 1 ? s:EscapeMagicChars(a:2) : '.\{-}'
   let l:type = maktaba#ensure#IsString(get(a:000, 2, '.\{-}'))
   return '^\('.l:indentation.'\)\([>v-]\) \('.l:name.'\), \('.l:type.
       \ '\)\%(, \(.\{-}\)\)\{0,1}:\%( \(.*\)\)\?$'
@@ -265,7 +269,7 @@ call typevim#make#Interface('ParsedScope', s:scope_interface)
 " Return a regex pattern that matches a scope with [name]. If [name] is not
 " provided, match a scope with any name.
 function! s:ScopePattern(...) abort
-  let l:name = maktaba#ensure#IsString(get(a:000, 0, '.*'))
+  let l:name = a:0 ? s:EscapeMagicChars(a:1) : '.*'
   return '^\([>v]\) \('.l:name.'\) :\%( \(.*\)\)\?$'
 endfunction
 
