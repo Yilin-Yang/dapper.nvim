@@ -55,6 +55,8 @@ function! dapper#log#DebugLogger#Get() abort
         \ 'swapfile': 0,
       \ })
   call l:buffer.setbufvar('&filetype', 'vim')
+  call l:buffer.setbufvar('&shiftwidth', 2)
+  call l:buffer.setbufvar('&foldmethod', 'indent')
   let l:new = {
       \ 'buffer': l:buffer,
       \ '__logger': g:dapper_plugin.logger,
