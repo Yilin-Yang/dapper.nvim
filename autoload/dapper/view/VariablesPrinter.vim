@@ -331,7 +331,7 @@ function! dapper#view#VariablesPrinter#_PrintCollapsedChildren(
     let l:self._pending_prints[string(a:child_of)] =
         \ function(l:self._PrintCollapsedChildren, l:args)
     call l:self._message_passer.NotifyReport(
-        \ 'info', 'Parent '.a:child_of[-1].' wasn''t printed; waiting.', l:args)
+        \ 'info', 'Parent '.a:child_of[-1]." wasn't printed; aborting.", l:args)
     return
   endtry
   if (l:parent_start != l:parent_end)
@@ -380,20 +380,24 @@ function! dapper#view#VariablesPrinter#_PrintCollapsedChildren(
     " will be able to find an entry to update
     call l:self._buffer.InsertLines(l:print_after, [l:var_str])
 
+    let l:child_path_as_str = string(l:child_path)
+    call l:self._message_passer.NotifyReport(
+        \ 'debug', 'Setting up child: '.l:child_path_as_str)
+
     " if any prints were waiting for one of these children to be printed,
     " fire them
-    let l:child_path_as_str = string(l:child_path)
+    if has_key(l:self._pending_prints, l:child_path_as_str)
+      let l:PendingPrint = l:self._pending_prints[l:child_path_as_str]
 
-    call l:self._message_passer.NotifyReport(
-        \ 'debug', 'Setting up child: '.l:child_lookup_path_as_str)
+      " firing the PendingPrint garbles the VariablesBuffer; don't bother,
+      " for now.
 
-    " if has_key(l:self._pending_prints, l:child_lookup_path_as_str)
-    "   let l:PendingPrint = l:self._pending_prints[l:child_lookup_path_as_str]
-    "   call l:self._message_passer.NotifyReport(
-    "       \ 'info', 'Firing pending print for: '.l:name, l:PendingPrint)
-    "   call l:PendingPrint()
-    "   unlet l:self._pending_prints[l:child_lookup_path_as_str]
-    " endif
+      " call l:self._message_passer.NotifyReport(
+      "     \ 'info', 'Firing pending print for: '.l:name, l:PendingPrint)
+      " call l:PendingPrint()
+
+      unlet l:self._pending_prints[l:child_path_as_str]
+    endif
 
     let l:var_path = a:child_of + [l:var.name()]
     if a:rec_depth ># 1 && l:has_children
