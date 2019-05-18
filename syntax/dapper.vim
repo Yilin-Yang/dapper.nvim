@@ -9,6 +9,9 @@ endif
 
 let b:current_syntax = 'dapper'
 
+" see `:help syn-sync`
+syntax sync fromstart
+
 "===============================================================================
 hi default link dapperTags NonText
 
