@@ -89,19 +89,8 @@ Execute (Pipeline: Dig Down Into VariablesBuffer):
   call g:vb.SetParent(g:sb)
   normal! 2G
 
-
-  " NOTE: There may(?) be a bug in neovim itself that causes changes made
-  " to the VariablesBuffer to not be visible to some of the function calls in
-  " the async waterfall.
-  "
-  " This doesn't seem to substantially affect functionality, since afterwards,
-  " the affected variable can still be expanded and collapsed normally. For now,
-  " hack around the test failure by backing up into the StackTraceBuffer, then
-  " digging back down into the VariablesBuffer (so that it can 'try again').
   execute "normal \<cr>"
   call AwaitTimeout({ -> ReceivedMessage('ScopesResponse')}, 4000, 1)
-  execute "normal \<bs>"
-  execute "normal \<cr>"
   sleep 100m
 
 Expect:

@@ -329,9 +329,9 @@ function! dapper#view#VariablesPrinter#_PrintCollapsedChildren(
     " with printing once it has been
     let l:args = [a:child_of, a:rec_depth, a:var_or_scope, a:children]
     let l:self._pending_prints[string(a:child_of)] =
-        \ function(l:self._PrintCollapsedChildren, l:args)
+        \ [a:child_of, a:rec_depth, a:var_or_scope]
     call l:self._message_passer.NotifyReport(
-        \ 'info', 'Parent '.a:child_of[-1]." wasn't printed; aborting.", l:args)
+        \ 'info', 'Parent '.a:child_of[-1]." wasn't printed; sleeping.", l:args)
     return
   endtry
   if (l:parent_start != l:parent_end)
@@ -387,16 +387,16 @@ function! dapper#view#VariablesPrinter#_PrintCollapsedChildren(
     " if any prints were waiting for one of these children to be printed,
     " fire them
     if has_key(l:self._pending_prints, l:child_path_as_str)
-      let l:PendingPrint = l:self._pending_prints[l:child_path_as_str]
-
-      " firing the PendingPrint garbles the VariablesBuffer; don't bother,
-      " for now.
-
-      " call l:self._message_passer.NotifyReport(
-      "     \ 'info', 'Firing pending print for: '.l:name, l:PendingPrint)
-      " call l:PendingPrint()
-
+      let l:print_collapsed_args = l:self._pending_prints[l:child_path_as_str]
+      call l:self._message_passer.NotifyReport(
+          \ 'info', 'Firing pending print for: '.l:name, l:print_collapsed_args)
       unlet l:self._pending_prints[l:child_path_as_str]
+
+      " note: PrintCollapsedChildren needs to be an atomic operation
+      " (interruptions will throw off line numbers) so set a Promise that will
+      " callback after this call returns
+      call l:print_collapsed_args[2].Children().Then(
+          \ l:self._PrintCollapsedChildren, l:print_collapsed_args)
     endif
 
     let l:var_path = a:child_of + [l:var.name()]
