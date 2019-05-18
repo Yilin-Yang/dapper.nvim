@@ -73,19 +73,19 @@ endfunction
 " Convert the given @dict(Variable) {variable} into the "compact struct" used
 " by functions like @function(dapper#view#VariablesPrinter#StringFromVariable).
 "
-" {child_of} is the lookup path to the parent of {variable}.
+" {lookup_path} is the lookup path to {variable}.
 "
 " The returned struct defaults to being collapsed, if {variable} is
 " structured. If [expanded] is true, and {variable} is structured, then it
 " will be expanded.
 "
 " @default expanded=0
-function! s:DictVariableToStruct(child_of, variable, ...) abort
-  call maktaba#ensure#IsList(a:child_of)
+function! s:DictVariableToStruct(lookup_path, variable, ...) abort
+  call maktaba#ensure#IsList(a:lookup_path)
   call typevim#ensure#IsType(a:variable, 'Variable')
   let l:expanded = typevim#ensure#IsBool(get(a:000, 0, 0))
   let l:to_return = {
-      \ 'indentation': typevim#object#GetIndentBlock(len(a:child_of) - 1),
+      \ 'indentation': typevim#object#GetIndentBlock(len(a:lookup_path) - 1),
       \ 'expanded': 0,
       \ 'unstructured': !a:variable.HasChildren(),
       \ 'name': a:variable.name(),
@@ -358,15 +358,16 @@ function! dapper#view#VariablesPrinter#_PrintCollapsedChildren(
   let l:name_and_var = sort(items(a:children),
                           \ function('typevim#value#CompareKeys'))
 
-  " the path to the given var_or_scope
-  let l:path_to_given = a:child_of + [a:var_or_scope.name()]
-
   let l:print_after = l:parent_end
   for [l:name, l:var] in l:name_and_var
     call maktaba#ensure#IsString(l:name)
     call typevim#ensure#IsType(l:var, 'Variable')
+
+    " the path to this child variable
+    let l:child_path = a:child_of + [l:name]
+
     let l:has_children = l:var.HasChildren()
-    let l:var_struct = s:DictVariableToStruct(l:path_to_given, l:var)
+    let l:var_struct = s:DictVariableToStruct(l:child_path, l:var)
     if l:has_children
       let l:var_str =
           \ dapper#view#VariablesPrinter#StringFromVariable(l:var_struct, '>')
@@ -381,19 +382,18 @@ function! dapper#view#VariablesPrinter#_PrintCollapsedChildren(
 
     " if any prints were waiting for one of these children to be printed,
     " fire them
-    let l:child_lookup_path = l:path_to_given + [l:name]
-    let l:child_lookup_path_as_str = string(l:child_lookup_path)
+    let l:child_path_as_str = string(l:child_path)
 
     call l:self._message_passer.NotifyReport(
         \ 'debug', 'Setting up child: '.l:child_lookup_path_as_str)
 
-    if has_key(l:self._pending_prints, l:child_lookup_path_as_str)
-      let l:PendingPrint = l:self._pending_prints[l:child_lookup_path_as_str]
-      call l:self._message_passer.NotifyReport(
-          \ 'info', 'Firing pending print for: '.l:name, l:PendingPrint)
-      call l:PendingPrint()
-      unlet l:self._pending_prints[l:child_lookup_path_as_str]
-    endif
+    " if has_key(l:self._pending_prints, l:child_lookup_path_as_str)
+    "   let l:PendingPrint = l:self._pending_prints[l:child_lookup_path_as_str]
+    "   call l:self._message_passer.NotifyReport(
+    "       \ 'info', 'Firing pending print for: '.l:name, l:PendingPrint)
+    "   call l:PendingPrint()
+    "   unlet l:self._pending_prints[l:child_lookup_path_as_str]
+    " endif
 
     let l:var_path = a:child_of + [l:var.name()]
     if a:rec_depth ># 1 && l:has_children
@@ -768,8 +768,9 @@ function! dapper#view#VariablesPrinter#PrintScopes(scopes, ...) dict abort
   let l:var_lookup = l:self._var_lookup
   let l:names_and_scopes = []
   for l:scope in a:scopes
-    let l:name_and_scope = [maktaba#ensure#IsString(l:scope)]
-    call add(l:name_and_scope, l:var_lookup.VariableFromPath([l:scope]))
+    let l:name_and_scope = [
+        \ maktaba#ensure#IsString(l:scope),
+        \ l:var_lookup.VariableFromPath([l:scope])]
     call add(l:names_and_scopes, l:name_and_scope)
   endfor
 
