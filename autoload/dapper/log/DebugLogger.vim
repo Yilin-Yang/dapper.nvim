@@ -54,6 +54,7 @@ function! dapper#log#DebugLogger#Get() abort
         \ 'buftype': 'nofile',
         \ 'swapfile': 0,
       \ })
+  call l:buffer.setbufvar('&filetype', 'vim')
   let l:new = {
       \ 'buffer': l:buffer,
       \ '__logger': g:dapper_plugin.logger,
