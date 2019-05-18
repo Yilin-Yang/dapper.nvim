@@ -155,7 +155,6 @@ function! s:VariableDoer_Receive(obj) dict abort
     call a:obj.variables().Then(l:self.Receive, l:self.Reject)
   elseif maktaba#value#IsDict(a:obj) && !typevim#value#IsValidObject(a:obj)
     " dict between variable names and Variable objects
-    call maktaba#ensure#IsDict(a:obj)
     let l:first_varname = l:lookup_path[0]
     unlet l:lookup_path[0]  " pop
     if !has_key(a:obj, l:first_varname)
@@ -168,7 +167,9 @@ function! s:VariableDoer_Receive(obj) dict abort
       call l:self.Resolve(l:first_var)
       return
     endif
-    call l:first_var.Child(l:lookup_path[0]).Then(
+    let l:varname_of_firsts_child = l:lookup_path[0]
+    unlet l:lookup_path[0]
+    call l:first_var.Child(l:varname_of_firsts_child).Then(
         \ l:self.Receive, l:self.Reject)
   elseif typevim#value#IsType(a:obj, 'Variable')
     if empty(l:lookup_path)
