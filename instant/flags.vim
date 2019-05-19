@@ -250,7 +250,7 @@ call s:plugin.Flag('scopes_to_always_expand',
 " @flag(expand_scopes_by_default). Scopes that appear in this list cannot
 " appear in @flag(scopes_to_always_expand).
 call s:plugin.Flag('scopes_to_never_expand',
-    \ s:GlobalSettingOrDefault('g:dapper_scopes_to_never_expand', []))
+    \ s:GlobalSettingOrDefault('g:dapper_scopes_to_never_expand', ['Global']))
 
 " since these translators each reference the other flag, they need to be
 " declared after both flags have been declared

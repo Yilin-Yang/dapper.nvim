@@ -13,6 +13,9 @@ Execute (Pipeline: Setup Model, ThreadsBuffer; Subscribe; Initialize Mock Debug 
   call g:plugin.Flag('menu_expand_depth_on_map', 3)
   call g:plugin.Flag('menu_expand_depth_initial', 3)
   call g:plugin.Flag('preferred_scope_order', [])
+  call g:plugin.Flag('expand_scopes_by_default', 1)
+  call g:plugin.Flag('scopes_to_always_expand', [])
+  call g:plugin.Flag('scopes_to_never_expand', [])
 
 Execute (Pipeline: Launch Debuggee):
   call AwaitTimeout({ -> ReceivedMessage('LaunchResponse')}, 4000, 1)

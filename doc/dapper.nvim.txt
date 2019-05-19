@@ -159,7 +159,8 @@ Default: s:GlobalSettingOrDefault('g:dapper_scopes_to_always_expand', []) `
 Names of scopes that will never be expanded, overriding
 |dapper.nvim:expand_scopes_by_default|. Scopes that appear in this list cannot
 appear in |dapper.nvim:scopes_to_always_expand|.
-Default: s:GlobalSettingOrDefault('g:dapper_scopes_to_never_expand', []) `
+Default: s:GlobalSettingOrDefault('g:dapper_scopes_to_never_expand',
+  ['Global']) `
 
                                     *dapper.nvim:dont_expand_expensive_scopes*
 Debug adapters can report that a particular scope is "expensive to retrieve,"
