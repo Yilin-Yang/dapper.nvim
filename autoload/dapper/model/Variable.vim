@@ -36,8 +36,16 @@ let s:PROTOTYPE = {
     \ }
 call typevim#make#Class(s:typename, s:PROTOTYPE)
 
+let s:known_good_middletalker = v:null
+
 function! dapper#model#Variable#__New(message_passer, variable, recursion_depth) abort
-  call typevim#ensure#Implements(a:message_passer, dapper#MiddleTalker#Interface())
+  if a:message_passer isnot s:known_good_middletalker
+    " assume that a message_passer, once validated, will never cease to be a
+    " valid message_passer implementation
+    call typevim#ensure#Implements(
+        \ a:message_passer, dapper#MiddleTalker#Interface())
+    let s:known_good_middletalker = a:message_passer
+  endif
   call typevim#ensure#Implements(a:variable, dapper#dap#Variable())
   call maktaba#ensure#IsNumber(a:recursion_depth)
 
@@ -57,7 +65,9 @@ function! dapper#model#Variable#__New(message_passer, variable, recursion_depth)
   " TODO cache this 'constructor Promise', have async functions resolve when
   " it does (to eliminate redundant VariablesRequests while this request is
   " pending)
-  call dapper#model#Variable#__GetPromiseAutopopulate(l:new)
+  if s:plugin.Flag('max_drilldown_recursion')
+    call dapper#model#Variable#__GetPromiseAutopopulate(l:new)
+  endif
   return l:new
 endfunction
 
