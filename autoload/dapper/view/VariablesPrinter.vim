@@ -18,6 +18,8 @@
 
 let s:typename = 'VariablesPrinter'
 
+let s:plugin = maktaba#plugin#Get('dapper.nvim')
+
 ""
 " @public
 " @dict VariablesPrinter
@@ -770,26 +772,41 @@ function! dapper#view#VariablesPrinter#PrintScopes(scopes, ...) dict abort
   call maktaba#ensure#IsList(a:scopes)
   let l:rec_depth = maktaba#ensure#IsNumber(get(a:000, 0, 3))
   let l:var_lookup = l:self._var_lookup
-  let l:names_and_scopes = []
+  let l:names_to_scopes = {}
   for l:scope in a:scopes
-    let l:name_and_scope = [
-        \ maktaba#ensure#IsString(l:scope),
-        \ l:var_lookup.VariableFromPath([l:scope])]
-    call add(l:names_and_scopes, l:name_and_scope)
+    let l:names_to_scopes[maktaba#ensure#IsString(l:scope)] =
+        \ l:var_lookup.VariableFromPath([l:scope])
   endfor
 
-  call sort(l:names_and_scopes, function('typevim#value#CompareKeys'))
+  let l:scopes_order = s:plugin.Flag('preferred_scope_order')
+  let l:ordered_names_and_scopes = []
+  for l:name in l:scopes_order
+    if !has_key(l:names_to_scopes, l:name) | continue | endif
+
+    call add(l:ordered_names_and_scopes,
+           \ [l:name, l:names_to_scopes[l:name]])
+    unlet l:names_to_scopes[l:name]
+  endfor
+  " any scopes remaining in the dict were not mentioned in the preferred order
+  for l:unmentioned in
+      \ sort(items(l:names_to_scopes), function('typevim#value#CompareKeys'))
+    call add(l:ordered_names_and_scopes, l:unmentioned)
+  endfor
+
   let l:print_after = 1
   let l:buffer = l:self._buffer
-  for [l:name, l:scope_promise] in l:names_and_scopes
+  for [l:name, l:scope_promise] in l:ordered_names_and_scopes
     let l:scope_header =
         \ dapper#view#VariablesPrinter#StringFromScope(
             \ {'expanded': 0, 'name': l:name, 'info': ''}, 1)
     call l:buffer.InsertLines(l:print_after, [l:scope_header])
-    call l:scope_promise.Then(
-        \ function('s:ExpandScope', [l:self, [l:name], l:rec_depth]),
-        \ function(l:self._LogFailure, ['"expand all Scopes"']))
     let l:print_after += 1
+
+    if l:rec_depth ># 0
+      call l:scope_promise.Then(
+          \ function('s:ExpandScope', [l:self, [l:name], l:rec_depth]),
+          \ function(l:self._LogFailure, ['"expand all Scopes"']))
+    endif
   endfor
 endfunction
 

@@ -4,11 +4,15 @@ Include: SubscriptionHelpers.vader
 Include: EnableProfiling.vader
 
 Execute (Pipeline: Setup Model, ThreadsBuffer; Subscribe; Initialize Mock Debug Adapter):
+  " get handle to this plugin
+  let g:plugin = maktaba#plugin#Get('dapper.nvim')
+
   " setup ThreadsBuffer, which should (itself) subscribe
   let g:tb = dapper#view#ThreadsBuffer#New(g:dapper_model, g:dapper_middletalker)
   let g:plugin = maktaba#plugin#Get('dapper.nvim')
   call g:plugin.Flag('menu_expand_depth_on_map', 3)
   call g:plugin.Flag('menu_expand_depth_initial', 3)
+  call g:plugin.Flag('preferred_scope_order', [])
 
 Execute (Pipeline: Launch Debuggee):
   call AwaitTimeout({ -> ReceivedMessage('LaunchResponse')}, 4000, 1)
@@ -193,7 +197,6 @@ Expect:
 
 Execute (Pipeline: Re-Expand Variables):
   call g:vb.Open()
-  let g:plugin = maktaba#plugin#Get('dapper.nvim')
   normal! 5G
   execute "normal \<CR>"
   sleep 100m
@@ -237,7 +240,6 @@ Expect:
 
 Execute (Pipeline: Collapse with an Unstructured Variable Selected):
   call g:vb.Open()
-  let g:plugin = maktaba#plugin#Get('dapper.nvim')
   call g:plugin.Flag('menu_expand_depth_on_map', 1)
 
   normal! 17G
@@ -312,4 +314,17 @@ Expect:
     - local_0_i, integer: 123
     > local_0_o, object: Object
     - local_0_s, string: hello world
+  </variables>
+
+Execute (Pipeline: Enter Buffer w/ Expansion Depth Zero):
+  call g:plugin.Flag('menu_expand_depth_initial', 0)
+  call g:sb.Open()
+  normal! 3G
+  execute "normal \<cr>"
+  call AwaitTimeout({ -> ReceivedMessage('ScopesResponse')}, 4000, 1)
+  sleep 100m
+Expect:
+  <variables>
+  > Global : 
+  > Local : 
   </variables>

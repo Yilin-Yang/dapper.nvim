@@ -2,6 +2,10 @@ Include: AwaitTimeout.vader
 Include: StartMockDebugAdapter.vader
 Include: EnableProfiling.vader
 
+Execute (VariablesPrinter: Set Up):
+  let g:plugin = maktaba#plugin#Get('dapper.nvim')
+  call g:plugin.Flag('preferred_scope_order', [])  " simple alphabetical
+
 Execute (VariablesPrinter: Parse Structured Variable):
   let g:parsed = dapper#view#VariablesPrinter#VariableFromString(
       \ '  v quoz, Foo, {class}:')
@@ -500,10 +504,37 @@ Execute (VariablesPrinter: Can Find Scopes with Regex Chars in Name):
   AssertEqual [9, 9], g:vp.GetRange(['[[Local]]', 'local_0_o', '.'])
   AssertEqual [11, 19], g:vp.GetRange(['\(Global\)'])
 
+Given (Empty Buffer):
+  
+
+Execute (VariablesPrinter: Prints in Preferred Order):
+  call g:plugin.Flag('preferred_scope_order',
+      \ ['At the Start', 'At the Middle', 'at the later middle', 'The End'])
+  call g:buffer.SetBuffer(bufnr('%'))
+  call g:buffer.ReplaceLines(1, -1,
+      \ ['<variables>', '</variables>']
+      \ )
+
+  let g:scopes_to_print =
+      \ ['The End', 'at the later middle', 'At the Start',
+      \  'def', 'abc', 'xyz', 'uvw']
+  call g:vp.PrintScopes(g:scopes_to_print, 0)  " rec_depth 0 -> don't expand
+Expect:
+  <variables>
+  > At the Start : 
+  > at the later middle : 
+  > The End : 
+  > abc : 
+  > def : 
+  > uvw : 
+  > xyz : 
+  </variables>
+
 Execute (Clean Up Old Variables Printer, Create Real One):
   " which used a mock VariableLookup object
   unlet g:vp
   unlet g:var_lookup
+  call g:plugin.Flag('preferred_scope_order', [])  " simple alphabetical
   let g:var_lookup = dapper#model#VariableLookup#New(g:dapper_middletalker, g:frame)
   let g:vp = dapper#view#VariablesPrinter#New(
       \ g:dapper_middletalker, g:buffer, g:var_lookup)

@@ -54,7 +54,8 @@ Default: s:GlobalSettingOrDefault( 'g:dapper_collapse_mapping', '<BS>') `
 
                                        *dapper.nvim:toggle_breakpoint_mapping*
 Keymapping used to toggle breakpoints on the current line. Defaults to "<F9>".
-Default: s:GlobalSettingOrDefault('g:toggle_breakpoint_mapping', '<F9>') `
+Default: s:GlobalSettingOrDefault('g:dapper_toggle_breakpoint_mapping',
+  '<F9>') `
 
                                             *dapper.nvim:filetypes_to_configs*
 Mapping between a filetype and all debug adapter configurations for that
@@ -116,7 +117,18 @@ Default: s:GlobalSettingOrDefault('g:dapper_max_drilldown_recursion', 0) `
 The initial depth to which scopes and structured variables will be expanded
 when viewing scopes and variables accessible in a stack frame. Should be a
 non-negative number.
-Default: s:GlobalSettingOrDefault('g:menu_expand_depth_initial', 1) `
+Default: s:GlobalSettingOrDefault('g:dapper_menu_expand_depth_initial', 1) `
+
+                                           *dapper.nvim:preferred_scope_order*
+The preferred order in which to display scopes inside of a
+|dapper.nvim.VariablesBuffer|. If a scope comes earlier in this list than
+another, then it will be shown closer to the top of the buffer.
+
+Matching is done by case-sensitive string comparison. Scopes whose names don't
+appear in this list will appear at the end of the buffer sorted in
+alphabetical order.
+Default: s:GlobalSettingOrDefault('g:dapper_preferred_scope_order', ['Local',
+  'Global']) `
 
                                                 *dapper.nvim:plugin[mappings]*
 Configures whether plugin/mappings.vim should be loaded.

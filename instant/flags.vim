@@ -171,3 +171,15 @@ call s:plugin.Flag('menu_expand_depth_on_map',
 
 call s:plugin.flags.menu_expand_depth_on_map.AddTranslator(
     \ function('typevim#ensure#IsPositive'))
+
+""
+" The preferred order in which to display scopes inside of a
+" @dict(VariablesBuffer). If a scope comes earlier in this list than another,
+" then it will be shown closer to the top of the buffer.
+"
+" Matching is done by case-sensitive string comparison. Scopes whose names
+" don't appear in this list will appear at the end of the buffer sorted in
+" alphabetical order.
+call s:plugin.Flag('preferred_scope_order',
+    \ s:GlobalSettingOrDefault('g:dapper_preferred_scope_order',
+        \ ['Local', 'Global']))
