@@ -23,6 +23,8 @@ let g:dapper_logfile = g:project_root.'/test/LOGFILE.vim'
 let g:dapper_log_buffer_writeback = 1
 let g:dapper_min_log_level = 'info'
 
+let g:typevim_enable_verbose_error_messages = 1
+
 " TODO: make it possible to change settings after calls to Detect?
 call maktaba#plugin#Detect()
 
