@@ -316,6 +316,7 @@ Execute (VariablesPrinter: Print Local Scope):
       \ )
   call g:vp.ExpandEntry(['Local'], g:scope)
   sleep 100m
+  sleep 100m
 Expect:
   <variables>
   v Local : 
@@ -339,6 +340,7 @@ Execute (VariablesPrinter: Print Local Scope, Smaller Recursion Depth):
       \ ['<variables>', '> Local : ', '</variables>']
       \ )
   call g:vp.ExpandEntry(['Local'], g:scope, 2)
+  sleep 100m
   sleep 100m
 Expect:
   <variables>

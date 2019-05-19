@@ -398,7 +398,8 @@ function! dapper#view#VariablesPrinter#_PrintCollapsedChildren(
       " (interruptions will throw off line numbers) so set a Promise that will
       " callback after this call returns
       call l:print_collapsed_args[2].Children().Then(
-          \ l:self._PrintCollapsedChildren, l:print_collapsed_args)
+          \ function(l:self._PrintCollapsedChildren, l:print_collapsed_args),
+          \ function(l:self._LogFailure, ['"fire pending print"']))
     endif
 
     let l:var_path = a:child_of + [l:var.name()]
