@@ -80,7 +80,7 @@ call s:plugin.Flag('collapse_mapping',
 ""
 " Keymapping used to toggle breakpoints on the current line. Defaults to "<F9>".
 call s:plugin.Flag('toggle_breakpoint_mapping',
-    \ s:GlobalSettingOrDefault('g:toggle_breakpoint_mapping', '<F9>'))
+    \ s:GlobalSettingOrDefault('g:dapper_toggle_breakpoint_mapping', '<F9>'))
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
@@ -155,7 +155,7 @@ call s:plugin.flags.max_drilldown_recursion.AddTranslator(
 " when viewing scopes and variables accessible in a stack frame. Should be a
 " non-negative number.
 call s:plugin.Flag('menu_expand_depth_initial',
-    \ s:GlobalSettingOrDefault('g:menu_expand_depth_initial', 1))
+    \ s:GlobalSettingOrDefault('g:dapper_menu_expand_depth_initial', 1))
 
 call s:plugin.flags.menu_expand_depth_initial.AddTranslator(
     \ function('typevim#ensure#IsNonNegative'))
@@ -167,7 +167,7 @@ call s:plugin.flags.menu_expand_depth_initial.AddTranslator(
 " children will be shown. Should be a positive number.
 
 call s:plugin.Flag('menu_expand_depth_on_map',
-    \ s:GlobalSettingOrDefault('g:menu_expand_depth_on_map', 1))
+    \ s:GlobalSettingOrDefault('g:dapper_menu_expand_depth_on_map', 1))
 
 call s:plugin.flags.menu_expand_depth_on_map.AddTranslator(
     \ function('typevim#ensure#IsPositive'))
