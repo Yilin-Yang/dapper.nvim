@@ -5,19 +5,28 @@ endif
 
 ""
 " @section Configuration, config
-" dapper.nvim may be configured in two ways: by using Google's Glaive plugin;
-" or by using "legacy" global variables (i.e. by explicitly setting variables
-" like `g:dapper_dig_down_mapping` in your vimrc).
+" dapper.nvim may be configured in three ways: by using Google's Glaive plugin;
+" by setting dapper.nvim's maktaba flags; or by using "legacy" global
+" variables (i.e. by explicitly setting variables like
+" `g:dapper_dig_down_mapping` in your vimrc).
 "
-" The former is strongly recommended: dapper.nvim uses vim-maktaba's "flags"
-" for settings and configuration, which enables easy validation and
-" "translation" of user settings, the setting of callback handlers that fire
-" whenever settings are changed, and a number of other useful features. The
-" latter should work for "static" configuration, but generally won't be able
-" to change dapper.nvim's behavior at runtime.
+" The former two are strongly recommended: legacy configuration will work for
+" "static" configuration, but generally won't be able to change dapper.nvim's
+" behavior at runtime.
 "
 " Install Glaive (https://github.com/google/glaive) and use the |:Glaive|
-" command to configure dapper.nvim's maktaba flags.
+" command to configure dapper.nvim's maktaba flags. Alternatively, one can
+" put the following in their .vimrc:
+" >
+"   " retrieve dapper.nvim's plugin handle
+"   let g:dapper_nvim = maktaba#plugin#Get('dapper.nvim')
+"
+"   " to set dapper.nvim:dig_down_mapping to '<leader>d'
+"   call g:dapper_nvim.Flag('dig_down_mapping', '<leader>d')
+"
+"   " to disable all logging entirely
+"   call g:dapper_nvim.Flag('min_log_level', 'no_logging')
+" <
 
 ""
 " @public
@@ -47,6 +56,33 @@ function! s:GlobalSettingOrDefault(setting_name, default)
         \ a:setting_name, l:set_val)
   endtry
   return l:set_val
+endfunction
+
+function! s:EnsureHoldsOnlyStrings(List) abort
+  call typevim#ensure#IsList(a:List)
+  for l:Item in a:List
+    call maktaba#ensure#IsString(l:Item)
+  endfor
+  return a:List
+endfunction
+
+function! s:StrListToDict(List) abort
+  call typevim#ensure#IsList(a:List)
+  let l:to_return = {}
+  for l:Item in a:List
+    let l:to_return[maktaba#ensure#IsString(l:Item)] = 1
+  endfor
+  return l:to_return
+endfunction
+
+function! s:EnsureNoSharedKeys(ref_dictname, errmsg_fmt, ToCheck) abort
+  call typevim#ensure#IsDict(a:ToCheck)
+  let l:reference = typevim#ensure#IsDict(s:plugin.Flag(a:ref_dictname))
+  for l:key in keys(a:ToCheck)
+    if !has_key(l:reference, l:key) | continue | endif
+    throw maktaba#error#BadValue(a:errmsg_fmt, l:key)
+  endfor
+  return a:ToCheck
 endfunction
 
 """""""""""""""""""""""""""""""""""MAPPINGS"""""""""""""""""""""""""""""""""""""
@@ -154,6 +190,12 @@ call s:plugin.flags.max_drilldown_recursion.AddTranslator(
 " The initial depth to which scopes and structured variables will be expanded
 " when viewing scopes and variables accessible in a stack frame. Should be a
 " non-negative number.
+"
+" Note that setting this to zero essentially disables on-entry scope
+" expansion (since any scopes to be expanded will only "expand" to depth 0),
+" overriding settings like @flag(scopes_to_always_expand).
+"
+" See @flag(menu_expand_depth_on_map) for more details.
 call s:plugin.Flag('menu_expand_depth_initial',
     \ s:GlobalSettingOrDefault('g:dapper_menu_expand_depth_initial', 1))
 
@@ -161,10 +203,12 @@ call s:plugin.flags.menu_expand_depth_initial.AddTranslator(
     \ function('typevim#ensure#IsNonNegative'))
 
 ""
-" The default depth to which collapsed variables and scopes will expand. When
-" equal to 1, only the immediate children of the selected scope or structured
-" variable will be shown; when equal to 2, those children and their own
-" children will be shown. Should be a positive number.
+" The depth to which collapsed variables and scopes will expand when
+" triggering @flag(expand_mapping).
+"
+" When equal to 1, only the immediate children of the selected scope or
+" structured variable will be shown; when equal to 2, those children and their
+" own children will be shown. Should be a positive number.
 
 call s:plugin.Flag('menu_expand_depth_on_map',
     \ s:GlobalSettingOrDefault('g:dapper_menu_expand_depth_on_map', 1))
@@ -183,3 +227,58 @@ call s:plugin.flags.menu_expand_depth_on_map.AddTranslator(
 call s:plugin.Flag('preferred_scope_order',
     \ s:GlobalSettingOrDefault('g:dapper_preferred_scope_order',
         \ ['Local', 'Global']))
+
+call s:plugin.flags.preferred_scope_order.AddTranslator(
+    \ function('s:EnsureHoldsOnlyStrings'))
+
+""
+" Whether to expand all scopes by default when inspecting a stack frame.
+call s:plugin.Flag('expand_scopes_by_default',
+    \ s:GlobalSettingOrDefault('g:dapper_expand_scopes_by_default', 1))
+
+call s:plugin.flags.expand_scopes_by_default.AddTranslator(
+    \ function('typevim#ensure#IsBool'))
+
+""
+" Names of scopes that will always be expanded, overriding
+" @flag(expand_scopes_by_default). Scopes that appear in this list cannot
+" appear in @flag(scopes_to_never_expand).
+call s:plugin.Flag('scopes_to_always_expand',
+    \ s:GlobalSettingOrDefault('g:dapper_scopes_to_always_expand', []))
+""
+" Names of scopes that will never be expanded, overriding
+" @flag(expand_scopes_by_default). Scopes that appear in this list cannot
+" appear in @flag(scopes_to_always_expand).
+call s:plugin.Flag('scopes_to_never_expand',
+    \ s:GlobalSettingOrDefault('g:dapper_scopes_to_never_expand', []))
+
+" since these translators each reference the other flag, they need to be
+" declared after both flags have been declared
+call s:plugin.flags.scopes_to_always_expand.AddTranslator(
+    \ function('s:StrListToDict'))
+call s:plugin.flags.scopes_to_never_expand.AddTranslator(
+    \ function('s:StrListToDict'))
+
+" need to convert both to dicts before retrieving them in these translators
+call s:plugin.flags.scopes_to_always_expand.AddTranslator(
+    \ function('s:EnsureNoSharedKeys', [
+        \ 'scopes_to_never_expand',
+        \ 'Cannot add scopename already present in '
+            \ . 'scopes_to_never_expand: %s']))
+call s:plugin.flags.scopes_to_never_expand.AddTranslator(
+    \ function('s:EnsureNoSharedKeys', [
+        \ 'scopes_to_always_expand',
+        \ 'Cannot add scopename already present in '
+            \ . 'scopes_to_always_expand: %s']))
+
+""
+" Debug adapters can report that a particular scope is "expensive to
+" retrieve," meaning that it has many variables and that trying to display its
+" contents may be unacceptably slow. Set this to 1 to avoid expanding these
+" scopes by default. If set, overrides @flag(scopes_to_always_expand) and
+" @flag(expand_scopes_by_default).
+call s:plugin.Flag('dont_expand_expensive_scopes',
+    \ s:GlobalSettingOrDefault('g:dapper_dont_expand_expensive_scopes', 0))
+
+call s:plugin.flags.dont_expand_expensive_scopes.AddTranslator(
+    \ function('typevim#ensure#IsBool'))

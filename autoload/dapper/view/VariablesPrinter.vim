@@ -794,6 +794,11 @@ function! dapper#view#VariablesPrinter#PrintScopes(scopes, ...) dict abort
     call add(l:ordered_names_and_scopes, l:unmentioned)
   endfor
 
+  " retrieve relevant settings
+  let l:expand_by_default = s:plugin.Flag('expand_scopes_by_default')
+  let l:to_always_expand = s:plugin.Flag('scopes_to_always_expand')
+  let l:to_never_expand = s:plugin.Flag('scopes_to_never_expand')
+
   let l:print_after = 1
   let l:buffer = l:self._buffer
   for [l:name, l:scope_promise] in l:ordered_names_and_scopes
@@ -802,6 +807,28 @@ function! dapper#view#VariablesPrinter#PrintScopes(scopes, ...) dict abort
             \ {'expanded': 0, 'name': l:name, 'info': ''}, 1)
     call l:buffer.InsertLines(l:print_after, [l:scope_header])
     let l:print_after += 1
+
+    " check if we should expand this scope
+    if l:expand_by_default
+      if has_key(l:to_never_expand, l:name)
+        call l:self._message_passer.NotifyReport(
+            \ 'info', 'Never expand '.l:name.'.',
+            \ 'Default expansion is enabled, but '.l:name.' should never be '
+                \ . 'expanded.')
+        continue
+      endif
+    else  " don't expand by default
+      if has_key(l:to_always_expand, l:name)
+        call l:self._message_passer.NotifyReport(
+            \ 'info', 'Always expand '.l:name.'.',
+            \ 'Default expansion is disabled, but '.l:name
+                \ . ' should always be expanded.')
+      else
+        call l:self._message_passer.NotifyReport(
+            \ 'info', 'By default, not expanding '.l:name)
+        continue
+      endif
+    endif  " checking if we should expand this scope
 
     if l:rec_depth ># 0
       call l:scope_promise.Then(
@@ -812,8 +839,16 @@ function! dapper#view#VariablesPrinter#PrintScopes(scopes, ...) dict abort
 endfunction
 
 function! s:ExpandScope(printer, lookup_path, rec_depth, scope) abort
-  call a:printer.ExpandEntry(
-      \ a:lookup_path, a:scope, a:rec_depth)
+  let l:dont_expand_expensive = s:plugin.Flag('dont_expand_expensive_scopes')
+  if l:dont_expand_expensive && a:scope.expensive()
+    let l:name = a:scope.name()
+    call a:printer._message_passer.NotifyReport(
+        \ 'info', l:name.' is expensive, not expanding.',
+        \ l:name.' was going to be expanded, but it was marked as expensive.',
+        \ a:scope._raw_scope)
+    return
+  endif
+  call a:printer.ExpandEntry(a:lookup_path, a:scope, a:rec_depth)
 endfunction
 
 ""

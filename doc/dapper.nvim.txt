@@ -18,19 +18,28 @@ staple them onto neovim.
 ==============================================================================
 CONFIGURATION                                             *dapper.nvim-config*
 
-dapper.nvim may be configured in two ways: by using Google's Glaive plugin; or
-by using "legacy" global variables (i.e. by explicitly setting variables like
-`g:dapper_dig_down_mapping` in your vimrc).
+dapper.nvim may be configured in three ways: by using Google's Glaive plugin;
+by setting dapper.nvim's maktaba flags; or by using "legacy" global variables
+(i.e. by explicitly setting variables like `g:dapper_dig_down_mapping` in your
+vimrc).
 
-The former is strongly recommended: dapper.nvim uses vim-maktaba's "flags" for
-settings and configuration, which enables easy validation and "translation" of
-user settings, the setting of callback handlers that fire whenever settings
-are changed, and a number of other useful features. The latter should work for
+The former two are strongly recommended: legacy configuration will work for
 "static" configuration, but generally won't be able to change dapper.nvim's
 behavior at runtime.
 
 Install Glaive (https://github.com/google/glaive) and use the |:Glaive|
-command to configure dapper.nvim's maktaba flags.
+command to configure dapper.nvim's maktaba flags. Alternatively, one can put
+the following in their .vimrc:
+>
+  " retrieve dapper.nvim's plugin handle
+  let g:dapper_nvim = maktaba#plugin#Get('dapper.nvim')
+
+  " to set dapper.nvim:dig_down_mapping to '<leader>d'
+  call g:dapper_nvim.Flag('dig_down_mapping', '<leader>d')
+
+  " to disable all logging entirely
+  call g:dapper_nvim.Flag('min_log_level', 'no_logging')
+<
 
                                                 *dapper.nvim:dig_down_mapping*
 Keymapping used to "dig down" to a deeper level of a dapper.nvim buffer, e.g.
@@ -117,6 +126,12 @@ Default: s:GlobalSettingOrDefault('g:dapper_max_drilldown_recursion', 0) `
 The initial depth to which scopes and structured variables will be expanded
 when viewing scopes and variables accessible in a stack frame. Should be a
 non-negative number.
+
+Note that setting this to zero essentially disables on-entry scope expansion
+(since any scopes to be expanded will only "expand" to depth 0), overriding
+settings like |dapper.nvim:scopes_to_always_expand|.
+
+See |dapper.nvim:menu_expand_depth_on_map| for more details.
 Default: s:GlobalSettingOrDefault('g:dapper_menu_expand_depth_initial', 1) `
 
                                            *dapper.nvim:preferred_scope_order*
@@ -129,6 +144,31 @@ appear in this list will appear at the end of the buffer sorted in
 alphabetical order.
 Default: s:GlobalSettingOrDefault('g:dapper_preferred_scope_order', ['Local',
   'Global']) `
+
+                                        *dapper.nvim:expand_scopes_by_default*
+Whether to expand all scopes by default when inspecting a stack frame.
+Default: s:GlobalSettingOrDefault('g:dapper_expand_scopes_by_default', 1) `
+
+                                         *dapper.nvim:scopes_to_always_expand*
+Names of scopes that will always be expanded, overriding
+|dapper.nvim:expand_scopes_by_default|. Scopes that appear in this list cannot
+appear in |dapper.nvim:scopes_to_never_expand|.
+Default: s:GlobalSettingOrDefault('g:dapper_scopes_to_always_expand', []) `
+
+                                          *dapper.nvim:scopes_to_never_expand*
+Names of scopes that will never be expanded, overriding
+|dapper.nvim:expand_scopes_by_default|. Scopes that appear in this list cannot
+appear in |dapper.nvim:scopes_to_always_expand|.
+Default: s:GlobalSettingOrDefault('g:dapper_scopes_to_never_expand', []) `
+
+                                    *dapper.nvim:dont_expand_expensive_scopes*
+Debug adapters can report that a particular scope is "expensive to retrieve,"
+meaning that it has many variables and that trying to display its contents may
+be unacceptably slow. Set this to 1 to avoid expanding these scopes by
+default. If set, overrides |dapper.nvim:scopes_to_always_expand| and
+|dapper.nvim:expand_scopes_by_default|.
+Default: s:GlobalSettingOrDefault('g:dapper_dont_expand_expensive_scopes', 0)
+  `
 
                                                 *dapper.nvim:plugin[mappings]*
 Configures whether plugin/mappings.vim should be loaded.
