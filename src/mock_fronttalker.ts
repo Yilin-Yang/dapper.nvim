@@ -39,6 +39,11 @@ export class MockFrontTalker extends BasicFrontTalker {
     };
     msg.vim_msg_typename = typenameOf(msg);
     this.messages.push(msg);
+    console.log(kind + ' report: ' + brief);
+    console.log('long: ' + JSON.stringify(long));
+    if (other) {
+      console.log('other: ' + JSON.stringify(other));
+    }
     return Promise.resolve();
   }
 

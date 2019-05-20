@@ -99,7 +99,8 @@ export class Middleman {
   async startAdapter(startArgs: Config.StartArgs):
       Promise<DebugProtocol.InitializeResponse> {
     this.terminatePending = false;
-    if (!deepEqual(this.dc, Middleman.EMPTY_DC)) {
+    if (this.debugClientRunning()) {
+      console.log('Disconnecting/Terminating existing client.');
       try {
         if (this.wasAttachment) {
           await this.disconnect();
@@ -113,6 +114,7 @@ export class Middleman {
         // try to kill it again
         await this.terminate();
       }
+      this.initialized = undefined;
     }
     this.wasAttachment = false;
 
@@ -124,7 +126,7 @@ export class Middleman {
     this.oldEmit = this.dc.emit.bind(this.dc);
     this.dc.emit = this.teeEmit.bind(this);
 
-    this.dc.start();
+    await this.dc.start();
 
     // need to start waiting for InitializedEvent before sending the
     // InitializeRequest, or else we may miss it entirely
@@ -275,6 +277,12 @@ export class Middleman {
    */
   async request(command: string, vimID: number, args: any):
       Promise<DapperResponse> {
+    if (!this.debugClientRunning()) {
+      this.ft.report(
+          'info', 'No client running, won\'t send: ' + command,
+          JSON.stringify(args));
+      return {} as DapperResponse;
+    }
     try {
       this.ft.report(
           'debug', 'Sending request: ' + command, JSON.stringify(args));
