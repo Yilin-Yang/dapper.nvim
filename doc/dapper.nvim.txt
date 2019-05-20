@@ -210,6 +210,10 @@ DapperBuffer.CleanUp()                                *DapperBuffer.CleanUp()*
 DapperBuffer._Log({kind}, {brief})                       *DapperBuffer._Log()*
   Log a report.
 
+DapperBuffer.Dump()                                      *DapperBuffer.Dump()*
+  Dump this buffer's contents and stored state, turning it into a "blank
+  slate" comparable to a freshly constructed DapperBuffer.
+
 DapperBuffer.GetRange()                              *DapperBuffer.GetRange()*
   Get the line range of an "entry" inside the buffer itself as a two-element
   list of numbers, which are the first and last line that make up the 'entry',
@@ -1003,6 +1007,9 @@ VariablesBuffer.Push({stack_frame})                   *VariablesBuffer.Push()*
 
   Throws ERROR(BadValue) if {stack_frame} is not a dict.
   Throws ERROR(WrongType) if {stack_frame} is not a |dapper.nvim.StackFrame|.
+
+VariablesBuffer.Dump()                                *VariablesBuffer.Dump()*
+  Dump the contents and stored state of this VariablesBuffer.
 
 VariablesBuffer.GetRange({lookup_path_of_var})    *VariablesBuffer.GetRange()*
   See |dapper#view#VariablesPrinter#GetRange()|.

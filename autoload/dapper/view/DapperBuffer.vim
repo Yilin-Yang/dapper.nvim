@@ -42,6 +42,7 @@ function! dapper#view#DapperBuffer#new(message_passer, ...) abort
       \ '_children': [],
       \ '_MessagePasser': typevim#make#Member('_MessagePasser'),
       \ 'Push': typevim#make#AbstractFunc(s:typename, 'Push', []),
+      \ 'Dump': typevim#make#Member('Dump'),
       \ 'GetRange': typevim#make#AbstractFunc(s:typename, 'GetRange', []),
       \ 'SetMappings': typevim#make#AbstractFunc(s:typename, 'SetMappings', []),
       \ 'ConfigureBuffer': typevim#make#Member('ConfigureBuffer'),
@@ -99,6 +100,15 @@ function! dapper#view#DapperBuffer#_Log(kind, brief, ...) dict abort
   call maktaba#ensure#IsString(a:kind)
   call maktaba#ensure#IsString(a:brief)
   call call(l:self._message_passer.NotifyReport, [a:kind, a:brief] + a:000)
+endfunction
+
+""
+" @public
+" @dict DapperBuffer
+" Dump this buffer's contents and stored state, turning it into a "blank slate"
+" comparable to a freshly constructed DapperBuffer.
+function! dapper#view#DapperBuffer#Dump() dict abort
+  call s:CheckType(l:self)
 endfunction
 
 ""

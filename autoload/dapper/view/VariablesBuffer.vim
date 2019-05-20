@@ -47,6 +47,7 @@ function! dapper#view#VariablesBuffer#New(message_passer, ...) abort
       \ '_ResetBuffer': typevim#make#Member('_ResetBuffer'),
       \ 'stackFrame': typevim#make#Member('stackFrame'),
       \ 'Push': typevim#make#Member('Push'),
+      \ 'Dump': typevim#make#Member('Dump'),
       \ 'GetRange': typevim#make#Member('GetRange'),
       \ 'SetMappings': typevim#make#Member('SetMappings'),
       \ 'ExpandSelected': typevim#make#Member('ExpandSelected'),
@@ -64,6 +65,7 @@ function! dapper#view#VariablesBuffer#New(message_passer, ...) abort
   endif
 
   call l:new._ResetBuffer()
+  let s:counter += 1
   return l:new
 endfunction
 
@@ -85,7 +87,6 @@ function! s:BufferNameFrom(...) abort
     let l:to_return .= printf(' ID: %s,', a:2)
   endif
   let l:to_return .= printf(' (buf #%d)', s:counter)
-  let s:counter += 1
   return typevim#string#EscapeChars(l:to_return, '#%')
 endfunction
 
@@ -130,6 +131,20 @@ function! dapper#view#VariablesBuffer#Push(stack_frame) dict abort
   call l:self._printer.PrintScopes(
       \ l:scopes, s:plugin.Flag('menu_expand_depth_initial'))
   call l:self.Rename(s:BufferNameFrom(a:stack_frame.name(), a:stack_frame.id()))
+endfunction
+
+""
+" @public
+" @dict VariablesBuffer
+" Dump the contents and stored state of this VariablesBuffer.
+function! dapper#view#VariablesBuffer#Dump() dict abort
+  call s:CheckType(l:self)
+  let l:self._stack_frame = v:null
+  let l:self._var_lookup = v:null
+  let l:self._printer = v:null
+
+  call l:self._ResetBuffer()
+  call l:self.Rename(s:BufferNameFrom())
 endfunction
 
 ""

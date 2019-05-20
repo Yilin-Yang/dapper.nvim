@@ -54,6 +54,7 @@ function! dapper#view#StackTraceBuffer#New(message_passer, ...) abort
       \ typevim#object#Bind(l:new._PrintFailedResponse, l:new)
   let l:new._ShowCallstack =
       \ typevim#object#Bind(l:new._ShowCallstack, l:new)
+  let s:counter += 1
   return l:new
 endfunction
 
@@ -73,7 +74,6 @@ function! s:BufferNameFrom(...) abort
   else
     let l:to_return = printf('[dapper.nvim] Stack Trace (buf #%d)', s:counter)
   endif
-  let s:counter += 1
   return typevim#string#EscapeChars(l:to_return, '#%')
 endfunction
 
