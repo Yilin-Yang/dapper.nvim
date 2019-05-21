@@ -2,6 +2,7 @@ Execute (dapper#log#DebugLogger: Set Up):
   let g:logger = dapper#log#DebugLogger#Get()
   let g:plugin = maktaba#plugin#Get('dapper.nvim')
   call g:plugin.Flag('min_log_level', 'debug')
+  call g:plugin.Flag('log_buffer_writeback', 1)
   silent execute '!rm -f '.g:dapper_logfile
 
 Execute (dapper#log#DebugLogger: Basic Logging):
