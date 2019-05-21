@@ -206,10 +206,8 @@ call s:plugin.flags.preferred_scope_order.AddTranslator(
 ""
 " Whether to expand all scopes by default when inspecting a stack frame.
 call s:plugin.Flag('expand_scopes_by_default',
-    \ dapper#GlobalVarOrDefault('g:dapper_expand_scopes_by_default', 1))
-
-call s:plugin.flags.expand_scopes_by_default.AddTranslator(
-    \ function('typevim#ensure#IsBool'))
+    \ dapper#GlobalVarOrDefault('g:dapper_expand_scopes_by_default', 1, v:t_bool))
+" note: using typevim#Bool() prevents vimdoc from picking up the default value
 
 ""
 " Names of scopes that will always be expanded, overriding
@@ -250,7 +248,4 @@ call s:plugin.flags.scopes_to_never_expand.AddTranslator(
 " scopes by default. If set, overrides @flag(scopes_to_always_expand) and
 " @flag(expand_scopes_by_default).
 call s:plugin.Flag('dont_expand_expensive_scopes',
-    \ dapper#GlobalVarOrDefault('g:dapper_dont_expand_expensive_scopes', 0))
-
-call s:plugin.flags.dont_expand_expensive_scopes.AddTranslator(
-    \ function('typevim#ensure#IsBool'))
+    \ dapper#GlobalVarOrDefault('g:dapper_dont_expand_expensive_scopes', 0, v:t_bool))

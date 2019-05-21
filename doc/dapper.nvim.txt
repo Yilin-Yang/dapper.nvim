@@ -148,7 +148,8 @@ Default: dapper#GlobalVarOrDefault('g:dapper_preferred_scope_order', ['Local',
 
                                         *dapper.nvim:expand_scopes_by_default*
 Whether to expand all scopes by default when inspecting a stack frame.
-Default: dapper#GlobalVarOrDefault('g:dapper_expand_scopes_by_default', 1) `
+Default: dapper#GlobalVarOrDefault('g:dapper_expand_scopes_by_default', 1,
+  v:t_bool) `
 
                                          *dapper.nvim:scopes_to_always_expand*
 Names of scopes that will always be expanded, overriding
@@ -169,8 +170,8 @@ meaning that it has many variables and that trying to display its contents may
 be unacceptably slow. Set this to 1 to avoid expanding these scopes by
 default. If set, overrides |dapper.nvim:scopes_to_always_expand| and
 |dapper.nvim:expand_scopes_by_default|.
-Default: dapper#GlobalVarOrDefault('g:dapper_dont_expand_expensive_scopes', 0)
-  `
+Default: dapper#GlobalVarOrDefault('g:dapper_dont_expand_expensive_scopes', 0,
+  v:t_bool) `
 
                                                 *dapper.nvim:plugin[commands]*
 Configures whether plugin/commands.vim should be loaded.
