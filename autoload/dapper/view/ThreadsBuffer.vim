@@ -96,6 +96,7 @@ function! dapper#view#ThreadsBuffer#Push(threads, ...) dict abort
   call maktaba#ensure#IsDict(a:threads)
   let l:to_highlight = get(a:000, 0, v:null)
 
+  call l:self._ResetChildren()
   call l:self._ResetBuffer()
 
   let l:ids_and_threads = sort(items(a:threads), 'typevim#value#CompareKeys')
@@ -110,7 +111,6 @@ function! dapper#view#ThreadsBuffer#Push(threads, ...) dict abort
       endif
     let l:i += 1 | endwhile
   endif
-
 
   for [l:tid, l:thread] in l:ids_and_threads
     if l:thread.status() ==# 'exited'
@@ -243,7 +243,7 @@ function! dapper#view#ThreadsBuffer#DigDown() dict abort
       \ 'Digging down from ThreadsBuffer to tid:'.l:tid,
       \ l:long_msg
       \ )
-  call l:self._DigDownAndPush(l:self._model.thread(l:tid))
+  call l:self._DigDownAndPush(l:tid, l:self._model.thread(l:tid))
 endfunction
 
 ""

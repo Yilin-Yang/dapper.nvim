@@ -43,6 +43,17 @@ Expect:
   (4)	[NO]	(l:1, c:0)	File(4)
   </stacktrace>
 
+Execute (Pipeline: (Set Up) Keep StackTraceBuffer Alive in Another Tab):
+  " so that it isn't destroyed when it's out of view
+  call g:tb.Open()
+  normal! gg
+  execute "normal \<cr>"
+  sleep 10m
+  let g:sb = b:dapper_buffer
+  tabnew
+  call g:sb.Open()
+  tabprev
+
 Execute (Pipeline: Get Stack Frame from Callstack):
   let g:thread = g:dapper_model.thread(1)
   let g:callstack = AwaitPromise(g:thread.stackTrace(), 4000)
@@ -87,13 +98,13 @@ Then (Check Values in Structured Variable):
   AssertEqual 'hello world', g:var.value()
 
 Execute (Pipeline: Dig Down Into VariablesBuffer):
-  call g:tb.Open()
-  normal! 2G
-  execute "normal \<cr>"
-  let g:sb = b:dapper_buffer
+  call g:sb.Open()
   let g:vb = dapper#view#VariablesBuffer#New(g:dapper_middletalker)
   call g:sb.AddChild(g:vb)
   call g:vb.SetParent(g:sb)
+  tabnew
+  call g:vb.Open()
+  tabprev
   normal! 2G
 
   execute "normal \<cr>"

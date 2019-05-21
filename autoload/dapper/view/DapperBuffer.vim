@@ -8,6 +8,11 @@
 " one level of information to another (e.g. from a list of all running threads
 " to a stack trace for a particular thread), and for "climbing up" from that
 " deeper level back to the parent level.
+"
+" DapperBuffer instances will maintain distinct child DapperBuffers for each
+" object into which the user can drill down. This is so that each child buffer
+" will remember its previous state (e.g. cursor position), making it easier to
+" switch between children without "losing one's place."
 
 let s:typename = 'DapperBuffer'
 
@@ -39,7 +44,8 @@ function! dapper#view#DapperBuffer#new(message_passer, ...) abort
   let l:new = {
       \ '_message_passer': a:message_passer,
       \ '_parent': 0,
-      \ '_children': [],
+      \ '_unused_children': [],
+      \ '_ids_to_children': {},
       \ '_MessagePasser': typevim#make#Member('_MessagePasser'),
       \ 'Push': typevim#make#AbstractFunc(s:typename, 'Push', []),
       \ 'Dump': typevim#make#Member('Dump'),
@@ -54,6 +60,7 @@ function! dapper#view#DapperBuffer#new(message_passer, ...) abort
       \ 'AddChild': typevim#make#Member('AddChild'),
       \ 'RemoveChild': typevim#make#Member('RemoveChild'),
       \ 'GetChildren': typevim#make#Member('GetChildren'),
+      \ '_ResetChildren': typevim#make#Member('_ResetChildren'),
       \ '_MakeChild': typevim#make#AbstractFunc(s:typename, '_MakeChild', []),
       \ '_Log': typevim#make#Member('_Log'),
       \ '_GetOpenInTab': typevim#make#Member('_GetOpenInTab'),
@@ -173,28 +180,60 @@ endfunction
 " Push the given item {to_show} to all children, and switch to one. Meant to
 " be called after determining what {to_show} during a call to
 " @function(dapper#view#DapperBuffer#DigDown).
-function! dapper#view#DapperBuffer#_DigDownAndPush(to_show) dict abort
+"
+" {id} is some sort of unique identifier for {to_show}, like the
+" @function(dapper#model#StackFrame#id) of a @dict(StackFrame).
+function! dapper#view#DapperBuffer#_DigDownAndPush(id, to_show) dict abort
   call s:CheckType(l:self)
-  let l:children = l:self._children
-  if empty(l:children)
-    call add(l:children, l:self._MakeChild())
-  endif
-  let l:open_in_same = 0
-  for l:child in l:children
-    call l:child.Push(a:to_show)
-    if !empty(l:open_in_same) | continue | endif
-    if l:child.IsOpenInTab() | let l:open_in_same = l:child | endif
-  endfor
-  if empty(l:open_in_same)
-    try
-      call l:children[0].Switch()
-    catch /ERROR(NotFound)/
-      " not open in any tabs
-      call l:children[0].Open()
-    endtry
+  let l:to_open = v:null
+  let l:already_shown = 0
+
+  let l:unused_children = l:self._unused_children
+  let l:ids_to_children = l:self._ids_to_children
+  if has_key(l:ids_to_children, a:id)
+    let l:to_open = l:ids_to_children[a:id]
+    let l:already_shown = 1
+  elseif empty(l:unused_children)
+    " not shown in any existing buffers, and no unused children to repurpose
+    " leave l:to_open equal to v:null, so that we construct a new child below
   else
-    call l:open_in_same.Switch()
+    " find an existing unused child to repurpose, preferably in the same tab
+    let l:i = 0 | while l:i <# len(l:unused_children)
+      let l:child = l:unused_children[l:i]
+      if l:child.IsOpen()
+        call l:child.Dump()
+        if l:to_open is v:null && l:child.IsOpenInTab()
+          let l:to_open = l:child
+        endif
+      else  " child buffer is not visible anywhere
+        unlet l:unused_children[l:i]
+        call l:child.CleanUp()
+        continue  " don't increment index
+      endif
+    let l:i += 1 | endwhile
+    " it's possible that this loop will fail completely, in which case
+    " we'll construct a new child down below
   endif
+
+  if l:to_open is v:null
+    if empty(l:unused_children)
+      let l:to_open = l:self._MakeChild()
+    else
+      let l:to_open = l:unused_children[-1]
+      unlet l:unused_children[-1]
+    endif
+  endif
+
+  if !l:already_shown
+    let l:ids_to_children[a:id] = l:to_open
+    call l:to_open.Push(a:to_show)
+  endif
+
+  try
+    call l:to_open.Switch()
+  catch  /ERROR(NotFound)/  " not open in any tabs
+    call l:to_open.Open()
+  endtry
 endfunction
 
 ""
@@ -237,7 +276,7 @@ endfunction
 function! dapper#view#DapperBuffer#AddChild(new_child) dict abort
   call s:CheckType(l:self)
   call typevim#ensure#Implements(a:new_child, dapper#interface#UpdatePusher())
-  call add(l:self._children, a:new_child)
+  call add(l:self._unused_children, a:new_child)
 endfunction
 
 ""
@@ -251,10 +290,10 @@ endfunction
 function! dapper#view#DapperBuffer#RemoveChild(to_remove) dict abort
   call s:CheckType(l:self)
   call typevim#ensure#Implements(a:to_remove, dapper#interface#UpdatePusher())
-  let l:i = 0 | while l:i <# len(l:self._children)
-    let l:child = l:self._children[l:i]
+  let l:i = 0 | while l:i <# len(l:self._unused_children)
+    let l:child = l:self._unused_children[l:i]
     if l:child is a:to_remove
-      unlet l:self._children[l:i]
+      unlet l:self._unused_children[l:i]
       return 1
     endif
   let l:i += 1 | endwhile
@@ -268,7 +307,42 @@ endfunction
 " order.
 function! dapper#view#DapperBuffer#GetChildren() dict abort
   call s:CheckType(l:self)
-  return copy(l:self._children)
+  return copy(l:self._unused_children)
+endfunction
+
+""
+" @public
+" @dict DapperBuffer
+" Destroy children that are not visible. Reset any children that are currently
+" showing information, and add them to the list of unused children.
+function! dapper#view#DapperBuffer#_ResetChildren() dict abort
+  call s:CheckType(l:self)
+
+  " clean up old child buffers
+  let l:unused_children = l:self._unused_children
+  let l:i = 0 | while l:i <# len(l:unused_children)
+    let l:child_buffer = l:unused_children[l:i]
+    if !l:child_buffer.IsOpen()
+      call l:unused_children[l:i].CleanUp()
+      unlet l:unused_children[l:i]
+      continue
+    else  " buffer is already unused, but just for completeness
+      call l:unused_children[l:i].Dump()
+    endif
+  let l:i += 1 | endwhile
+
+  let l:ids_to_children = l:self._ids_to_children
+  for [l:id, l:child_buffer] in items(l:ids_to_children)
+    if l:child_buffer.IsOpen()
+      " the buffer is open somewhere; don't destroy it, to avoid changing the
+      " user's window layout
+      call l:child_buffer.Dump()
+      call add(l:unused_children, l:child_buffer)
+    else
+      call l:child_buffer.CleanUp()
+    endif
+    unlet l:ids_to_children[l:id]
+  endfor
 endfunction
 
 ""

@@ -21,7 +21,7 @@ Expect:
   thread id: 789	name: unnamed		status: started
   </threads>
 
-Do (DapperBuffer: Test Creation of New Buffer):
+Do (DapperBuffer: can be constructed, and can drill down into a child):
   :call g:tb.Open()\<cr>
   gg\<cr>
 Then:
@@ -31,24 +31,26 @@ Then:
   let g:child = b:dapper_buffer
   let g:child_bufnr = b:dapper_buffer.bufnr()
 
-Do (DapperBuffer: Return to Parent):
+Do (DapperBuffer: can return to parent):
   :call g:child.Open()\<cr>
   \<esc>
 Then:
   Assert exists('b:dapper_buffer'), 'Could not find buffer-local ThreadsBuffer'
   call typevim#ensure#IsType(b:dapper_buffer, 'ThreadsBuffer')
 
-Do (DapperBuffer: Test Open Different in Existing Child):
+Do (DapperBuffer: will show a different thing in a different child):
   :call g:tb.Open()\<cr>
   j\<cr>
 Then:
   Assert exists('b:dapper_buffer'), 'Could not find buffer-local StackTraceBuffer'
   call typevim#ensure#IsType(b:dapper_buffer, 'StackTraceBuffer')
   AssertEqual 789, b:dapper_buffer.thread().id()
-  AssertEqual g:child_bufnr, b:dapper_buffer.bufnr()
+  AssertNotEqual g:child_bufnr, b:dapper_buffer.bufnr()
+  let g:second_child = b:dapper_buffer
+  let g:second_child_bufnr = g:second_child.bufnr()
   execute "normal \<esc>"
 
-Execute (DapperBuffer: Test Move to Existing Window):
+Execute (DapperBuffer: won't open in the same window if the child's open already):
   call g:tb.Open()
   let g:tb_winnr = winnr()
   " if vsplit opens left, then g:child will assume winnr 1
@@ -57,42 +59,123 @@ Execute (DapperBuffer: Test Move to Existing Window):
   let g:ch_winnr = winnr()
   wincmd p
   execute "normal gg\<cr>"
-Then:
+Then (and it'll be the same child buffer, in addition to the above):
+  " we should have moved to the child's window
   call typevim#ensure#IsType(b:dapper_buffer, 'StackTraceBuffer')
   AssertNotEqual g:tb_winnr, winnr()
+
+  " we didn't do anything that should cause DapperBuffer to reset its children
+  AssertEqual g:child_bufnr, b:dapper_buffer.bufnr()
+
+  " climbing back up should return to the old tab
   execute "normal \<esc>"
   call typevim#ensure#IsType(b:dapper_buffer, 'ThreadsBuffer')
   AssertEqual g:tb_winnr, winnr()
   execute g:child.Switch()
   close
 
-Execute (DapperBuffer: Test Move to Existing Window in Different Tab):
+Execute (DapperBuffer: will switch to a different tab if child is in that tab):
+  " to avoid a 'buffer not modifiable' error from vader
   tabnew
+
+  tabnew
+  tabprev
+  " open the child in the previous new tab, again to (somehow) avoid exceptions
+  " from vader
   call g:child.Open()
   let g:tabnr = tabpagenr()
-  tabprevious
+  tabnext
+
   call g:tb.Open()
   execute "normal gg\<cr>"
 Then:
   call typevim#ensure#IsType(b:dapper_buffer, 'StackTraceBuffer')
   AssertEqual 123, b:dapper_buffer.thread().id()
   AssertEqual g:tabnr, tabpagenr()
-
-Execute (DapperBuffer: Test Existing Child, Not Open in Any):
   tabnext
   tabclose
-  while len(tabpagebuflist()) ># 1
-    quit
-  endwhile
+
+Execute (DapperBuffer: should open an existing child even if it's not open anywhere):
+  try
+    while 1
+      call g:child.Switch()
+      quit
+    endwhile
+  catch /ERROR(NotFound)/
+  endtry
+
+  try
+    while 1
+      call g:second_child.Switch()
+      quit
+    endwhile
+  catch /ERROR(NotFound)/
+  endtry
+  
+  let g:winnr = winnr()
   let g:tabnr = tabpagenr()
   call g:tb.Open()
   execute "normal gg\<cr>"
 Then:
   call typevim#ensure#IsType(b:dapper_buffer, 'StackTraceBuffer')
   AssertEqual 123, b:dapper_buffer.thread().id()
-  AssertEqual g:tabnr, tabpagenr()
+  AssertEqual g:child_bufnr, b:dapper_buffer.bufnr()
 
-Execute (ThreadsBuffer: Cleanup):
+  " should open in the same window, in the same tab
+  AssertEqual g:tabnr, tabpagenr()
+  AssertEqual g:winnr, winnr()
+
+Execute (DapperBuffer: will reuse an existing child buffer on reset if its still open):
+  " close all instances of the second child
+  try
+    while 1
+      call g:second_child.Switch()
+      quit
+    endwhile
+  catch /ERROR(NotFound)/
+  endtry
+
+  tabnew
+  call g:child.Open()
+  let g:child_bufnr = b:dapper_buffer.bufnr()
+  tabprev
+
+  let g:msg = dapper#dap#Event#New('thread', {'threadId': 456, 'reason': 'started'})
+  call g:model.Receive(g:msg)
+
+  let g:msg = typevim#make#Instance(dapper#dap#ThreadsResponse())
+  let g:msg.vim_msg_typename = 'ThreadsResponse'
+  let g:msg.success = 1
+  let g:new_thread = typevim#make#Instance(dapper#dap#Thread())
+  let g:new_thread.id = 456
+  let g:new_thread.name = 'foobar'
+  call add(g:msg.body.threads, g:new_thread)
+
+  call g:tb.Open()
+  call g:model.Receive(g:msg)
+
+  Assert bufexists(g:child.bufnr())
+    g:bhilc
+Then:
+  normal! 2G
+  execute "normal \<cr>"
+  AssertEqual g:child_bufnr, b:dapper_buffer.bufnr()
+
+  execute "normal \<esc>"
+  normal! j
+  execute "normal \<cr>"
+  AssertNotEqual g:child_bufnr, b:dapper_buffer.bufnr()
+  AssertNotEqual g:second_child_bufnr, b:dapper_buffer.bufnr()
+
+  execute "normal \<esc>"
+Expect:
+  <threads>
+  thread id: 456	name: foobar		status: started
+  thread id: 123	name: unnamed		status: started
+  thread id: 789	name: unnamed		status: started
+  </threads>
+
+Execute (DapperBuffer: deletes its managed buffer on CleanUp):
   call MockCleanUp()
   let g:thread_bufnr = g:tb.bufnr()
   let g:child_bufnr = g:child.bufnr()

@@ -188,6 +188,11 @@ to another (e.g. from a list of all running threads to a stack trace for a
 particular thread), and for "climbing up" from that deeper level back to the
 parent level.
 
+DapperBuffer instances will maintain distinct child DapperBuffers for each
+object into which the user can drill down. This is so that each child buffer
+will remember its previous state (e.g. cursor position), making it easier to
+switch between children without "losing one's place."
+
 dapper#view#DapperBuffer#New({message_passer}, [bufparams])
                                                           *DapperBuffer.new()*
   Construct a DapperBuffer.
@@ -234,10 +239,13 @@ DapperBuffer.ClimbUp([fail_silently])                 *DapperBuffer.ClimbUp()*
 
   [fail_silently] is 0 if omitted.
 
-DapperBuffer._DigDownAndPush({to_show})       *DapperBuffer._DigDownAndPush()*
+DapperBuffer._DigDownAndPush({id}, {to_show}) *DapperBuffer._DigDownAndPush()*
   Push the given item {to_show} to all children, and switch to one. Meant to
   be called after determining what {to_show} during a call to
   |dapper#view#DapperBuffer#DigDown()|.
+
+  {id} is some sort of unique identifier for {to_show}, like the
+  |dapper#model#StackFrame#id()| of a |dapper.nvim.StackFrame|.
 
 DapperBuffer.Open()                                      *DapperBuffer.Open()*
   Open this buffer, and trigger setup/buffer-local mappings.
@@ -266,6 +274,10 @@ DapperBuffer.RemoveChild({to_remove})             *DapperBuffer.RemoveChild()*
 DapperBuffer.GetChildren()                        *DapperBuffer.GetChildren()*
   Returns a copied list of all of this buffer's children, in no particular
   order.
+
+DapperBuffer._ResetChildren()                  *DapperBuffer._ResetChildren()*
+  Destroy children that are not visible. Reset any children that are currently
+  showing information, and add them to the list of unused children.
 
 DapperBuffer._GetOpenInTab({buffers}, [tabnr])  *DapperBuffer._GetOpenInTab()*
   Returns the the first DapperBuffer in the given list of {buffers} that is

@@ -32,8 +32,7 @@ function! dapper#view#StackTraceBuffer#New(message_passer, ...) abort
   endif
 
   let l:base = dapper#view#DapperBuffer#new(
-          \ a:message_passer,
-          \ {'bufname': l:bufname})
+      \ a:message_passer, {'bufname': l:bufname})
 
   let l:new = {
       \ '_thread': l:thread,
@@ -50,6 +49,8 @@ function! dapper#view#StackTraceBuffer#New(message_passer, ...) abort
       \ '_ShowCallstack': typevim#make#Member('_ShowCallstack'),
       \ }
   call typevim#make#Derived(s:typename, l:base, l:new)
+  let l:new._DigDownAndPush =
+      \ typevim#object#Bind(l:new._DigDownAndPush, l:new)
   let l:new._PrintFailedResponse =
       \ typevim#object#Bind(l:new._PrintFailedResponse, l:new)
   let l:new._ShowCallstack =
@@ -198,6 +199,7 @@ function! dapper#view#StackTraceBuffer#_ShowCallstack(stack_trace) dict abort
 
   call l:self._ResetBuffer()
   call l:self.InsertLines(1, l:lines)
+  call l:self._ResetChildren()
 endfunction
 
 ""
@@ -231,16 +233,21 @@ function! dapper#view#StackTraceBuffer#DigDown() dict abort
   let l:frame_idx = l:self._GetSelected()
 
   call l:stack_trace_promise.Then(
-      \ function('s:GetStackFrameAndPush', [l:self, l:frame_idx]),
+      \ function('s:GetStackFrameAndOpen', [l:self, l:frame_idx]),
       \ l:self._PrintFailedResponse)
 endfunction
 
-function! s:GetStackFrameAndPush(buffer, index, stack_trace) abort
+function! s:GetStackFrameAndOpen(self, index, stack_trace) abort
   call typevim#ensure#IsType(a:stack_trace, 'StackTrace')
   let l:frame_promise = a:stack_trace.frame(a:index)
   call l:frame_promise.Then(
-      \ typevim#object#Bind(a:buffer._DigDownAndPush, a:buffer),
-      \ a:buffer._PrintFailedResponse)
+      \ function('s:GetFrameIDAndOpen', [a:self]),
+      \ a:self._PrintFailedResponse)
+endfunction
+
+function! s:GetFrameIDAndOpen(self, stack_frame) abort
+  call typevim#ensure#IsType(a:stack_frame, 'StackFrame')
+  call a:self._DigDownAndPush(a:stack_frame.id(), a:stack_frame)
 endfunction
 
 ""
