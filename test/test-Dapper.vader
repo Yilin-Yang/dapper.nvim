@@ -1,0 +1,71 @@
+Include: AssertThrew.vader
+
+Execute (dapper#GlobalVarOrDefault: returns the default if the global var isn't set):
+  AssertEqual 42, dapper#GlobalVarOrDefault('g:DoesntExist', 42)
+
+Execute (dapper#GlobalVarOrDefault: accepts type matches against references):
+  function! Foo()
+  endfunction
+
+  let g:list_of_objs = [0, '', function('Foo'), [], {}, 0.0, v:true]
+
+  for g:Obj in g:list_of_objs
+    AssertEqual g:Obj, dapper#GlobalVarOrDefault('g:Obj', g:Obj)
+  endfor
+
+Execute (dapper#GlobalVarOrDefault: accepts type matches against constants):
+  for g:Obj in g:list_of_objs
+    AssertEqual g:Obj, dapper#GlobalVarOrDefault('g:Obj', v:null, type(g:Obj))
+  endfor
+
+Execute (dapper#GlobalVarOrDefault: accepts type matches against typevim#Any()):
+  for g:Obj in g:list_of_objs
+    AssertEqual g:Obj, dapper#GlobalVarOrDefault('g:Obj', v:null, typevim#Any())
+  endfor
+
+Execute (dapper#GlobalVarOrDefault: returns a reference to the original collection):
+  let g:Obj = {}
+  Assert g:Obj is dapper#GlobalVarOrDefault('g:Obj', {}), 'Failed with dict and instance'
+  let g:Obj = []
+  Assert g:Obj is dapper#GlobalVarOrDefault('g:Obj', []), 'Failed with list and instance'
+
+  let g:Obj = {}
+  Assert g:Obj is dapper#GlobalVarOrDefault('g:Obj', v:null, type(g:Obj)), 'Failed with dict and const'
+  let g:Obj = []
+  Assert g:Obj is dapper#GlobalVarOrDefault('g:Obj', v:null, type(g:Obj)), 'Failed with list and const'
+
+Execute (dapper#GlobalVarOrDefault: rejects type mismatches against instances):
+  function! Foo()
+  endfunction
+
+  let g:list_of_objs = [0, '', function('Foo'), [], {}, 0.0, v:true]
+
+  " offset by one
+  let g:mismatch = copy(g:list_of_objs)
+  call add(g:mismatch, g:mismatch[0])
+  unlet g:mismatch[0]
+
+  let i = 0 | while i <# len(g:list_of_objs)
+    let g:Obj = g:list_of_objs[i]
+    let g:WrongObj = g:mismatch[i]
+    AssertThrows call dapper#GlobalVarOrDefault('g:Obj', g:WrongObj)
+    AssertThrew printf('ERROR(WrongType).*g:Obj.*Expected.*%s.*[Gg]ot.*%s.*',
+                     \ maktaba#value#TypeName(g:WrongObj),
+                     \ maktaba#value#TypeName(g:Obj))
+  let i += 1 | endwhile
+
+Execute (dapper#GlobalVarOrDefault: rejects type mismatches against constants):
+  let g:list_of_objs = [0, '', function('Foo'), [], {}, 0.0, v:true]
+  " offset by one
+  let g:mismatch = maktaba#function#Map(g:list_of_objs, { Obj -> type(Obj)} )
+  call add(g:mismatch, g:mismatch[0])
+  unlet g:mismatch[0]
+
+  let i = 0 | while i <# len(g:list_of_objs)
+    let g:Obj = g:list_of_objs[i]
+    let g:wrong_type = g:mismatch[i]
+    AssertThrows call dapper#GlobalVarOrDefault('g:Obj', v:null, g:wrong_type)
+    AssertThrew printf('ERROR(WrongType).*g:Obj.*Expected.*%s.*[Gg]ot.*%s.*',
+                     \ typevim#value#ConstantToTypeName(g:wrong_type),
+                     \ maktaba#value#TypeName(g:Obj))
+  let i += 1 | endwhile

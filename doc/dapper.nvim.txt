@@ -5,8 +5,9 @@ Yilin Yang <yiliny@umich.edu>                      *dapper.nvim* *dapper.nvim*
 CONTENTS                                                *dapper.nvim-contents*
   1. Introduction..........................................|dapper.nvim-intro|
   2. Configuration........................................|dapper.nvim-config|
-  3. Dictionaries..........................................|dapper.nvim-dicts|
-  4. Functions.........................................|dapper.nvim-functions|
+  3. Commands...........................................|dapper.nvim-commands|
+  4. Dictionaries..........................................|dapper.nvim-dicts|
+  5. Functions.........................................|dapper.nvim-functions|
 
 ==============================================================================
 INTRODUCTION                                               *dapper.nvim-intro*
@@ -44,12 +45,12 @@ the following in their .vimrc:
                                                 *dapper.nvim:dig_down_mapping*
 Keymapping used to "dig down" to a deeper level of a dapper.nvim buffer, e.g.
 to go from a "ThreadBuffer" down to the selected "StackTraceBuffer".
-Default: s:GlobalSettingOrDefault('g:dapper_dig_down_mapping', '<cr>') `
+Default: dapper#GlobalVarOrDefault('g:dapper_dig_down_mapping', '<cr>') `
 
                                                 *dapper.nvim:climb_up_mapping*
 Keymapping used to "climb up" to a higher level of a dapper.nvim buffer, e.g.
 to go from a "StackTraceBuffer" up to a "ThreadBuffer".
-Default: s:GlobalSettingOrDefault('g:dapper_climb_up_mapping', '<Esc>') `
+Default: dapper#GlobalVarOrDefault('g:dapper_climb_up_mapping', '<Esc>') `
 
                                                   *dapper.nvim:expand_mapping*
 Keymapping used to expand the contents of a collapsed scope or "structured"
@@ -59,32 +60,32 @@ variable (e.g. a class instance, a struct, a list) in a
                                                 *dapper.nvim:collapse_mapping*
 Keymapping used to collapse the contents of an expanded scope or "structured"
 variable in a |dapper.nvim.VariablesBuffer|.
-Default: s:GlobalSettingOrDefault( 'g:dapper_collapse_mapping', '<BS>') `
+Default: dapper#GlobalVarOrDefault( 'g:dapper_collapse_mapping', '<BS>') `
 
                                        *dapper.nvim:toggle_breakpoint_mapping*
 Keymapping used to toggle breakpoints on the current line. Defaults to "<F9>".
-Default: s:GlobalSettingOrDefault('g:dapper_toggle_breakpoint_mapping',
+Default: dapper#GlobalVarOrDefault('g:dapper_toggle_breakpoint_mapping',
   '<F9>') `
 
                                             *dapper.nvim:filetypes_to_configs*
 Mapping between a filetype and all debug adapter configurations for that
 filetype.
-Default: s:GlobalSettingOrDefault('g:dapper_filetypes_to_configs', {}) `
+Default: dapper#GlobalVarOrDefault('g:dapper_filetypes_to_configs', {}) `
 
                                                  *dapper.nvim:log_buffer_name*
 The |bufname| of the debug log buffer.
-Default: s:GlobalSettingOrDefault('g:dapper_log_buffer_name', '[dapper] Debug
+Default: dapper#GlobalVarOrDefault('g:dapper_log_buffer_name', '[dapper] Debug
   Log') `
 
                                                          *dapper.nvim:logfile*
 The output file to which the debug log will be written, if log writing is
 enabled.
-Default: s:GlobalSettingOrDefault('g:dapper_logfile',
+Default: dapper#GlobalVarOrDefault('g:dapper_logfile',
   $HOME.'/dapper_debug_log.vim.dp') `
 
                                             *dapper.nvim:log_buffer_writeback*
 Whether or not to write the debug log buffer out to a file on exit.
-Default: s:GlobalSettingOrDefault('g:dapper_log_buffer_writeback', 0) `
+Default: dapper#GlobalVarOrDefault('g:dapper_log_buffer_writeback', 0) `
 
                                                    *dapper.nvim:min_log_level*
 The "lowest" notification level to be written to the debug log buffer.
@@ -101,7 +102,7 @@ Note that setting this to "low" values, particularly "debug", may incur a
 significant performance penalty, as dapper.nvim's debug log output is
 extremely verbose. It's recommended to set this no lower than "warn" in
 ordinary use.
-Default: s:GlobalSettingOrDefault('g:dapper_min_log_level', 'error') `
+Default: dapper#GlobalVarOrDefault('g:dapper_min_log_level', 'error') `
 
                                          *dapper.nvim:max_drilldown_recursion*
 When retrieving the contents of a structured variable, dapper.nvim can try to
@@ -120,7 +121,7 @@ However, this recursive retrieval blocks vim. If a stack frame has many
 (hundreds or more) elements, then inspecting its variables would freeze vim
 for up to several minutes. Consequently, this value should never be greater
 than zero unless you plan to use it for performance benchmarking.
-Default: s:GlobalSettingOrDefault('g:dapper_max_drilldown_recursion', 0) `
+Default: dapper#GlobalVarOrDefault('g:dapper_max_drilldown_recursion', 0) `
 
                                        *dapper.nvim:menu_expand_depth_initial*
 The initial depth to which scopes and structured variables will be expanded
@@ -132,7 +133,7 @@ Note that setting this to zero essentially disables on-entry scope expansion
 settings like |dapper.nvim:scopes_to_always_expand|.
 
 See |dapper.nvim:menu_expand_depth_on_map| for more details.
-Default: s:GlobalSettingOrDefault('g:dapper_menu_expand_depth_initial', 1) `
+Default: dapper#GlobalVarOrDefault('g:dapper_menu_expand_depth_initial', 1) `
 
                                            *dapper.nvim:preferred_scope_order*
 The preferred order in which to display scopes inside of a
@@ -142,24 +143,24 @@ another, then it will be shown closer to the top of the buffer.
 Matching is done by case-sensitive string comparison. Scopes whose names don't
 appear in this list will appear at the end of the buffer sorted in
 alphabetical order.
-Default: s:GlobalSettingOrDefault('g:dapper_preferred_scope_order', ['Local',
+Default: dapper#GlobalVarOrDefault('g:dapper_preferred_scope_order', ['Local',
   'Global']) `
 
                                         *dapper.nvim:expand_scopes_by_default*
 Whether to expand all scopes by default when inspecting a stack frame.
-Default: s:GlobalSettingOrDefault('g:dapper_expand_scopes_by_default', 1) `
+Default: dapper#GlobalVarOrDefault('g:dapper_expand_scopes_by_default', 1) `
 
                                          *dapper.nvim:scopes_to_always_expand*
 Names of scopes that will always be expanded, overriding
 |dapper.nvim:expand_scopes_by_default|. Scopes that appear in this list cannot
 appear in |dapper.nvim:scopes_to_never_expand|.
-Default: s:GlobalSettingOrDefault('g:dapper_scopes_to_always_expand', []) `
+Default: dapper#GlobalVarOrDefault('g:dapper_scopes_to_always_expand', []) `
 
                                           *dapper.nvim:scopes_to_never_expand*
 Names of scopes that will never be expanded, overriding
 |dapper.nvim:expand_scopes_by_default|. Scopes that appear in this list cannot
 appear in |dapper.nvim:scopes_to_always_expand|.
-Default: s:GlobalSettingOrDefault('g:dapper_scopes_to_never_expand',
+Default: dapper#GlobalVarOrDefault('g:dapper_scopes_to_never_expand',
   ['Global']) `
 
                                     *dapper.nvim:dont_expand_expensive_scopes*
@@ -168,12 +169,26 @@ meaning that it has many variables and that trying to display its contents may
 be unacceptably slow. Set this to 1 to avoid expanding these scopes by
 default. If set, overrides |dapper.nvim:scopes_to_always_expand| and
 |dapper.nvim:expand_scopes_by_default|.
-Default: s:GlobalSettingOrDefault('g:dapper_dont_expand_expensive_scopes', 0)
+Default: dapper#GlobalVarOrDefault('g:dapper_dont_expand_expensive_scopes', 0)
   `
+
+                                                *dapper.nvim:plugin[commands]*
+Configures whether plugin/commands.vim should be loaded.
+Default: 1 `
+
+                                                  *dapper.nvim:plugin[dapper]*
+Configures whether plugin/dapper.vim should be loaded.
+Default: 1 `
 
                                                 *dapper.nvim:plugin[mappings]*
 Configures whether plugin/mappings.vim should be loaded.
 Default: 0 `
+
+==============================================================================
+COMMANDS                                                *dapper.nvim-commands*
+
+:DapperLog                                                        *:DapperLog*
+  Opens dapper.nvim's debug log buffer in the current window.
 
 ==============================================================================
 DICTIONARIES                                               *dapper.nvim-dicts*
@@ -1190,6 +1205,26 @@ FUNCTIONS                                              *dapper.nvim-functions*
 
 dapper#receive({msg})                                       *dapper#receive()*
   Receive a response or event from the TypeScript middle-end.
+
+dapper#GlobalVarOrDefault({setting_name}, {default}, [type])
+                                                 *dapper#GlobalVarOrDefault()*
+  Return the value of {setting_name}, a scoped variable (e.g.
+  `"g:dapper_foobar"`, including the leading `"g:"`), or {default}, if
+  {setting_name} has no value set.
+
+  This function exists so that dapper.nvim may present a familiar, "legacy"
+  interface for plugin settings to the end user, should they decide not to use
+  glaive.
+
+  [type], if not equal to -1, is the type that the setting represented by
+  {setting_name} should possess. If equal to -1, the function will compare the
+  setting's type against that of {default}.
+
+  [type] is -1 if omitted.
+  Throws ERROR(WrongType) if [type] is -1 and the variable that {setting_name}
+  represents does not have the same type as {default}; or if [type] is not -1
+  and the setting's type does not match it.
+  Throws ERROR(Failure) if {setting_name} is malformed.
 
 dapper#ensure#IsValidLogLevel({level})       *dapper#ensure#IsValidLogLevel()*
   Checks if the given {level} corresponds to a valid maktaba notification

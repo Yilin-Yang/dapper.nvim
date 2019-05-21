@@ -1,5 +1,7 @@
-if exists('g:dapper_nvim_autoloaded') | finish | endif
-let g:dapper_nvim_autoloaded = 1
+let [s:plugin, s:enter] = maktaba#plugin#Enter(expand('<sfile>:p'))
+if !s:enter
+  finish
+endif
 
 let g:dapper_plugin = maktaba#plugin#Get('TypeVim')
 

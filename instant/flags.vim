@@ -28,35 +28,6 @@ endif
 "   call g:dapper_nvim.Flag('min_log_level', 'no_logging')
 " <
 
-""
-" @public
-" Return the value of {setting_name}, a scoped variable (e.g.
-" `"g:dapper_foobar"`, including the leading `"g:"`), or {default}, if
-" {setting_name} has no value set.
-"
-" This function exists so that dapper.nvim may present a familiar, "legacy"
-" interface for plugin settings to the end user, should they decide not to use
-" glaive.
-"
-" @default type_reference=v:null
-" @throws WrongType if the variable that {setting_name} represents does not have the same type as {default}.
-" @throws Failure if {setting_name} is malformed.
-function! s:GlobalSettingOrDefault(setting_name, default)
-  call maktaba#ensure#IsString(a:setting_name)
-  if exists(a:setting_name)
-    execute 'let l:set_val = '.a:setting_name
-  else
-    let l:set_val = a:default
-  endif
-  try
-    call maktaba#ensure#TypeMatches(l:set_val, a:default)
-  catch /ERROR(WrongType)/
-    throw maktaba#error#WrongType(
-        \ 'Given setting %s has the wrong type! (val: %s)',
-        \ a:setting_name, l:set_val)
-  endtry
-  return l:set_val
-endfunction
 
 function! s:EnsureHoldsOnlyStrings(List) abort
   call typevim#ensure#IsList(a:List)
@@ -86,37 +57,38 @@ function! s:EnsureNoSharedKeys(ref_dictname, errmsg_fmt, ToCheck) abort
 endfunction
 
 """""""""""""""""""""""""""""""""""MAPPINGS"""""""""""""""""""""""""""""""""""""
+" TODO use maktaba MapPrefix where appropriate
 
 ""
 " Keymapping used to "dig down" to a deeper level of a dapper.nvim buffer,
 " e.g. to go from a "ThreadBuffer" down to the selected "StackTraceBuffer".
 call s:plugin.Flag('dig_down_mapping',
-    \ s:GlobalSettingOrDefault('g:dapper_dig_down_mapping', '<cr>'))
+    \ dapper#GlobalVarOrDefault('g:dapper_dig_down_mapping', '<cr>'))
 
 ""
 " Keymapping used to "climb up" to a higher level of a dapper.nvim buffer,
 " e.g. to go from a "StackTraceBuffer" up to a "ThreadBuffer".
 call s:plugin.Flag('climb_up_mapping',
-    \ s:GlobalSettingOrDefault('g:dapper_climb_up_mapping', '<Esc>'))
+    \ dapper#GlobalVarOrDefault('g:dapper_climb_up_mapping', '<Esc>'))
 
 ""
 " Keymapping used to expand the contents of a collapsed scope or "structured"
 " variable (e.g. a class instance, a struct, a list) in a @dict(VariablesBuffer).
 call s:plugin.Flag('expand_mapping',
-    \ s:GlobalSettingOrDefault(
+    \ dapper#GlobalVarOrDefault(
         \ 'g:dapper_expand_mappping', s:plugin.Flag('dig_down_mapping')))
 
 ""
 " Keymapping used to collapse the contents of an expanded scope or
 " "structured" variable in a @dict(VariablesBuffer).
 call s:plugin.Flag('collapse_mapping',
-    \ s:GlobalSettingOrDefault(
+    \ dapper#GlobalVarOrDefault(
         \ 'g:dapper_collapse_mapping', '<BS>'))
 
 ""
 " Keymapping used to toggle breakpoints on the current line. Defaults to "<F9>".
 call s:plugin.Flag('toggle_breakpoint_mapping',
-    \ s:GlobalSettingOrDefault('g:dapper_toggle_breakpoint_mapping', '<F9>'))
+    \ dapper#GlobalVarOrDefault('g:dapper_toggle_breakpoint_mapping', '<F9>'))
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
@@ -124,23 +96,23 @@ call s:plugin.Flag('toggle_breakpoint_mapping',
 " Mapping between a filetype and all debug adapter configurations for that
 " filetype.
 call s:plugin.Flag('filetypes_to_configs',
-    \ s:GlobalSettingOrDefault('g:dapper_filetypes_to_configs', {}))
+    \ dapper#GlobalVarOrDefault('g:dapper_filetypes_to_configs', {}))
 
 ""
 " The |bufname| of the debug log buffer.
 call s:plugin.Flag('log_buffer_name',
-    \ s:GlobalSettingOrDefault('g:dapper_log_buffer_name', '[dapper] Debug Log'))
+    \ dapper#GlobalVarOrDefault('g:dapper_log_buffer_name', '[dapper] Debug Log'))
 
 ""
 " The output file to which the debug log will be written, if log writing is
 " enabled.
 call s:plugin.Flag('logfile',
-    \ s:GlobalSettingOrDefault('g:dapper_logfile', $HOME.'/dapper_debug_log.vim.dp'))
+    \ dapper#GlobalVarOrDefault('g:dapper_logfile', $HOME.'/dapper_debug_log.vim.dp'))
 
 ""
 " Whether or not to write the debug log buffer out to a file on exit.
 call s:plugin.Flag('log_buffer_writeback',
-    \ s:GlobalSettingOrDefault('g:dapper_log_buffer_writeback', 0))
+    \ dapper#GlobalVarOrDefault('g:dapper_log_buffer_writeback', 0))
 
 ""
 " The "lowest" notification level to be written to the debug log buffer.
@@ -158,7 +130,7 @@ call s:plugin.Flag('log_buffer_writeback',
 " extremely verbose. It's recommended to set this no lower than "warn" in
 " ordinary use.
 call s:plugin.Flag('min_log_level',
-    \ s:GlobalSettingOrDefault('g:dapper_min_log_level', 'error'))
+    \ dapper#GlobalVarOrDefault('g:dapper_min_log_level', 'error'))
 
 call s:plugin.flags.min_log_level.AddTranslator(
     \ function('dapper#ensure#IsValidLogLevel'))
@@ -181,7 +153,7 @@ call s:plugin.flags.min_log_level.AddTranslator(
 " for up to several minutes. Consequently, this value should never be greater
 " than zero unless you plan to use it for performance benchmarking.
 call s:plugin.Flag('max_drilldown_recursion',
-    \ s:GlobalSettingOrDefault('g:dapper_max_drilldown_recursion', 0))
+    \ dapper#GlobalVarOrDefault('g:dapper_max_drilldown_recursion', 0))
 
 call s:plugin.flags.max_drilldown_recursion.AddTranslator(
     \ function('typevim#ensure#IsNonNegative'))
@@ -197,7 +169,7 @@ call s:plugin.flags.max_drilldown_recursion.AddTranslator(
 "
 " See @flag(menu_expand_depth_on_map) for more details.
 call s:plugin.Flag('menu_expand_depth_initial',
-    \ s:GlobalSettingOrDefault('g:dapper_menu_expand_depth_initial', 1))
+    \ dapper#GlobalVarOrDefault('g:dapper_menu_expand_depth_initial', 1))
 
 call s:plugin.flags.menu_expand_depth_initial.AddTranslator(
     \ function('typevim#ensure#IsNonNegative'))
@@ -211,7 +183,7 @@ call s:plugin.flags.menu_expand_depth_initial.AddTranslator(
 " own children will be shown. Should be a positive number.
 
 call s:plugin.Flag('menu_expand_depth_on_map',
-    \ s:GlobalSettingOrDefault('g:dapper_menu_expand_depth_on_map', 1))
+    \ dapper#GlobalVarOrDefault('g:dapper_menu_expand_depth_on_map', 1))
 
 call s:plugin.flags.menu_expand_depth_on_map.AddTranslator(
     \ function('typevim#ensure#IsPositive'))
@@ -225,7 +197,7 @@ call s:plugin.flags.menu_expand_depth_on_map.AddTranslator(
 " don't appear in this list will appear at the end of the buffer sorted in
 " alphabetical order.
 call s:plugin.Flag('preferred_scope_order',
-    \ s:GlobalSettingOrDefault('g:dapper_preferred_scope_order',
+    \ dapper#GlobalVarOrDefault('g:dapper_preferred_scope_order',
         \ ['Local', 'Global']))
 
 call s:plugin.flags.preferred_scope_order.AddTranslator(
@@ -234,7 +206,7 @@ call s:plugin.flags.preferred_scope_order.AddTranslator(
 ""
 " Whether to expand all scopes by default when inspecting a stack frame.
 call s:plugin.Flag('expand_scopes_by_default',
-    \ s:GlobalSettingOrDefault('g:dapper_expand_scopes_by_default', 1))
+    \ dapper#GlobalVarOrDefault('g:dapper_expand_scopes_by_default', 1))
 
 call s:plugin.flags.expand_scopes_by_default.AddTranslator(
     \ function('typevim#ensure#IsBool'))
@@ -244,13 +216,13 @@ call s:plugin.flags.expand_scopes_by_default.AddTranslator(
 " @flag(expand_scopes_by_default). Scopes that appear in this list cannot
 " appear in @flag(scopes_to_never_expand).
 call s:plugin.Flag('scopes_to_always_expand',
-    \ s:GlobalSettingOrDefault('g:dapper_scopes_to_always_expand', []))
+    \ dapper#GlobalVarOrDefault('g:dapper_scopes_to_always_expand', []))
 ""
 " Names of scopes that will never be expanded, overriding
 " @flag(expand_scopes_by_default). Scopes that appear in this list cannot
 " appear in @flag(scopes_to_always_expand).
 call s:plugin.Flag('scopes_to_never_expand',
-    \ s:GlobalSettingOrDefault('g:dapper_scopes_to_never_expand', ['Global']))
+    \ dapper#GlobalVarOrDefault('g:dapper_scopes_to_never_expand', ['Global']))
 
 " since these translators each reference the other flag, they need to be
 " declared after both flags have been declared
@@ -278,7 +250,7 @@ call s:plugin.flags.scopes_to_never_expand.AddTranslator(
 " scopes by default. If set, overrides @flag(scopes_to_always_expand) and
 " @flag(expand_scopes_by_default).
 call s:plugin.Flag('dont_expand_expensive_scopes',
-    \ s:GlobalSettingOrDefault('g:dapper_dont_expand_expensive_scopes', 0))
+    \ dapper#GlobalVarOrDefault('g:dapper_dont_expand_expensive_scopes', 0))
 
 call s:plugin.flags.dont_expand_expensive_scopes.AddTranslator(
     \ function('typevim#ensure#IsBool'))
