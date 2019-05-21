@@ -3,7 +3,7 @@ Include: StartMockDebugAdapter.vader
 Include: SubscriptionHelpers.vader
 Include: EnableProfiling.vader
 
-Execute (Pipeline: Setup Model, ThreadsBuffer; Subscribe; Initialize Mock Debug Adapter):
+Execute (Pipeline: setup Model, ThreadsBuffer; subscribe; initialize mock debug adapter):
   " get handle to this plugin
   let g:plugin = maktaba#plugin#Get('dapper.nvim')
 
@@ -17,10 +17,10 @@ Execute (Pipeline: Setup Model, ThreadsBuffer; Subscribe; Initialize Mock Debug 
   call g:plugin.Flag('scopes_to_always_expand', [])
   call g:plugin.Flag('scopes_to_never_expand', [])
 
-Execute (Pipeline: Launch Debuggee):
+Execute (Pipeline: can launch a debuggee):
   call AwaitTimeout({ -> ReceivedMessage('LaunchResponse')}, 4000, 1)
 
-Execute (Pipeline: Request Threads):
+Execute (Pipeline: can receive and show a ThreadsResponse):
   call g:dapper_model.Update()
   call g:tb.Open()
   call AwaitTimeout({ -> ReceivedMessage('ThreadsResponse')}, 3000, 1)
@@ -29,7 +29,7 @@ Expect:
   thread id: 1	name: thread 1		status: entry
   </threads>
 
-Execute (Pipeline: Dig Down into StackTraceBuffer):
+Execute (Pipeline: can show a stack trace in a StackTraceBuffer):
   call g:tb.Open()
   normal! gg
   execute "normal \<cr>"
@@ -43,7 +43,7 @@ Expect:
   (4)	[NO]	(l:1, c:0)	File(4)
   </stacktrace>
 
-Execute (Pipeline: (Set Up) Keep StackTraceBuffer Alive in Another Tab):
+Execute (Pipeline: (Set Up) keep stacktracebuffer alive in another tab):
   " so that it isn't destroyed when it's out of view
   call g:tb.Open()
   normal! gg
@@ -54,7 +54,7 @@ Execute (Pipeline: (Set Up) Keep StackTraceBuffer Alive in Another Tab):
   call g:sb.Open()
   tabprev
 
-Execute (Pipeline: Get Stack Frame from Callstack):
+Execute (Pipeline: can retrieve a stack frame from callstack):
   let g:thread = g:dapper_model.thread(1)
   let g:callstack = AwaitPromise(g:thread.stackTrace(), 4000)
   let g:frame_promise = g:callstack.frame(0)
@@ -63,7 +63,7 @@ Execute (Pipeline: Get Stack Frame from Callstack):
   let g:frame = g:frame_promise.Get()
   AssertEqual '#(0)', g:frame.name()
 
-Execute (Pipeline: Get Local Scope from Stack Frame):
+Execute (Pipeline: retrieve the "Local" scope from a stack frame):
   let g:scope_promise = g:frame.scope('Local')
   call AwaitTimeout({ -> g:scope_promise.State() ==# 'fulfilled'}, 4000, 1)
   let g:scope = g:scope_promise.Get()
@@ -97,7 +97,7 @@ Then (Check Values in Structured Variable):
   AssertEqual 'string',      g:var.type()
   AssertEqual 'hello world', g:var.value()
 
-Execute (Pipeline: Dig Down Into VariablesBuffer):
+Execute (Pipeline: can show accessible variables in a VariablesBuffer):
   call g:sb.Open()
   let g:vb = dapper#view#VariablesBuffer#New(g:dapper_middletalker)
   call g:sb.AddChild(g:vb)
@@ -109,7 +109,7 @@ Execute (Pipeline: Dig Down Into VariablesBuffer):
 
   execute "normal \<cr>"
   call AwaitTimeout({ -> ReceivedMessage('ScopesResponse')}, 4000, 1)
-  sleep 100m
+  sleep 10m
 
 Expect:
   <variables>
@@ -141,26 +141,26 @@ Expect:
     - local_0_s, string: hello world
   </variables>
 
-Execute (Pipeline: Collapse Scopes):
+Execute (Pipeline: can totally collapse scopes):
   call g:vb.Open()
   execute "normal \<BS>"
   normal! 3G
   execute "normal \<BS>"
-  sleep 100m
+  sleep 10m
 Expect:
   <variables>
   > Global : 
   > Local : 
   </variables>
 
-Execute (Pipeline: Expand Scopes):
+Execute (Pipeline: can expand scopes):
   call g:vb.Open()
   normal! 2G
   execute "normal \<CR>"
-  sleep 100m
+  sleep 10m
   normal! 15G
   execute "normal \<CR>"
-  sleep 100m
+  sleep 10m
 Expect:
   <variables>
   v Global : 
@@ -191,14 +191,14 @@ Expect:
     - local_0_s, string: hello world
   </variables>
 
-Execute (Pipeline: Collapse Variables):
+Execute (Pipeline: can collapse particular variables):
   call g:vb.Open()
   normal! 5G
   execute "normal \<BS>"
-  sleep 100m
+  sleep 10m
   normal! 7G
   execute "normal \<BS>"
-  sleep 100m
+  sleep 10m
 Expect:
   <variables>
   v Global : 
@@ -209,14 +209,14 @@ Expect:
   > Local : 
   </variables>
 
-Execute (Pipeline: Re-Expand Variables):
+Execute (Pipeline: can re-expand those collapsed variables):
   call g:vb.Open()
   normal! 5G
   execute "normal \<CR>"
-  sleep 100m
+  sleep 10m
   normal! 23G
   execute "normal \<CR>"
-  sleep 100m
+  sleep 10m
 Expect:
   <variables>
   v Global : 
@@ -252,17 +252,17 @@ Expect:
   </variables>
 
 
-Execute (Pipeline: Collapse with an Unstructured Variable Selected):
+Execute (Pipeline: can collapse by selecting an unstructured variable):
   call g:vb.Open()
   call g:plugin.Flag('menu_expand_depth_on_map', 1)
 
   normal! 17G
   execute "normal \<BS>"
-  sleep 100m
+  sleep 10m
 
   normal! 9G
   execute "normal \<BS>"
-  sleep 100m
+  sleep 10m
 
 Expect:
   <variables>
@@ -274,12 +274,12 @@ Expect:
   > Local : 
   </variables>
 
-Execute (Pipeline: Collapse with an Already-Collapsed Variable Selected):
+Execute (Pipeline: can collapse by selecting an already-collapsed variable):
   call g:vb.Open()
 
   normal! 5G
   execute "normal \<BS>"
-  sleep 100m
+  sleep 10m
 
 Expect:
   <variables>
@@ -287,34 +287,34 @@ Expect:
   > Local : 
   </variables>
 
-Execute (Pipeline: Fully Collapse Again):
+Execute (Pipeline: can fully collapse everything again):
   call g:vb.Open()
 
   normal! 2G
   execute "normal \<BS>"
-  sleep 100m
+  sleep 10m
 
   normal! 3G
   execute "normal \<BS>"
-  sleep 100m
+  sleep 10m
 Expect:
   <variables>
   > Global : 
   > Local : 
   </variables>
 
-Execute (Pipeline: Re-Expand, at a Shallower Depth):
+Execute (Pipeline: can change mapping expansion depth at runtime):
   call g:vb.Open()
   let g:plugin = maktaba#plugin#Get('dapper.nvim')
   call g:plugin.Flag('menu_expand_depth_on_map', 1)
 
   normal! gg
   execute "normal \<CR>"
-  sleep 100m
+  sleep 10m
 
   normal! 7G
   execute "normal \<CR>"
-  sleep 100m
+  sleep 10m
 
 Expect:
   <variables>
@@ -330,13 +330,43 @@ Expect:
     - local_0_s, string: hello world
   </variables>
 
-Execute (Pipeline: Enter Buffer w/ Expansion Depth Zero):
+Execute (Pipeline: can initialize a VariablesBuffer with expansion depth 0):
   call g:plugin.Flag('menu_expand_depth_initial', 0)
   call g:sb.Open()
   normal! 3G
   execute "normal \<cr>"
   call AwaitTimeout({ -> ReceivedMessage('ScopesResponse')}, 4000, 1)
-  sleep 100m
+  sleep 10m
+Expect:
+  <variables>
+  > Global : 
+  > Local : 
+  </variables>
+
+Execute (Pipeline: can return to a previous stack frame and find it unchanged):
+  call sb.Open()
+  normal! 2G
+  execute "normal \<cr>"
+  sleep 10m
+Expect:
+  <variables>
+  v Global : 
+    - global_0_f, float: 3.14
+    - global_0_i, integer: 123
+    > global_0_o, object: Object
+    - global_0_s, string: hello world
+  v Local : 
+    - local_0_f, float: 3.14
+    - local_0_i, integer: 123
+    > local_0_o, object: Object
+    - local_0_s, string: hello world
+  </variables>
+
+Execute (Pipeline: ditto, with yet another stack frame):
+  call sb.Open()
+  normal! 3G
+  execute "normal \<cr>"
+  sleep 10m
 Expect:
   <variables>
   > Global : 
