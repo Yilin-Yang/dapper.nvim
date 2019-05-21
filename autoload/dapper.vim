@@ -44,7 +44,7 @@ function! dapper#GlobalVarOrDefault(setting_name, Default, ...)
   if a:0 && a:1 !=# -1
     if !typevim#value#IsTypeConstant(a:1)
       throw maktaba#error#WrongType(
-          \ 'Did''nt give a type constant when setting value for %s!',
+          \ "Didn't give a type constant when setting value for %s!",
           \ a:setting_name)
     endif
     let l:type = a:1
@@ -78,6 +78,26 @@ function! s:ThrowBadSettingType(setting_name, actual_const, expected_const) abor
       \ a:setting_name,
       \ typevim#value#ConstantToTypeName(a:expected_const),
       \ typevim#value#ConstantToTypeName(a:actual_const))
+endfunction
+
+""
+" @public
+" Return a copy of the capabilities reported by the active debug adapter.
+"
+" @throws NotFound if capabilities have not been received.
+function! dapper#Capabilities() abort
+  return g:dapper_model.capabilities()
+endfunction
+
+""
+" @public
+" Returns 1 if the running debug adapter supports {capability}, and 0
+" otherwise.
+"
+" @throws NotFound if capabilities have not yet been received.
+" @throws WrongType if {capability} is not a string.
+function! dapper#AdapterSupports(capability) abort
+  return g:dapper_model.AdapterSupports(a:capability)
 endfunction
 
 function! s:ConvertLoggerType(logger_type, funcname) abort

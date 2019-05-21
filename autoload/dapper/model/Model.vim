@@ -59,6 +59,7 @@ function! dapper#model#Model#New(message_passer) abort
       \ 'exceptionBps': typevim#make#Member('exceptionBps'),
       \ 'sources': typevim#make#Member('sources'),
       \ 'capabilities': typevim#make#Member('capabilities'),
+      \ 'AdapterSupports': typevim#make#Member('AdapterSupports'),
       \ 'Receive': typevim#make#Member('Receive'),
       \ 'Update': typevim#make#Member('Update'),
       \ '_ReceiveThreadEvent': typevim#make#Member('_ReceiveThreadEvent'),
@@ -190,6 +191,24 @@ function! dapper#model#Model#capabilities() dict abort
     throw maktaba#error#NotFound('capabilities have not yet been received!')
   endif
   return deepcopy(l:self._capabilities)
+endfunction
+
+""
+" @public
+" @dict Model
+" Returns 1 when the running debug adapter supports the given capability, and
+" 0 otherwise.
+"
+" @throws NotFound if capabilities have not yet been received.
+" @throws WrongType if {capability} is not a string.
+function! dapper#model#Model#AdapterSupports(capability) dict abort
+  call s:CheckType(l:self)
+  call maktaba#ensure#IsString(a:capability)
+  let l:capabilities = l:self._capabilities
+  if empty(l:capabilities)
+    throw maktaba#error#NotFound('capabilities have not yet been received!')
+  endif
+  return has_key(l:capabilities, a:capability) && l:capabilities[a:capability]
 endfunction
 
 ""

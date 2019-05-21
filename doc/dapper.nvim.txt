@@ -561,6 +561,13 @@ Model.capabilities()                                    *Model.capabilities()*
 
   Throws ERROR(NotFound) if capabilities have not yet been received.
 
+Model.AdapterSupports({capability})                  *Model.AdapterSupports()*
+  Returns 1 when the running debug adapter supports the given capability, and
+  0 otherwise.
+
+  Throws ERROR(NotFound) if capabilities have not yet been received.
+  Throws ERROR(WrongType) if {capability} is not a string.
+
 Model.Receive({msg})                                         *Model.Receive()*
   Update from incoming Debug Adapter Protocol messages.
 
@@ -1226,6 +1233,18 @@ dapper#GlobalVarOrDefault({setting_name}, {default}, [type])
   represents does not have the same type as {default}; or if [type] is not -1
   and the setting's type does not match it.
   Throws ERROR(Failure) if {setting_name} is malformed.
+
+dapper#Capabilities()                                  *dapper#Capabilities()*
+  Return a copy of the capabilities reported by the active debug adapter.
+
+  Throws ERROR(NotFound) if capabilities have not been received.
+
+dapper#AdapterSupports({capability})                *dapper#AdapterSupports()*
+  Returns 1 if the running debug adapter supports {capability}, and 0
+  otherwise.
+
+  Throws ERROR(NotFound) if capabilities have not yet been received.
+  Throws ERROR(WrongType) if {capability} is not a string.
 
 dapper#ensure#IsValidLogLevel({level})       *dapper#ensure#IsValidLogLevel()*
   Checks if the given {level} corresponds to a valid maktaba notification
