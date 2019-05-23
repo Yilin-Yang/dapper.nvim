@@ -1,5 +1,14 @@
 let s:typename = 'RequestDoer'
 
+let s:FUNC_PREFIX = 'dapper#RequestDoer#'
+let s:PROTOTYPE = {
+    \ 'StartDoing': function(s:FUNC_PREFIX.'StartDoing'),
+    \ 'Receive': function(s:FUNC_PREFIX.'Receive'),
+    \ }
+call typevim#make#Derived(s:typename, typevim#Doer#New(), s:PROTOTYPE)
+
+let s:known_good_middletalker = v:null
+
 ""
 " @dict RequestDoer
 " Sends the given {command} with the given {request_args} and resolves with
@@ -15,17 +24,19 @@ let s:typename = 'RequestDoer'
 "
 " @throws WrongType if {message_passer} doesn't implement a MiddleTalker interface, {command} is not a string, {request_args} is not a dict.
 function! dapper#RequestDoer#New(message_passer, command, request_args) abort
-  call typevim#ensure#Implements(a:message_passer, dapper#MiddleTalker#Interface())
+  if typevim#ensure#IsDict(a:message_passer) isnot s:known_good_middletalker
+    call typevim#ensure#Implements(
+        \ a:message_passer, dapper#MiddleTalker#Interface())
+    let s:known_good_middletalker = a:message_passer
+  endif
   call maktaba#ensure#IsString(a:command)
   call maktaba#ensure#IsDict(a:request_args)
-  let l:new = {
+  let l:new = deepcopy(s:PROTOTYPE)
+  call extend(l:new, {
       \ '_message_passer': a:message_passer,
       \ '_command': a:command,
       \ '_request_args': a:request_args,
-      \ 'StartDoing': typevim#make#Member('StartDoing'),
-      \ 'Receive': typevim#make#Member('Receive'),
-      \ }
-  call typevim#make#Derived(s:typename, typevim#Doer#New(), l:new)
+      \ })
   let l:new.Receive = typevim#object#Bind(l:new.Receive, l:new)
   return l:new
 endfunction
