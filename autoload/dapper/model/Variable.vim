@@ -28,18 +28,20 @@ let s:PROTOTYPE = {
     \ 'indexedVariables': function(s:FUNC_PREFIX.'indexedVariables'),
     \
     \ '_UpdateFromMsg': function(s:FUNC_PREFIX.'_UpdateFromMsg'),
+    \ '_UpdateFromSetVar': function(s:FUNC_PREFIX.'_UpdateFromSetVar'),
     \ '_HandleFailedReq': function(s:FUNC_PREFIX.'_HandleFailedReq'),
     \ 'HasChildren': function(s:FUNC_PREFIX.'HasChildren'),
     \ 'ChildNames': function(s:FUNC_PREFIX.'ChildNames'),
     \ 'Children': function(s:FUNC_PREFIX.'Children'),
     \ 'Child': function(s:FUNC_PREFIX.'Child'),
+    \ 'SetValue': function(s:FUNC_PREFIX.'SetValue'),
     \ }
 call typevim#make#Class(s:typename, s:PROTOTYPE)
 
 let s:known_good_middletalker = v:null
 
 function! dapper#model#Variable#__New(message_passer, variable, recursion_depth) abort
-  if a:message_passer isnot s:known_good_middletalker
+  if typevim#ensure#IsDict(a:message_passer) isnot s:known_good_middletalker
     " assume that a message_passer, once validated, will never cease to be a
     " valid message_passer implementation
     call typevim#ensure#Implements(
@@ -58,6 +60,7 @@ function! dapper#model#Variable#__New(message_passer, variable, recursion_depth)
       \ })
 
   let l:new._UpdateFromMsg = typevim#object#Bind(l:new._UpdateFromMsg, l:new)
+  let l:new._UpdateFromSetVar = typevim#object#Bind(l:new._UpdateFromSetVar, l:new)
   let l:new._HandleFailedReq =
       \ typevim#object#Bind(l:new._HandleFailedReq, l:new)
 
@@ -203,6 +206,42 @@ function! dapper#model#Variable#_UpdateFromMsg(msg) dict abort
     let l:self._names_to_children[l:new_var.name()] = l:new_var
   endfor
   return copy(l:self._names_to_children)
+endfunction
+
+function! dapper#model#Variable#_UpdateFromSetVar(msg) dict abort
+  call s:CheckType(l:self)
+  call typevim#ensure#Implements(a:msg, dapper#dap#SetVariableResponse())
+  if !a:msg.success
+    call l:self._message_passer.NotifyReport(
+        \ 'error',
+        \ 'SetVariableRequest failed for: '.l:self.name(),
+        \ a:msg,
+        \ l:self)
+    return
+  endif
+  let l:body = a:msg.body
+  let l:variable = l:self._variable
+
+  let l:variable.value = l:body.value
+  let l:self._names_to_children = {}
+  call s:UpdatePropIfPresent(l:variable, l:body, 'type')
+  call s:UpdatePropIfPresent(l:variable, l:body, 'variablesReference')
+  call s:UpdatePropIfPresent(l:variable, l:body, 'namedVariables')
+  call s:UpdatePropIfPresent(l:variable, l:body, 'indexedVariables')
+endfunction
+
+""
+" Update a stored DebugProtocol.Variable from a SetVariableResponse. Return 1
+" if setting the property was successful.
+function! s:UpdatePropIfPresent(variable, resp_body, property)
+  if has_key(a:resp_body[a:property])
+    let a:variable[a:property] = a:resp_body[a:property]
+    return 1
+  else
+    " unlet the property if it's not present, to avoid 'carry-over' from the
+    " old Variable struct
+    if has_key(a:variable[a:property]) | unlet a:variable[a:property] | endif
+  endif
 endfunction
 
 ""
@@ -365,4 +404,40 @@ function! dapper#model#Variable#__ReturnChildNames(self, ___) abort
     call add(l:names, l:name)
   endfor
   return l:names
+endfunction
+
+""
+" @public
+" @dict Variable
+" Send a SetVariableRequest to the debug adapter; if successful, this will
+" set this Variable equal to {value}, which must be given as a {string}. How
+" {value} will be evaluated depends on the debug adapter.
+"
+" {container_ref} is the `variablesReference` of the container for this
+" Variable. [value_format] is a DebugProtocol.ValueFormat.
+"
+" Returns a Promise that resolves (or rejects) with this @dict(Variable) after
+" the SetVariableResponse is received.
+"
+" @throws BadValue if {value_format} is not a dict.
+" @throws WrongType if {container_ref} is not a number, {value} is not a string, or {value_format} is not a DebugProtocol.ValueFormat.
+function! dapper#model#Variable#SetValue(container_ref, value, ...) dict abort
+  call s:CheckType(l:self)
+  call maktaba#ensure#IsNumber(a:container_ref)
+  call maktaba#ensure#IsString(a:value)
+  let l:value_format =
+      \ typevim#ensure#Implements(get(a:000, 0, {}), dapper#dap#ValueFormat())
+  let l:args = {
+      \ 'variablesReference': a:container_ref,
+      \ 'name': l:self.name(),
+      \ 'value': a:value,
+      \ }
+  if !empty(l:value_format)
+    let l:args.format = l:value_format
+  endif
+  let l:requester = dapper#RequestDoer#New()
+  call l:self._message_passer.Request(
+      \ 'setVariable', l:args, l:self._UpdateFromSetVar)
+
+  " TODO return Promise
 endfunction
