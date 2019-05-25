@@ -59,8 +59,10 @@ function! dapper#model#Variable#__New(message_passer, variable, recursion_depth)
       \ '__recursion_depth': a:recursion_depth,
       \ })
 
-  let l:new._UpdateFromMsg = typevim#object#Bind(l:new._UpdateFromMsg, l:new)
-  let l:new._UpdateFromSetVar = typevim#object#Bind(l:new._UpdateFromSetVar, l:new)
+  let l:new._UpdateFromMsg =
+      \ typevim#object#Bind(l:new._UpdateFromMsg, l:new)
+  let l:new._UpdateFromSetVar =
+      \ typevim#object#Bind(l:new._UpdateFromSetVar, l:new)
   let l:new._HandleFailedReq =
       \ typevim#object#Bind(l:new._HandleFailedReq, l:new)
 
@@ -208,6 +210,10 @@ function! dapper#model#Variable#_UpdateFromMsg(msg) dict abort
   return copy(l:self._names_to_children)
 endfunction
 
+""
+" @private
+" Update the contents of this Variable from the given
+" DebugProtocol.SetVariableResponse and then return this Variable.
 function! dapper#model#Variable#_UpdateFromSetVar(msg) dict abort
   call s:CheckType(l:self)
   call typevim#ensure#Implements(a:msg, dapper#dap#SetVariableResponse())
@@ -228,6 +234,7 @@ function! dapper#model#Variable#_UpdateFromSetVar(msg) dict abort
   call s:UpdatePropIfPresent(l:variable, l:body, 'variablesReference')
   call s:UpdatePropIfPresent(l:variable, l:body, 'namedVariables')
   call s:UpdatePropIfPresent(l:variable, l:body, 'indexedVariables')
+  return l:self
 endfunction
 
 ""
@@ -435,9 +442,11 @@ function! dapper#model#Variable#SetValue(container_ref, value, ...) dict abort
   if !empty(l:value_format)
     let l:args.format = l:value_format
   endif
-  let l:requester = dapper#RequestDoer#New()
-  call l:self._message_passer.Request(
-      \ 'setVariable', l:args, l:self._UpdateFromSetVar)
-
-  " TODO return Promise
+  let l:requester = dapper#RequestDoer#New(
+      \ l:self._message_passer, 'setVariable', l:args
+      \ )
+  return typevim#Promise#New(l:requester).Then(
+      \ l:self._UpdateFromSetVar,
+      \ l:self._HandleFailedReq
+      \ )
 endfunction
