@@ -238,16 +238,18 @@ function! dapper#model#Variable#_UpdateFromSetVar(msg) dict abort
 endfunction
 
 ""
-" Update a stored DebugProtocol.Variable from a SetVariableResponse. Return 1
-" if setting the property was successful.
+" Update a stored DebugProtocol.Variable from a SetVariableResponse, setting a
+" new value for a property only if that property appears in the {resp_body}.
+" Else, unlet that property from the stored variable. Return 1 if setting the
+" property was successful, 0 otherwise.
 function! s:UpdatePropIfPresent(variable, resp_body, property)
-  if has_key(a:resp_body[a:property])
+  if has_key(a:resp_body, a:property)
     let a:variable[a:property] = a:resp_body[a:property]
     return 1
   else
     " unlet the property if it's not present, to avoid 'carry-over' from the
     " old Variable struct
-    if has_key(a:variable[a:property]) | unlet a:variable[a:property] | endif
+    if has_key(a:variable, a:property) | unlet a:variable[a:property] | endif
   endif
 endfunction
 
