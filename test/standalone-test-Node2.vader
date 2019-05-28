@@ -28,3 +28,50 @@ Expect:
   <threads>
   thread id: 1	name: Node (#####)		status: breakpoint
   </threads>
+
+Execute (Node2: Dig Down to Stack Trace Buffer):
+  call g:tb.Open()
+  normal! 2G
+  execute "normal \<cr>"
+  call AwaitTimeout({ -> ReceivedMessage('StackTraceResponse')}, 4000, 1)
+  let g:sb = b:dapper_buffer
+  call g:sb.SetDoRestore({'&modifiable': 1}, '%s/(l:\d*, c:\d*)/(l:##, c:##)')
+  " open persistently in background
+  tabnew
+  call g:sb.Open()
+Expect:
+  <stacktrace>
+  (0)	[NO]	(l:##, c:##)	(anonymous function)
+  (1)	[NO]	(l:##, c:##)	Module._compile
+  (2)	[NO]	(l:##, c:##)	Module._extensions..js
+  (3)	[NO]	(l:##, c:##)	Module.load
+  (4)	[NO]	(l:##, c:##)	tryModuleLoad
+  (5)	[NO]	(l:##, c:##)	Module._load
+  (6)	[NO]	(l:##, c:##)	Module.runMain
+  (7)	[NO]	(l:##, c:##)	startup
+  (8)	[NO]	(l:##, c:##)	bootstrapNodeJSCore
+  </stacktrace>
+
+Execute (Node2: Dig Down to VariablesBuffer):
+  call g:sb.Open()
+  normal! 2G
+  execute "normal \<cr>"
+  call BusyWait()
+  let g:vb = b:dapper_buffer
+  tabnew
+  call g:vb.Open()
+Expect:
+  <variables>
+  > Global : 
+  v Local : 
+    - Foo, undefined: undefined
+    - [[StableObjectId]], number: 1
+    - __dirname, string: "/home/yiliny/plugin/dapper.nvim/test/js_test"
+    - __filename, string: "/home/yiliny/plugin/dapper.nvim/test/js_test/index.js"
+    > exports, Object: Object {}
+    - foo, undefined: undefined
+    > module, Object: Module {id: ".", exports: Object, parent: null, …}
+    > require, Function: function require(path) { … }
+    > this, Object: Object
+    > throwError, Function: function throwError() { … }
+  </variables>

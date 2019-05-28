@@ -82,8 +82,10 @@ call s:plugin.Flag('expand_mapping',
 " Keymapping used to collapse the contents of an expanded scope or
 " "structured" variable in a @dict(VariablesBuffer).
 call s:plugin.Flag('collapse_mapping',
-    \ dapper#GlobalVarOrDefault(
-        \ 'g:dapper_collapse_mapping', '<BS>'))
+    \ dapper#GlobalVarOrDefault('g:dapper_collapse_mapping', '<BS>'))
+
+call s:plugin.Flag('set_variable_mapping',
+    \ dapper#GlobalVarOrDefault('g:dapper_set_variable_mapping', 'c'))
 
 ""
 " Keymapping used to toggle breakpoints on the current line. Defaults to "<F9>".

@@ -57,3 +57,16 @@ Execute (AwaitTimeout: Declare Helper Functions):
         \ a:timeout, l:should_throw, l:resolution)
     return a:promise.Get()
   endfunction
+
+  ""
+  " @usage {num_iterations} [time]
+  " Run through multiple |:sleep| statements, so that a multi-level Promise
+  " chain could resolve.
+  function! BusyWait() abort
+    " TODO add actual function arguments to this
+    let l:i = 0
+    while l:i <# 3
+      sleep 100m
+      let l:i += 1
+    endwhile
+  endfunction

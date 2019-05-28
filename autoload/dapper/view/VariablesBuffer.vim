@@ -52,6 +52,7 @@ function! dapper#view#VariablesBuffer#New(message_passer, ...) abort
       \ 'SetMappings': typevim#make#Member('SetMappings'),
       \ 'ExpandSelected': typevim#make#Member('ExpandSelected'),
       \ 'CollapseSelected': typevim#make#Member('CollapseSelected'),
+      \ 'SetVariable': typevim#make#Member('SetVariable'),
       \ 'DigDown': { -> 0},
       \ '_MakeChild': { -> 0},
       \ }
@@ -168,6 +169,9 @@ function! dapper#view#VariablesBuffer#SetMappings() dict abort
 
   execute 'nnoremap <buffer> '.s:plugin.Flag('collapse_mapping').' '
       \ . ':call b:dapper_buffer.CollapseSelected()<cr>'
+
+  execute 'nnoremap <buffer> '.s:plugin.Flag('set_variable_mapping').' '
+      \ . ':call b:dapper_buffer.SetVariable()<cr>'
 endfunction
 
 ""
@@ -225,4 +229,46 @@ function! dapper#view#VariablesBuffer#CollapseSelected() dict abort
   endif
 
   call l:self._printer.CollapseEntry(l:lookup_path)
+endfunction
+
+""
+" @public
+" @dict VariablesBuffer
+" Set the value of the currently selected @dict(Variable). This operation
+" may fail, in which an error message will be logged..
+function! dapper#view#VariablesBuffer#SetVariable() dict abort
+  call s:CheckType(l:self)
+  let l:lookup_path = l:self._printer.VarFromCursor(getcurpos(), 1)
+  if len(l:lookup_path) ==# 1
+    call l:self._message_passer.NotifyReport(
+        \ 'error', 'Tried to set value of a Scope: '.l:lookup_path[0])
+  elseif empty(l:lookup_path)
+    throw maktaba#error#Failure('Could not get variable from cursor!')
+  endif
+
+  " order these so that, by the time var_promise resolves, parent_promise must
+  " have resolved first, so that we can retrieve the parent in the child
+
+  let l:parent_promise = l:self._var_lookup.VariableFromPath(l:lookup_path[:-2])
+  let l:var_promise =
+      \ l:parent_promise.Then(
+          \ { parent -> parent.Child(l:lookup_path[-1]) },
+          \ function(l:self._printer._LogFailure, ['"set value, get par"']))
+
+  call l:var_promise.Then(
+      \ function('s:SetVariableValue', [l:self, l:parent_promise]),
+      \ function(l:self._printer._LogFailure, ['"set value"']))
+endfunction
+
+function! s:SetVariableValue(self, parent_promise, variable) abort
+  call s:CheckType(a:self)
+  let l:prompt =
+      \ printf('[dapper.nvim] Enter new value for "%s" (CTRL-C to cancel):',
+              \ a:variable.name())
+  call inputsave()
+  let l:new_value = input(l:prompt, a:variable.value())
+  call inputrestore()
+
+  let l:parent = a:parent_promise.Get()
+  call a:variable.SetValue(l:parent.variablesReference(), l:new_value)
 endfunction
