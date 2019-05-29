@@ -138,6 +138,20 @@ call s:plugin.flags.min_log_level.AddTranslator(
     \ function('dapper#ensure#IsValidLogLevel'))
 
 ""
+" The maximum recursion depth to which objects may be
+" |typevim#object#PrettyPrint()|ed by dapper.nvim's debug logger. Ordinarily,
+" there should no reason to change this. Increase this (or set to -1) if you
+" want debug logs to be more detailed, at the cost of a (potentially very
+" substantial) performance hit.
+call s:plugin.Flag('max_debug_log_recursion_depth',
+    \ dapper#GlobalVarOrDefault('g:max_debug_log_recursion_depth', 4))
+
+call s:plugin.flags.max_debug_log_recursion_depth.AddTranslator(
+    \ function('maktaba#ensure#IsNumber'))
+call s:plugin.flags.max_debug_log_recursion_depth.AddTranslator(
+    \ {max_depth -> typevim#ensure#IsGreaterThan(max_depth, -2)})
+
+""
 " When retrieving the contents of a structured variable, dapper.nvim can try
 " to automatically and recursively retrieve and cache the contents of its
 " children, so that expanding one of those variables can occur nearly

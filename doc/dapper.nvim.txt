@@ -60,7 +60,7 @@ variable (e.g. a class instance, a struct, a list) in a
                                                 *dapper.nvim:collapse_mapping*
 Keymapping used to collapse the contents of an expanded scope or "structured"
 variable in a |dapper.nvim.VariablesBuffer|.
-Default: dapper#GlobalVarOrDefault( 'g:dapper_collapse_mapping', '<BS>') `
+Default: dapper#GlobalVarOrDefault('g:dapper_collapse_mapping', '<BS>') `
 
                                        *dapper.nvim:toggle_breakpoint_mapping*
 Keymapping used to toggle breakpoints on the current line. Defaults to "<F9>".
@@ -103,6 +103,14 @@ significant performance penalty, as dapper.nvim's debug log output is
 extremely verbose. It's recommended to set this no lower than "warn" in
 ordinary use.
 Default: dapper#GlobalVarOrDefault('g:dapper_min_log_level', 'error') `
+
+                                   *dapper.nvim:max_debug_log_recursion_depth*
+The maximum recursion depth to which objects may be
+|typevim#object#PrettyPrint()|ed by dapper.nvim's debug logger. Ordinarily,
+there should no reason to change this. Increase this (or set to -1) if you
+want debug logs to be more detailed, at the cost of a (potentially very
+substantial) performance hit.
+Default: dapper#GlobalVarOrDefault('g:max_debug_log_recursion_depth', 4) `
 
                                          *dapper.nvim:max_drilldown_recursion*
 When retrieving the contents of a structured variable, dapper.nvim can try to

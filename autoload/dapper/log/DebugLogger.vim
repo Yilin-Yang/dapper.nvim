@@ -129,11 +129,12 @@ endfunction
 " @throws WrongType if {report} is not a @dict(DapperReport) object.
 function! dapper#log#DebugLogger#ListifyReport(report) dict abort
   call typevim#ensure#Implements(a:report, s:report_interface)
+  let l:max_depth = s:plugin.Flag('max_debug_log_recursion_depth')
   if !maktaba#value#IsString(a:report.long)
-    let a:report.long = typevim#object#PrettyPrint(a:report.long)
+    let a:report.long = typevim#object#PrettyPrint(a:report.long, l:max_depth)
   endif
   if !maktaba#value#IsString(a:report.other)
-    let a:report.other = typevim#object#PrettyPrint(a:report.other)
+    let a:report.other = typevim#object#PrettyPrint(a:report.other, l:max_depth)
   endif
 
   let l:lines_to_append = [
