@@ -59,7 +59,7 @@ function! dapper#log#DebugLogger#Get() abort
   call l:buffer.setbufvar('&foldmethod', 'indent')
   let l:new = {
       \ 'buffer': l:buffer,
-      \ '__logger': g:dapper_plugin.logger,
+      \ '__logger': s:plugin.logger,
       \ 'Log': typevim#make#Member('Log'),
       \ 'ListifyReport': typevim#make#Member('ListifyReport'),
       \ 'NotifyReport': typevim#make#Member('NotifyReport'),
