@@ -738,7 +738,9 @@ function! dapper#view#VariablesPrinter#UpdateValue(
         \ l:parsed_scope, l:parsed_scope.expanded)
   else  " is variable
     let l:parsed_var = dapper#view#VariablesPrinter#VariableFromString(l:header)
-    let l:parsed_var.value = l:new_props.value
+    for [l:prop, l:val] in items(l:new_props)
+      let l:parsed_var[l:prop] = l:val
+    endfor
     let l:prefix = '-'
     if !l:parsed_var.unstructured
       let l:prefix = l:parsed_var.expanded ? 'v' : '>'

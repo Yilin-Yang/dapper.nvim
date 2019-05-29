@@ -94,6 +94,15 @@ endfunction
 ""
 " @public
 " @dict Scope
+" Return the variablesReference property of this Scope object.
+function! dapper#model#Scope#variablesReference() dict abort
+  call s:CheckType(l:self)
+  return s:ReturnPropIfPresent(l:self, 'variablesReference')
+endfunction
+
+""
+" @public
+" @dict Scope
 " Return the namedVariables property of this Scope object, or |v:null| if it
 " could not be found..
 function! dapper#model#Scope#namedVariables() dict abort

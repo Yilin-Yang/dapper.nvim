@@ -235,25 +235,46 @@ endfunction
 " @public
 " @dict VariablesBuffer
 " Set the value of the currently selected @dict(Variable). This operation
-" may fail, in which an error message will be logged..
+" may fail, in which case an error message will be logged.
 function! dapper#view#VariablesBuffer#SetVariable() dict abort
   call s:CheckType(l:self)
+  if !dapper#AdapterSupports('supportsSetVariable')
+    call l:self._message_passer.NotifyReport(
+        \ 'warn', "Debug adapter doesn't support SetVariable!",
+        \ dapper#Capabilities())
+    return
+  endif
+
   let l:lookup_path = l:self._printer.VarFromCursor(getcurpos(), 1)
+  let l:var_name = l:lookup_path[-1]
   if len(l:lookup_path) ==# 1
     call l:self._message_passer.NotifyReport(
         \ 'error', 'Tried to set value of a Scope: '.l:lookup_path[0])
   elseif empty(l:lookup_path)
     throw maktaba#error#Failure('Could not get variable from cursor!')
+  elseif len(l:lookup_path) ==# 2
+    " parent is a Scope
+    let l:scope_name = l:lookup_path[0]
+    let l:parent_promise =
+        \ l:self._var_lookup.VariableFromPath([l:scope_name])
+    let l:vars_dict_promise =
+        \ l:parent_promise.Then(
+            \ { scope -> scope.variables() },
+            \ function(l:self._printer._LogFailure, ['"set_val, get vars"']))
+    let l:var_promise =
+        \ l:vars_dict_promise.Then(
+            \ { vars_dict -> vars_dict[l:var_name] },
+            \ function(l:self._printer._LogFailure, ['"set_val, get var"']))
+  else
+    " order these so that, by the time var_promise resolves, parent_promise must
+    " have resolved first, so that we can retrieve the parent in the child
+    let l:parent_promise =
+        \ l:self._var_lookup.VariableFromPath(l:lookup_path[:-2])
+    let l:var_promise =
+        \ l:parent_promise.Then(
+            \ { parent -> parent.Child(l:var_name) },
+            \ function(l:self._printer._LogFailure, ['"set_val, get par"']))
   endif
-
-  " order these so that, by the time var_promise resolves, parent_promise must
-  " have resolved first, so that we can retrieve the parent in the child
-
-  let l:parent_promise = l:self._var_lookup.VariableFromPath(l:lookup_path[:-2])
-  let l:var_promise =
-      \ l:parent_promise.Then(
-          \ { parent -> parent.Child(l:lookup_path[-1]) },
-          \ function(l:self._printer._LogFailure, ['"set value, get par"']))
 
   call l:var_promise.Then(
       \ function('s:SetVariableValue', [l:self, l:parent_promise]),
@@ -265,9 +286,9 @@ function! s:SetVariableValue(self, parent_promise, variable) abort
   let l:prompt =
       \ printf('[dapper.nvim] Enter new value for "%s" (CTRL-C to cancel):',
               \ a:variable.name())
-  call inputsave()
-  let l:new_value = input(l:prompt, a:variable.value())
-  call inputrestore()
+  let l:new_value = typevim#input(
+      \ s:plugin.Flag('save_and_restore_on_input'), l:prompt,
+      \ a:variable.value())
 
   let l:parent = a:parent_promise.Get()
   call a:variable.SetValue(l:parent.variablesReference(), l:new_value)

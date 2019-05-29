@@ -6,10 +6,22 @@ Execute (SubscriptionHelpers: Declare Functions):
     let g:messages += [a:msg]
   endfunction
 
-  function! ReceivedMessage(vim_msg_typename) abort
+  ""
+  " Returns 1 if a message matching the given {Predicate} has been received, 0
+  " otherwise.
+  "
+  " If {Predicate} is a string, then the function will return 1 if a message
+  " has been received whose `vim_msg_typename` matches {Predicate}.
+  function! ReceivedMessage(Predicate) abort
+    if maktaba#value#IsString(a:Predicate)
+      let l:Predicate = { msg -> msg.vim_msg_typename ==# a:Predicate }
+    else
+      let l:Predicate = a:Predicate
+    endif
+    call maktaba#ensure#IsFuncref(l:Predicate)
     if !exists('g:messages') | return 0 | endif
     let l:i = 0 | while l:i <# len(g:messages)
-      if g:messages[l:i]['vim_msg_typename'] ==# a:vim_msg_typename
+      if l:Predicate(g:messages[l:i])
         return 1
       endif
     let l:i += 1 | endwhile

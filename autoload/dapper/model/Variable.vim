@@ -216,8 +216,8 @@ endfunction
 " DebugProtocol.SetVariableResponse and then return this Variable.
 function! dapper#model#Variable#_UpdateFromSetVar(msg) dict abort
   call s:CheckType(l:self)
-  call typevim#ensure#Implements(a:msg, dapper#dap#SetVariableResponse())
   if !a:msg.success
+      \ || !typevim#value#Implements(a:msg, dapper#dap#SetVariableResponse())
     call l:self._message_passer.NotifyReport(
         \ 'error',
         \ 'SetVariableRequest failed for: '.l:self.name(),
@@ -258,7 +258,6 @@ endfunction
 " Log the outright failure of a VariablesRequest.
 function! dapper#model#Variable#_HandleFailedReq(msg) dict abort
   call s:CheckType(l:self)
-  call typevim#ensure#Implements(a:msg, dapper#dap#ProtocolMessage())
   let l:name = l:self.name()
   call l:self._message_passer.NotifyReport(
       \ 'error',
@@ -419,7 +418,7 @@ endfunction
 " @public
 " @dict Variable
 " Send a SetVariableRequest to the debug adapter; if successful, this will
-" set this Variable equal to {value}, which must be given as a {string}. How
+" set this Variable equal to {value}, which must be given as a string. How
 " {value} will be evaluated depends on the debug adapter.
 "
 " {container_ref} is the `variablesReference` of the container for this
@@ -428,8 +427,10 @@ endfunction
 " Returns a Promise that resolves (or rejects) with this @dict(Variable) after
 " the SetVariableResponse is received.
 "
-" @throws BadValue if {value_format} is not a dict.
-" @throws WrongType if {container_ref} is not a number, {value} is not a string, or {value_format} is not a DebugProtocol.ValueFormat.
+" @default value_format=`{}`
+"
+" @throws BadValue if [value_format] is not a dict.
+" @throws WrongType if {container_ref} is not a number, {value} is not a string, or [value_format] is not a DebugProtocol.ValueFormat.
 function! dapper#model#Variable#SetValue(container_ref, value, ...) dict abort
   call s:CheckType(l:self)
   call maktaba#ensure#IsNumber(a:container_ref)
@@ -447,8 +448,10 @@ function! dapper#model#Variable#SetValue(container_ref, value, ...) dict abort
   let l:requester = dapper#RequestDoer#New(
       \ l:self._message_passer, 'setVariable', l:args
       \ )
-  return typevim#Promise#New(l:requester).Then(
+  let l:to_return = typevim#Promise#New(l:requester).Then(
       \ l:self._UpdateFromSetVar,
       \ l:self._HandleFailedReq
       \ )
+  call l:to_return.Catch(l:self._HandleFailedReq)
+  return l:to_return
 endfunction

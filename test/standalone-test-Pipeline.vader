@@ -48,7 +48,7 @@ Execute (Pipeline: (Set Up) keep stacktracebuffer alive in another tab):
   call g:tb.Open()
   normal! gg
   execute "normal \<cr>"
-  sleep 10m
+  call BusyWait()
   let g:sb = b:dapper_buffer
   tabnew
   call g:sb.Open()
@@ -109,7 +109,7 @@ Execute (Pipeline: can show accessible variables in a VariablesBuffer):
 
   execute "normal \<cr>"
   call AwaitTimeout({ -> ReceivedMessage('ScopesResponse')}, 4000, 1)
-  sleep 10m
+  call BusyWait()
 
 Expect:
   <variables>
@@ -146,7 +146,7 @@ Execute (Pipeline: can totally collapse scopes):
   execute "normal \<BS>"
   normal! 3G
   execute "normal \<BS>"
-  sleep 10m
+  call BusyWait()
 Expect:
   <variables>
   > Global : 
@@ -157,10 +157,10 @@ Execute (Pipeline: can expand scopes):
   call g:vb.Open()
   normal! 2G
   execute "normal \<CR>"
-  sleep 10m
+  call BusyWait()
   normal! 15G
   execute "normal \<CR>"
-  sleep 10m
+  call BusyWait()
 Expect:
   <variables>
   v Global : 
@@ -195,10 +195,10 @@ Execute (Pipeline: can collapse particular variables):
   call g:vb.Open()
   normal! 5G
   execute "normal \<BS>"
-  sleep 10m
+  call BusyWait()
   normal! 7G
   execute "normal \<BS>"
-  sleep 10m
+  call BusyWait()
 Expect:
   <variables>
   v Global : 
@@ -213,10 +213,10 @@ Execute (Pipeline: can re-expand those collapsed variables):
   call g:vb.Open()
   normal! 5G
   execute "normal \<CR>"
-  sleep 10m
+  call BusyWait()
   normal! 23G
   execute "normal \<CR>"
-  sleep 10m
+  call BusyWait()
 Expect:
   <variables>
   v Global : 
@@ -258,11 +258,11 @@ Execute (Pipeline: can collapse by selecting an unstructured variable):
 
   normal! 17G
   execute "normal \<BS>"
-  sleep 10m
+  call BusyWait()
 
   normal! 9G
   execute "normal \<BS>"
-  sleep 10m
+  call BusyWait()
 
 Expect:
   <variables>
@@ -279,7 +279,7 @@ Execute (Pipeline: can collapse by selecting an already-collapsed variable):
 
   normal! 5G
   execute "normal \<BS>"
-  sleep 10m
+  call BusyWait()
 
 Expect:
   <variables>
@@ -292,11 +292,11 @@ Execute (Pipeline: can fully collapse everything again):
 
   normal! 2G
   execute "normal \<BS>"
-  sleep 10m
+  call BusyWait()
 
   normal! 3G
   execute "normal \<BS>"
-  sleep 10m
+  call BusyWait()
 Expect:
   <variables>
   > Global : 
@@ -310,11 +310,11 @@ Execute (Pipeline: can change mapping expansion depth at runtime):
 
   normal! gg
   execute "normal \<CR>"
-  sleep 10m
+  call BusyWait()
 
   normal! 7G
   execute "normal \<CR>"
-  sleep 10m
+  call BusyWait()
 
 Expect:
   <variables>
@@ -336,7 +336,7 @@ Execute (Pipeline: can initialize a VariablesBuffer with expansion depth 0):
   normal! 3G
   execute "normal \<cr>"
   call AwaitTimeout({ -> ReceivedMessage('ScopesResponse')}, 4000, 1)
-  sleep 10m
+  call BusyWait()
 Expect:
   <variables>
   > Global : 
@@ -344,10 +344,10 @@ Expect:
   </variables>
 
 Execute (Pipeline: can return to a previous stack frame and find it unchanged):
-  call sb.Open()
+  call g:sb.Open()
   normal! 2G
   execute "normal \<cr>"
-  sleep 10m
+  call BusyWait()
 Expect:
   <variables>
   v Global : 
@@ -363,10 +363,10 @@ Expect:
   </variables>
 
 Execute (Pipeline: ditto, with yet another stack frame):
-  call sb.Open()
+  call g:sb.Open()
   normal! 3G
   execute "normal \<cr>"
-  sleep 10m
+  call BusyWait()
 Expect:
   <variables>
   > Global : 

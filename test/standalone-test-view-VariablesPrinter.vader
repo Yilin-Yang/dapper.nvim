@@ -315,9 +315,7 @@ Execute (VariablesPrinter: Print Local Scope):
       \ ['<variables>', '> Local : ', '</variables>']
       \ )
   call g:vp.ExpandEntry(['Local'], g:scope)
-  sleep 10m
-  sleep 10m
-  sleep 10m
+  call BusyWait()
 Expect:
   <variables>
   v Local : 
@@ -341,9 +339,7 @@ Execute (VariablesPrinter: Print Local Scope, Smaller Recursion Depth):
       \ ['<variables>', '> Local : ', '</variables>']
       \ )
   call g:vp.ExpandEntry(['Local'], g:scope, 2)
-  sleep 10m
-  sleep 10m
-  sleep 10m
+  call BusyWait()
 Expect:
   <variables>
   v Local : 
@@ -363,9 +359,9 @@ Execute (VariablesPrinter: Print Local Scope, Then Expand):
       \ ['<variables>', '> Local : ', '</variables>']
       \ )
   call g:vp.ExpandEntry(['Local'], g:scope)
-  sleep 100m
+  call BusyWait()
   call g:vp.ExpandEntry(['Local', 'local_0_o', 'object__o'], g:scope)
-  sleep 100m
+  call BusyWait()
 Expect:
   <variables>
   v Local : 
@@ -389,7 +385,7 @@ Execute (VariablesPrinter: ExpandEntry to Update a Single Variable):
       \ ['<variables>', '> Local : ', '</variables>']
       \ )
   call g:vp.ExpandEntry(['Local'], g:scope, 2)
-  sleep 100m
+  call BusyWait()
   call g:buffer.ReplaceLines(3, 3, ['  - local_0_f, float: 6.28'])
   " updating should restore the original value
   " rec_depth should have no effect
@@ -414,7 +410,7 @@ Execute (VariablesPrinter: ExpandEntry to Update a Single Variable, w/ Explicit 
       \ ['<variables>', '> Local : ', '</variables>']
       \ )
   call g:vp.ExpandEntry(['Local'], g:scope, 2)
-  sleep 100m
+  call BusyWait()
   call g:buffer.ReplaceLines(3, 3, ['  - local_0_f, float: 6.28'])
   " updating should restore the original value
   " rec_depth should have no effect
@@ -551,7 +547,7 @@ Execute (VariablesPrinter: Print All Scopes):
   call g:buffer.SetBuffer(bufnr('%'))
   let g:scopes = g:frame.scopes()
   call g:vp.PrintScopes(g:scopes)
-  sleep 1000m
+  call BusyWait()
 Expect:
   <variables>
   v Global : 
@@ -588,7 +584,7 @@ Execute (VariablesPrinter: Will Expand "Always-Expand" Scopes Despite Defaults):
   call g:plugin.Flag('expand_scopes_by_default', 0)
 
   call g:vp.PrintScopes(['Local', 'Global'], 1)
-  sleep 100m
+  call BusyWait()
   call g:plugin.Flag('scopes_to_always_expand', [])
 Expect:
   <variables>
@@ -606,7 +602,7 @@ Execute (VariablesPrinter: Won't Expand "Never-Expand" Scopes Despite Defaults):
   call g:plugin.Flag('expand_scopes_by_default', 1)
 
   call g:vp.PrintScopes(['Local', 'Global'], 1)
-  sleep 100m
+  call BusyWait()
   call g:plugin.Flag('scopes_to_never_expand', [])
 Expect:
   <variables>
@@ -629,7 +625,7 @@ Execute (VariablesPrinter: Won't Expand "Expensive" Scopes Despite "Always-Expan
   let g:scope.expensive = { -> 1}
 
   call g:vp.PrintScopes(['Local', 'Global'], 1)
-  sleep 100m
+  call BusyWait()
 
   " restore old state
   call g:plugin.Flag('scopes_to_always_expand', [])

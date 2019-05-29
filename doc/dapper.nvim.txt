@@ -654,6 +654,9 @@ dapper#model#Scope#New({message_passer}, {raw_scope}, {vars_response})
 Scope.name()                                                    *Scope.name()*
   Return the name of this Scope object, or |v:null| if it could not be found.
 
+Scope.variablesReference()                        *Scope.variablesReference()*
+  Return the variablesReference property of this Scope object.
+
 Scope.namedVariables()                                *Scope.namedVariables()*
   Return the namedVariables property of this Scope object, or |v:null| if it
   could not be found..
@@ -975,6 +978,24 @@ Variable.Child({name_or_idx})                               *Variable.Child()*
   could be found.
   Throws ERROR(WrongType) if {name_or_idx} is not a string.
 
+Variable.SetValue({container_ref}, {value}, [value_format])
+                                                         *Variable.SetValue()*
+  Send a SetVariableRequest to the debug adapter; if successful, this will set
+  this Variable equal to {value}, which must be given as a string. How {value}
+  will be evaluated depends on the debug adapter.
+
+  {container_ref} is the `variablesReference` of the container for this
+  Variable. [value_format] is a DebugProtocol.ValueFormat.
+
+  Returns a Promise that resolves (or rejects) with this
+  |dapper.nvim.Variable| after the SetVariableResponse is received.
+
+  [value_format] is `{}` if omitted.
+
+  Throws ERROR(BadValue) if [value_format] is not a dict.
+  Throws ERROR(WrongType) if {container_ref} is not a number, {value} is not a
+  string, or [value_format] is not a DebugProtocol.ValueFormat.
+
                                                   *dapper.nvim.VariableLookup*
 Helper class used to asynchronously retrieve a |dapper.nvim.Scope| or a
 particular |dapper.nvim.Variable| from within a |dapper.nvim.StackFrame|; in
@@ -1068,6 +1089,10 @@ VariablesBuffer.CollapseSelected()        *VariablesBuffer.CollapseSelected()*
   If the currently selected |dapper.nvim.Variable| is an unstructured
   variable, or if it's a structured variable that's already been collapsed,
   instead collapse its parent |dapper.nvim.Scope| or |dapper.nvim.Variable|.
+
+VariablesBuffer.SetVariable()                  *VariablesBuffer.SetVariable()*
+  Set the value of the currently selected |dapper.nvim.Variable|. This
+  operation may fail, in which case an error message will be logged.
 
 VariablesBuffer.PrintScopes({scopes}, [rec_depth])
                                                *VariablesBuffer.PrintScopes()*

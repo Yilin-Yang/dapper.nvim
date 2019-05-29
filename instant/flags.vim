@@ -100,6 +100,12 @@ call s:plugin.Flag('toggle_breakpoint_mapping',
 call s:plugin.Flag('filetypes_to_configs',
     \ dapper#GlobalVarOrDefault('g:dapper_filetypes_to_configs', {}))
 
+" (private)
+" Whether to |inputsave()| and |inputrestore()| around calls to |input()|.
+" Disable this in order to test |input()| prompts with vader.vim `Do` blocks.
+call s:plugin.Flag('save_and_restore_on_input',
+    \ dapper#GlobalVarOrDefault('g:dapper_save_and_restore_on_input', 1, v:t_bool))
+
 ""
 " The |bufname| of the debug log buffer.
 call s:plugin.Flag('log_buffer_name',
