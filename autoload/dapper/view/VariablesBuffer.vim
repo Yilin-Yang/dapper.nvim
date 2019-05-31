@@ -53,10 +53,13 @@ function! dapper#view#VariablesBuffer#New(message_passer, ...) abort
       \ 'ExpandSelected': typevim#make#Member('ExpandSelected'),
       \ 'CollapseSelected': typevim#make#Member('CollapseSelected'),
       \ 'SetVariable': typevim#make#Member('SetVariable'),
+      \ '_UpdateVariable': typevim#make#Member('_UpdateVariable'),
       \ 'DigDown': { -> 0},
       \ '_MakeChild': { -> 0},
       \ }
   call typevim#make#Derived(s:typename, l:base, l:new)
+
+  let l:new._UpdateVariable = typevim#object#Bind(l:new._UpdateVariable, l:new)
 
   if l:has_stack_frame
     let l:new._var_lookup =
@@ -234,10 +237,18 @@ endfunction
 ""
 " @public
 " @dict VariablesBuffer
-" Set the value of the currently selected @dict(Variable). This operation
-" may fail, in which case an error message will be logged.
-function! dapper#view#VariablesBuffer#SetVariable() dict abort
+" Request to set the value of the currently selected @dict(Variable) to the
+" string [new_value]. If [new_value] is |v:null|, obtain the new value by
+" prompting the user.
+"
+" @default new_value=|v:null|
+"
+" @throws WrongType if [new_value] is not a string or v:null.
+function! dapper#view#VariablesBuffer#SetVariable(...) dict abort
   call s:CheckType(l:self)
+  let l:new_value =
+      \ maktaba#ensure#TypeMatchesOneOf(get(a:000, 0, v:null), ['', v:null])
+
   if !dapper#AdapterSupports('supportsSetVariable')
     call l:self._message_passer.NotifyReport(
         \ 'warn', "Debug adapter doesn't support SetVariable!",
@@ -250,6 +261,7 @@ function! dapper#view#VariablesBuffer#SetVariable() dict abort
   if len(l:lookup_path) ==# 1
     call l:self._message_passer.NotifyReport(
         \ 'error', 'Tried to set value of a Scope: '.l:lookup_path[0])
+    return
   elseif empty(l:lookup_path)
     throw maktaba#error#Failure('Could not get variable from cursor!')
   elseif len(l:lookup_path) ==# 2
@@ -277,19 +289,40 @@ function! dapper#view#VariablesBuffer#SetVariable() dict abort
   endif
 
   call l:var_promise.Then(
-      \ function('s:SetVariableValue', [l:self, l:parent_promise]),
-      \ function(l:self._printer._LogFailure, ['"set value"']))
+      \ { variable ->
+          \ s:SetVariableValue(l:self, l:lookup_path, l:new_value,
+                             \ l:parent_promise.Get(), variable) })
+      \.Catch(function(l:self._printer._LogFailure, ['"set value"']))
 endfunction
 
-function! s:SetVariableValue(self, parent_promise, variable) abort
-  call s:CheckType(a:self)
-  let l:prompt =
-      \ printf('[dapper.nvim] Enter new value for "%s" (CTRL-C to cancel):',
-              \ a:variable.name())
-  let l:new_value = typevim#input(
-      \ s:plugin.Flag('save_and_restore_on_input'), l:prompt,
-      \ a:variable.value())
+""
+" @private
+" Invoke @function(dapper#model#Variable#SetValue). {lookup_path} is the
+" lookup path of the variable. {set_val_to} is a string containing the new
+" value to which the variable should be set, or |v:null| if this should be
+" obtained by prompting the user. {parent} is the parent @dict(Scope) or
+" @dict(Variable) of {variable}.
+function! s:SetVariableValue(self, lookup_path, set_val_to, parent, variable) abort
+  if a:set_val_to is v:null
+    let l:prompt =
+        \ printf('[dapper.nvim] Enter new value for "%s" (CTRL-C to cancel):',
+                \ a:variable.name())
+    let l:new_value = typevim#input(
+        \ s:plugin.Flag('save_and_restore_on_input'), l:prompt,
+        \ a:variable.value())
+  else
+    let l:new_value = a:set_val_to
+  endif
 
-  let l:parent = a:parent_promise.Get()
-  call a:variable.SetValue(l:parent.variablesReference(), l:new_value)
+  call a:variable.SetValue(a:parent.variablesReference(), l:new_value)
+      \.Then(
+        \ function(a:self._UpdateVariable, [a:lookup_path]))
+      \.Catch(
+        \ function(a:self._printer._LogFailure, ['"update from set"']))
+endfunction
+
+function! dapper#view#VariablesBuffer#_UpdateVariable(lookup_path,
+                                                    \ variable) dict abort
+  call s:CheckType(l:self)
+  call l:self._printer.UpdateValue(a:lookup_path, a:variable)
 endfunction

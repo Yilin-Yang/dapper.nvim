@@ -706,7 +706,8 @@ function! dapper#view#VariablesPrinter#UpdateValue(
   if !typevim#value#Implements(a:new_props, s:new_props_interface)
     let l:given_var = typevim#ensure#IsType(a:new_props, 'Variable')
     let l:new_props = {}
-    for l:prop in ['value', 'type', 'namedVariables', 'indexedVariables']
+    for l:prop in ['value', 'type', 'variablesReference',
+                 \ 'namedVariables', 'indexedVariables']
       let l:new_props[l:prop] = l:given_var[l:prop]()
       if l:new_props[l:prop] is v:null
         unlet l:new_props[l:prop]
@@ -725,6 +726,8 @@ function! dapper#view#VariablesPrinter#UpdateValue(
   let l:header = l:self._buffer.GetLines(l:start)[0]
   if l:is_scope
     let l:parsed_scope = dapper#view#VariablesPrinter#ScopeFromString(l:header)
+
+    " update properties of the scope entry
     let l:info = ''
     if has_key(l:new_props, 'namedVariables')
       let l:info .= l:new_props.namedVariables.' named'
@@ -734,17 +737,27 @@ function! dapper#view#VariablesPrinter#UpdateValue(
                   \ . l:new_props.indexedVariables . 'indexed'
     endif
     if !empty(l:info) | let l:parsed_scope.info = l:info | endif
+
     let l:header = dapper#view#VariablesPrinter#StringFromScope(
         \ l:parsed_scope, l:parsed_scope.expanded)
   else  " is variable
     let l:parsed_var = dapper#view#VariablesPrinter#VariableFromString(l:header)
+
+    " update properties of the variable entry
+    if has_key(l:new_props, 'variablesReference')
+        \ && l:new_props.variablesReference
+      " nonzero variablesReference => variable is now structured
+      let l:parsed_var.unstructured = 0
+    endif
     for [l:prop, l:val] in items(l:new_props)
       let l:parsed_var[l:prop] = l:val
     endfor
+
     let l:prefix = '-'
     if !l:parsed_var.unstructured
       let l:prefix = l:parsed_var.expanded ? 'v' : '>'
     endif
+
     let l:header = dapper#view#VariablesPrinter#StringFromVariable(
         \ l:parsed_var, l:prefix)
   endif

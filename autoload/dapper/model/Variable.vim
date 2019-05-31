@@ -449,9 +449,7 @@ function! dapper#model#Variable#SetValue(container_ref, value, ...) dict abort
       \ l:self._message_passer, 'setVariable', l:args
       \ )
   let l:to_return = typevim#Promise#New(l:requester).Then(
-      \ l:self._UpdateFromSetVar,
-      \ l:self._HandleFailedReq
-      \ )
+      \ l:self._UpdateFromSetVar)
   call l:to_return.Catch(l:self._HandleFailedReq)
   return l:to_return
 endfunction
