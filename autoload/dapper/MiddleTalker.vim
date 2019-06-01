@@ -16,6 +16,8 @@
 " program-wide RPC, it does not make sense to have multiple MiddleTalker
 " instances at a given time.
 
+let s:plugin = maktaba#plugin#Get('dapper.nvim')
+
 let s:typename = 'MiddleTalker'
 let s:message_interface = dapper#dap#DapperMessage()
 
@@ -225,11 +227,13 @@ function! dapper#MiddleTalker#Request(command, request_args, Callback) abort dic
   " the latter isn't needed on the middle-end, vim_msg_typename shouldn't matter
   let l:vim_id = l:self.__GetID()
   let l:self.__ids_to_callbacks[l:vim_id] = a:Callback
+  let l:rec_depth = s:plugin.Flag('max_debug_log_recursion_depth')
   call l:self.NotifyReport(
       \ 'debug',
-      \ 'Sending request: '.typevim#object#ShallowPrint(a:command),
-      \ 'Given callback: '.typevim#object#ShallowPrint(a:Callback)
-        \ . ', given args: '.typevim#object#ShallowPrint(a:request_args)
+      \ 'Sending request: '.typevim#object#PrettyPrint(a:command, l:rec_depth)
+        \ . ', for id: '.l:vim_id,
+      \ 'Given callback: '.typevim#object#PrettyPrint(a:Callback, l:rec_depth),
+      \ 'Given args: '.typevim#object#PrettyPrint(a:request_args, l:rec_depth)
       \ )
   call DapperRequest(a:command, l:vim_id, l:req_args)
 endfunction
