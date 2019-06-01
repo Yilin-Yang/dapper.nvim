@@ -37,6 +37,7 @@ function! dapper#model#StackFrame#New(message_passer, stack_frame, scopes_respon
       \ '_HandleVariablesResponse': typevim#make#Member('_HandleVariablesResponse'),
       \ 'scope': typevim#make#Member('scope'),
       \ 'scopes': typevim#make#Member('scopes'),
+      \ 'ClearCache': typevim#make#Member('ClearCache'),
       \ }
   call typevim#make#Class(s:typename, l:new)
   let l:new._raw_scopes =
@@ -192,6 +193,20 @@ function! dapper#model#StackFrame#scopes() dict abort
   return l:names
 endfunction
 
+function! s:GetRawScope(self, name) abort
+  let l:found = v:null
+  for l:scope in a:self._raw_scopes
+    if l:scope.name ==# a:name
+      let l:found = l:scope
+      break
+    endif
+  endfor
+  if empty(l:found)  " no scope with the given {name}
+    throw maktaba#error#NotFound('No Scope found with name: %s', a:name)
+  endif
+  return l:found
+endfunction
+
 ""
 " @public
 " @dict StackFrame
@@ -204,17 +219,7 @@ endfunction
 function! dapper#model#StackFrame#scope(name) dict abort
   call s:CheckType(l:self)
   call maktaba#ensure#IsString(a:name)
-
-  let l:raw_scope = v:null
-  for l:scope in l:self._raw_scopes
-    if l:scope.name ==# a:name
-      let l:raw_scope = l:scope
-      break
-    endif
-  endfor
-  if empty(l:raw_scope)  " no scope with the given {name}
-    throw maktaba#error#NotFound('No Scope found with name: %s', a:name)
-  endif
+  let l:raw_scope = s:GetRawScope(l:self, a:name)
 
   if has_key(l:self._names_to_scopes, a:name)
     let l:to_return = typevim#Promise#New()
@@ -258,4 +263,30 @@ function! dapper#model#StackFrame#_HandleVariablesResponse(scope, msg) dict abor
       \ dapper#model#Scope#New(l:self._message_passer, a:scope, a:msg)
   let l:self._names_to_scopes[a:scope.name] = l:new_scope
   return l:new_scope
+endfunction
+
+""
+" @dict StackFrame
+" Clear the given {scope} from this StackFrame's cache of (possibly resolved)
+" Promises, so that later requests for {scope} through |StackFrame.scope()|
+" will retrieve values directly from the debug adapter.
+"
+" If {scope} is |v:null|, all Scopes are cleared from the cache.
+"
+" @throws NotFound if {scope} does not exist in this StackFrame.
+" @throws WrongType if {scope} is not v:null or a string.
+function! dapper#model#StackFrame#ClearCache(scope) dict abort
+  call s:CheckType(l:self)
+  if a:scope is v:null
+    let l:self._names_to_scopes = {}
+  endif
+
+  if has_key(l:self._names_to_scopes, maktaba#ensure#IsString(a:scope))
+    unlet l:self._names_to_scopes[a:scope]
+  else
+    " throws NotFound if scope doesn't exist
+    let l:raw_scope = s:GetRawScope(l:self, a:scope)
+    " the scope has already been cleared from the cache, so we don't
+    " need to do anything
+  endif
 endfunction

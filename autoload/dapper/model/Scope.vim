@@ -49,6 +49,7 @@ function! dapper#model#Scope#New(message_passer, raw_scope, vars_response) abort
       \ 'endColumn': typevim#make#Member('endColumn'),
       \
       \ 'variables': typevim#make#Member('variables'),
+      \ 'Refresh': typevim#make#Member('Refresh'),
       \ }
   return typevim#make#Class(s:typename, l:new)
 endfunction
@@ -191,4 +192,60 @@ function! dapper#model#Scope#variables() dict abort
   let l:to_return = typevim#Promise#New()
   call l:to_return.Resolve(copy(l:self._names_to_variables))
   return l:to_return
+endfunction
+
+""
+" @public
+" @dict Scope
+" Pull updated information about the @dict(Variable) {child} to store in this
+" Scope. Return a |TypeVim.Promise| that resolves to that {child}.
+"
+" If {child} is |v:null|, refresh all children, and return a Promise that
+" resolves to a dict between this scope's variable names/indices and their
+" corresponding @dict(Variable) objects.
+"
+" @throws NotFound if {child} could not be found in this Scope.
+" @throws WrongType if {child} is not v:null or a string.
+function! dapper#model#Scope#Refresh(child) dict abort
+  call s:CheckType(l:self)
+  if a:child is v:null
+    let l:doer = dapper#RequestDoer#New(
+        \ l:self._message_passer, 'variables',
+        \ {'variablesReference': l:self.variablesReference()})
+    return typevim#Promise#New(l:doer)
+        \.Then(function('s:UpdateChildren', [l:self]))
+  endif
+  let l:names_to_vars = l:self._names_to_variables
+  if !has_key(l:names_to_vars, maktaba#ensure#IsString(a:child))
+    throw maktaba#error#NotFound('No Variable named %s in scope: %s',
+        \ a:child, l:self.name())
+  endif
+  let l:child = l:names_to_vars[a:child]
+  let l:doer = dapper#RequestDoer#New(
+      \ l:self._message_passer, 'variables',
+        \ {'variablesReference': l:self.variablesReference()})
+  return typevim#Promise#New(l:doer).Then(
+      \ function('s:UpdateChild', [l:self, a:child]))
+endfunction
+
+function! s:UpdateChildren(self, msg) abort
+  call typevim#ensure#Implements(a:msg, dapper#dap#VariablesResponse())
+  let l:names_to_vars =
+      \ s:ParseResponseIntoVariables(a:self._message_passer, a:msg)
+  let a:self._names_to_variables = l:names_to_vars
+  return l:names_to_vars
+endfunction
+
+function! s:UpdateChild(self, child, msg) abort
+  call s:CheckType(a:self)
+  call typevim#ensure#Implements(a:msg, dapper#dap#VariablesResponse())
+  call maktaba#ensure#IsString(a:child)
+  for l:raw_var in a:msg.body.variables
+    if l:raw_var.name ==# a:child
+      let l:var = dapper#model#Variable#New(a:self._message_passer, l:raw_var)
+      let a:self._names_to_variables[a:child] = l:var
+      return l:var
+    endif
+  endfor
+  throw maktaba#error#NotFound('No variable in body named: %s', a:child)
 endfunction

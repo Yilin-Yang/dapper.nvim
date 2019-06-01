@@ -35,6 +35,7 @@ let s:PROTOTYPE = {
     \ 'Children': function(s:FUNC_PREFIX.'Children'),
     \ 'Child': function(s:FUNC_PREFIX.'Child'),
     \ 'SetValue': function(s:FUNC_PREFIX.'SetValue'),
+    \ 'Refresh': function(s:FUNC_PREFIX.'Refresh'),
     \ }
 call typevim#make#Class(s:typename, s:PROTOTYPE)
 
@@ -173,24 +174,21 @@ endfunction
 
 ""
 " @dict Variable
-" Update the child variables of this Variable from a newly received
+" Update the child variable {to_update} of this Variable from a newly received
 " DebugProtocol.VariablesResponse. Return the newly constructed Variable
-" children.
+" child.
+"
+" If {to_update} is v:null, all children are updated from the given {msg} and
+" a list of all constructed children is returned. If {to_update} is the name
+" of a child @dict(Variable), then that child will be updated from the given
+" {msg} and the "refreshed" child will be returned.
 "
 " @throws BadValue if {msg} is not a dict.
-" @throws WrongType if {msg} is not a @dict(ProtocolMessage).
-function! dapper#model#Variable#_UpdateFromMsg(msg) dict abort
+" @throws NotFound if the child {to_update} cannot be found in {msg}.
+" @throws WrongType if {to_update} is not v:null or a string, or if {msg} is not a @dict(ProtocolMessage).
+function! dapper#model#Variable#_UpdateFromMsg(to_update, msg) dict abort
   call s:CheckType(l:self)
   call typevim#ensure#Implements(a:msg, dapper#dap#ProtocolMessage())
-  if !empty(l:self._names_to_children)
-    " call l:self._message_passer.NotifyReport(
-    "     \ 'error',
-    "     \ 'Variable obj updated, but didn''t clear children?',
-    "     \ a:msg,
-    "     \ l:self
-    "     \ )
-    let l:self._names_to_children = {}
-  endif
   if a:msg.vim_msg_typename !=# 'VariablesResponse'
     let l:name = l:self.name()
     call l:self._message_passer.NotifyReport(
@@ -202,12 +200,27 @@ function! dapper#model#Variable#_UpdateFromMsg(msg) dict abort
     throw maktaba#error#Failure(
         \ 'Variable %s got a non-VariablesResponse!', l:name)
   endif
+  if a:to_update is v:null
+    if !empty(l:self._names_to_children)
+      let l:self._names_to_children = {}
+    endif
+    for l:raw_var in a:msg.body.variables
+      let l:new_var = dapper#model#Variable#__New(
+          \ l:self._message_passer, l:raw_var, l:self.__recursion_depth + 1)
+      let l:self._names_to_children[l:new_var.name()] = l:new_var
+    endfor
+    return copy(l:self._names_to_children)
+  endif
+  call maktaba#ensure#IsString(a:to_update)
   for l:raw_var in a:msg.body.variables
-    let l:new_var = dapper#model#Variable#__New(
-        \ l:self._message_passer, l:raw_var, l:self.__recursion_depth + 1)
-    let l:self._names_to_children[l:new_var.name()] = l:new_var
+    if l:raw_var.name !=# a:to_update | continue | endif
+      let l:new_var = dapper#model#Variable#__New(
+          \ l:self._message_passer, l:raw_var, l:self.__recursion_depth + 1)
+    let l:self._names_to_children[l:raw_var.name] = l:new_var
+    return l:new_var
   endfor
-  return copy(l:self._names_to_children)
+  throw maktaba#error#NotFound(
+      \ 'Did not find child %s in response body!', a:to_update)
 endfunction
 
 ""
@@ -289,7 +302,7 @@ function! dapper#model#Variable#ChildNames() dict abort
   if empty(l:self._names_to_children)
     " updates with new _names_to_children, and resolves with same dict;
     " only the former is needed for __ReturnChildNames
-    let l:to_return = dapper#model#Variable#__GetPromiseUpdateChild()
+    let l:to_return = dapper#model#Variable#__GetPromiseUpdateChild(v:null)
     return l:to_return.Then(
         \ typevim#object#Bind(
             \ function('dapper#model#Variable#__ReturnChildNames'), [l:self]))
@@ -309,7 +322,7 @@ endfunction
 function! dapper#model#Variable#Children() dict abort
   call s:CheckType(l:self)
   if empty(l:self._names_to_children)
-    return dapper#model#Variable#__GetPromiseUpdateChild(l:self)
+    return dapper#model#Variable#__GetPromiseUpdateChild(v:null, l:self)
   else
     let l:to_return = typevim#Promise#New()
     call l:to_return.Resolve(copy(l:self._names_to_children))
@@ -330,7 +343,7 @@ function! dapper#model#Variable#Child(name_or_idx) dict abort
   call maktaba#ensure#IsString(a:name_or_idx)
   if empty(l:self._names_to_children)
     let l:children_promise =
-        \ dapper#model#Variable#__GetPromiseUpdateChild(l:self)
+        \ dapper#model#Variable#__GetPromiseUpdateChild(v:null, l:self)
     return l:children_promise.Then(
         \ function('dapper#model#Variable#__ReturnChildWithName',
             \ [l:self, a:name_or_idx]))
@@ -371,14 +384,16 @@ function! dapper#model#Variable#__GetPromiseAutopopulate(self) abort
         \ )
     return
   endif
-  call dapper#model#Variable#__GetPromiseUpdateChild(a:self)
+  call dapper#model#Variable#__GetPromiseUpdateChild(v:null, a:self)
 endfunction
 
 ""
 " @dict Variable
 " Return a |TypeVim.Promise| that, after updating the "_names_to_children"
-" dict of this object, resolves to that same dictionary.
-function! dapper#model#Variable#__GetPromiseUpdateChild(self) abort
+" dict of this object, resolves to that same dictionary (if {to_update} is
+" v:null), or the particular @dict(Variable) {to_update} if {to_update} is a
+" string.
+function! dapper#model#Variable#__GetPromiseUpdateChild(to_update, self) abort
   call s:CheckType(a:self)
 
   function! s:ReturnEmpty()
@@ -390,7 +405,7 @@ function! dapper#model#Variable#__GetPromiseUpdateChild(self) abort
   try
     let l:var_ref = a:self.variablesReference()
     if !l:var_ref | return s:ReturnEmpty() | endif
-  catch ERROR(NotFound)
+  catch /ERROR(NotFound)/
     return s:ReturnEmpty()
   endtry
   let a:self._names_to_children = {}
@@ -398,7 +413,8 @@ function! dapper#model#Variable#__GetPromiseUpdateChild(self) abort
       \ a:self._message_passer, 'variables',
       \ {'variablesReference': l:var_ref})
   let l:to_return = typevim#Promise#New(l:doer)
-  return l:to_return.Then(a:self._UpdateFromMsg, a:self._HandleFailedReq)
+  return l:to_return.Then(
+      \ function(a:self._UpdateFromMsg, [a:to_update]), a:self._HandleFailedReq)
 endfunction
 
 ""
@@ -452,4 +468,22 @@ function! dapper#model#Variable#SetValue(container_ref, value, ...) dict abort
       \ l:self._UpdateFromSetVar)
   call l:to_return.Catch(l:self._HandleFailedReq)
   return l:to_return
+endfunction
+
+""
+" @public
+" @dict Variable
+" Pull updated values for the child variable {to_refresh} directly from the
+" debug adapter, to be returned by later calls to |Variable.Child()|.
+"
+" If {to_refresh} is |v:null|, all children are refreshed.
+"
+" Returns a |TypeVim.Promise| that resolves to a dict between names/indices of
+" all variable children and the children themselves, or the particular
+" @dict(Variable) {to_refresh}.
+"
+" @throws WrongType if {to_refresh} is not v:null or a string.
+function! dapper#model#Variable#Refresh(to_refresh) dict abort
+  call s:CheckType(l:self)
+  return dapper#model#Variable#__GetPromiseUpdateChild(a:to_refresh)
 endfunction
