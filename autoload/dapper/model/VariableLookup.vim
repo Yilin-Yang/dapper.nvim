@@ -45,17 +45,23 @@ function! dapper#model#VariableLookup#New(message_passer, stack_frame) abort
       \ '_stack_frame': a:stack_frame,
       \ '_scope_names': a:stack_frame.scopes(),
       \ '_message_passer': a:message_passer,
-      \ '__names_to_scope_promises': {},
+      \ '__names_to_scope_promises': s:ScopePromisesFromFrame(a:stack_frame),
       \ 'VariableFromPath': typevim#make#Member('VariableFromPath'),
+      \ 'Update': typevim#make#Member('Update'),
       \ }
-  for l:scope in a:stack_frame.scopes()
-    let l:new.__names_to_scope_promises[l:scope] = a:stack_frame.scope(l:scope)
-  endfor
   return typevim#make#Class(s:typename, l:new)
 endfunction
 
 function! s:CheckType(Obj) abort
   call typevim#ensure#IsType(a:Obj, s:typename)
+endfunction
+
+function! s:ScopePromisesFromFrame(stack_frame) abort
+  let l:names_to_promises = {}
+  for l:scope in a:stack_frame.scopes()
+    let l:names_to_promises[l:scope] = a:stack_frame.scope(l:scope)
+  endfor
+  return l:names_to_promises
 endfunction
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -195,6 +201,14 @@ endfunction
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
+function! s:EnsureCopyIsListOfStrings(Obj) abort
+  let l:copy = copy(maktaba#ensure#IsList(a:Obj))
+  for l:Obj in l:copy
+    call maktaba#ensure#IsString(l:Obj)
+  endfor
+  return l:copy
+endfunction
+
 ""
 " @public
 " @dict VariableLookup
@@ -213,16 +227,13 @@ endfunction
 " If the requested variable could not be found, the returned Promise will
 " reject with the text of an ERROR(NotFound) exception.
 "
-" @throws NotFound if the given scope could not be found.
+" @throws NotFound if the given scope or variable could not be found.
 " @throws WrongType if {lookup_path} is not a list of strings.
 function! dapper#model#VariableLookup#VariableFromPath(lookup_path) dict abort
   call s:CheckType(l:self)
   " copy lookup_path to avoid unexpectedly modifying the lookup_path
   " that the user had provided
-  let l:lookup_path = copy(maktaba#ensure#IsList(a:lookup_path))
-  for l:Obj in l:lookup_path
-    call maktaba#ensure#IsString(l:Obj)
-  endfor
+  let l:lookup_path = s:EnsureCopyIsListOfStrings(a:lookup_path)
 
   let l:names_to_scope_promises = l:self.__names_to_scope_promises
   if empty(l:lookup_path)  " Promise resolves to all Scope objects
@@ -243,4 +254,53 @@ function! dapper#model#VariableLookup#VariableFromPath(lookup_path) dict abort
   let l:var_doer = s:VariableDoer_New(
       \ l:self._message_passer, l:lookup_path, l:scope_promise)
   return typevim#Promise#New(l:var_doer)
+endfunction
+
+""
+" @public
+" @dict VariableLookup
+" Forcibly repopulate the @dict(Scope) or @dict(Variable) denoted by
+" {lookup_path}. Return a |TypeVim.Promise| that resolves to the updated Scope
+" or Variable.
+"
+" If {lookup_path} is empty, all Scopes are repopulated and the returned
+" Promise resolves to a dict between all reachable scope names and their
+" corresponding @dict(Scope) objects.
+"
+" @throws NotFound if the requested scope or variable could not be found.
+" @throws WrongType if {lookup_path} is not a list of strings.
+function! dapper#model#VariableLookup#Refresh(lookup_path) dict abort
+  call s:CheckType(l:self)
+  let l:lookup_path = s:EnsureCopyIsListOfStrings(a:lookup_path)
+  let l:stack_frame = l:self._stack_frame
+  if empty(l:lookup_path)
+    call l:stack_frame.ClearCache()
+    let l:self.__names_to_scope_promises =
+        \ s:ScopePromisesFromFrame(l:self._stack_frame)
+    return l:self.VariableFromPath([])
+  endif
+
+  let l:scope_name = l:lookup_path[0]
+  let l:names_to_scope_promises = l:self.__names_to_scope_promises
+  if !has_key(l:names_to_scope_promises, l:scope_name)
+    throw maktaba#error#NotFound('No Scope found with name: %s', l:scope_name)
+  elseif len(l:lookup_path) ==# 1  " refresh a Scope
+    call l:stack_frame.ClearCache(l:lookup_path[0])
+    let l:scope_promise = l:stack_frame.scope(l:scope_name)
+    let l:names_to_scope_promises[l:scope_name] = l:scope_promise
+    return l:scope_promise
+  else
+    " drill down to the parent of the requested variable and refresh it
+    let l:parent = l:self.VariableFromPath(a:lookup_path[-2])
+    let l:to_refresh = a:lookup_path[-1]
+    if l:parent.State() ==# 'fulfilled'
+      " if the Promise isn't already fulfilled, then there's nothing to refresh
+      return l:parent
+    endif
+    if len(l:lookup_path) ==# 2  " refresh a Variable inside a Scope
+      return l:parent.Then({ scope -> scope.Refresh(l:to_refresh) })
+    else  " refresh a Variable inside of a Variable
+      return l:parent.Then({ var -> var.Refresh(l:to_refresh) })
+    endif
+  endif
 endfunction
