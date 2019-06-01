@@ -182,15 +182,6 @@ function! dapper#view#VariablesPrinter#StringFromVariable(variable, prefix) abor
         \ 'Failed to print malformed variable: %s',
         \ typevim#PrintShallow(a:variable))
   endif
-  if a:prefix ==# '-' && !a:variable.unstructured
-    throw maktaba#error#Failure(
-        \ 'Tried to print structured variable as unstructured: %s',
-        \ typevim#PrintShallow(a:variable))
-  elseif a:prefix !=# '-' && a:variable.unstructured
-    throw maktaba#error#Failure(
-        \ 'Tried to print unstructured variable as structured: %s',
-        \ typevim#PrintShallow(a:variable))
-  endif
   let l:str = a:variable.indentation.a:prefix.' '.a:variable.name.', '
       \ .a:variable.type
   if !empty(a:variable.presentation_hint)
@@ -744,24 +735,23 @@ function! dapper#view#VariablesPrinter#UpdateValue(
     let l:parsed_var = dapper#view#VariablesPrinter#VariableFromString(l:header)
 
     " update properties of the variable entry
+    let l:parsed_var.value = l:new_props.value
     if has_key(l:new_props, 'variablesReference')
-        \ && l:new_props.variablesReference
       " nonzero variablesReference => variable is now structured
-      let l:parsed_var.unstructured = 0
+      let l:parsed_var.unstructured = l:new_props.variablesReference ? 0 : 1
     endif
-    for [l:prop, l:val] in items(l:new_props)
-      let l:parsed_var[l:prop] = l:val
-    endfor
 
     let l:prefix = '-'
     if !l:parsed_var.unstructured
-      let l:prefix = l:parsed_var.expanded ? 'v' : '>'
+      let l:prefix = '>'
+      let l:parsed_var.expanded = 0
+      " always collapse the variable after setting its value
     endif
 
     let l:header = dapper#view#VariablesPrinter#StringFromVariable(
         \ l:parsed_var, l:prefix)
   endif
-  call l:self._buffer.ReplaceLines(l:start, l:start, [l:header])
+  call l:self._buffer.ReplaceLines(l:start, l:end, [l:header])
 endfunction
 let s:new_props_interface = {
     \ 'value': typevim#String(),

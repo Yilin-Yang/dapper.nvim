@@ -259,10 +259,6 @@ function! s:UpdatePropIfPresent(variable, resp_body, property)
   if has_key(a:resp_body, a:property)
     let a:variable[a:property] = a:resp_body[a:property]
     return 1
-  else
-    " unlet the property if it's not present, to avoid 'carry-over' from the
-    " old Variable struct
-    if has_key(a:variable, a:property) | unlet a:variable[a:property] | endif
   endif
 endfunction
 

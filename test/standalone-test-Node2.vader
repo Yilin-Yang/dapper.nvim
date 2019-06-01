@@ -75,3 +75,49 @@ Expect:
     > this, Object: Object
     > throwError, Function: function throwError() { … }
   </variables>
+
+Execute (Node2: Set Variable Value):
+  call g:vb.Open()
+  normal! 4G
+  call b:dapper_buffer.SetVariable('123')
+  call BusyWait()
+  " note: Node debug adapter does not update the variable type after
+  " setting its value
+Expect:
+  <variables>
+  > Global : 
+  v Local : 
+    - Foo, undefined: 123
+    - [[StableObjectId]], number: 1
+    - __dirname, string: "/home/yiliny/plugin/dapper.nvim/test/js_test"
+    - __filename, string: "/home/yiliny/plugin/dapper.nvim/test/js_test/index.js"
+    > exports, Object: Object {}
+    - foo, undefined: undefined
+    > module, Object: Module {id: ".", exports: Object, parent: null, …}
+    > require, Function: function require(path) { … }
+    > this, Object: Object
+    > throwError, Function: function throwError() { … }
+  </variables>
+
+Execute (Node2: Set Value of Expanded Var Collapses and Updates It):
+  call g:vb.Open()
+  normal! 13G
+  normal "\<cr>"
+  call BusyWait()
+  call b:dapper_buffer.SetVariable('() => { return 0; }')
+  call BusyWait()
+Expect:
+  <variables>
+  > Global : 
+  v Local : 
+    - Foo, undefined: 123
+    - [[StableObjectId]], number: 1
+    - __dirname, string: "/home/yiliny/plugin/dapper.nvim/test/js_test"
+    - __filename, string: "/home/yiliny/plugin/dapper.nvim/test/js_test/index.js"
+    > exports, Object: Object {}
+    - foo, undefined: undefined
+    > module, Object: Module {id: ".", exports: Object, parent: null, …}
+    > require, Function: function require(path) { … }
+    > this, Object: Object
+    > throwError, Function: () => { … }
+  </variables>
