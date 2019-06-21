@@ -39,12 +39,15 @@ function! dapper#model#Source#New(message_passer, source_obj) abort
       \
       \ '_UpdateContents': typevim#make#Member('_UpdateContents'),
       \ '_UpdateBreakpoints': typevim#make#Member('_UpdateBreakpoints'),
+      \ '_LogFailure': typevim#make#Member('_LogFailure'),
       \ }
   call typevim#make#Class(s:typename, l:new)
   let l:new._UpdateContents =
       \ typevim#object#Bind(l:new._UpdateContents, l:new)
   let l:new._UpdateBreakpoints =
       \ typevim#object#Bind(l:new._UpdateBreakpoints, l:new)
+  let l:new._LogFailure =
+      \ typevim#object#Bind(l:new._LogFailure, l:new)
   return l:new
 endfunction
 
@@ -152,6 +155,29 @@ endfunction
 " @throws NotFound if this source has an associated path or (equivalently) has no `sourceReference`.
 function! dapper#model#Source#Contents() dict abort
   call s:CheckType(l:self)
+  let l:source_ref -  l:self.sourceReference()
+  if l:self.path() || l:source_ref
+    throw maktaba#error#NotFound(
+        \ 'Tried retrieving contents of non-virtual source: %s', l:self.name())
+  endif
+
+  " this is a 'virtual' source
+  if l:self._content
+    " TODO: will this content ever change?
+    let l:to_return = typevim#Promise#New()
+    call l:to_return.Resolve(l:self._content)
+    return l:to_return
+  endif
+
+  let l:source_req_args = {
+      \ 'source': l:self._raw_source,
+      \ 'sourceReference': l:source_ref,
+      \ }
+  let l:doer = dapper#RequestDoer#New(
+      \ l:self._message_passer, 'source', l:source_req_args)
+  let l:to_return = typevim#Promise#New(l:doer).Then(l:self._UpdateContents)
+  call l:to_return.Catch(l:self._LogFailure)
+  return l:to_return
 endfunction
 
 ""
@@ -202,3 +228,14 @@ endfunction
       " \ 'Contents': typevim#make#Member('Contents'),
       " \ 'SetBreakpoint': typevim#make#Member('SetBreakpoint'),
       " \ 'RemoveBreakpoint': typevim#make#Member('RemoveBreakpoint'),
+
+function! dapper#model#Source#_LogFailure(error) dict abort
+  call s:CheckType(l:self)
+  call l:self._message_passer.NotifyReport(
+      \ 'error',
+      \ 'Retrieve of source contents for '.l:self.name().' failed!',
+      \ a:error,
+      \ l:self
+      \ )
+  return []
+endfunction
